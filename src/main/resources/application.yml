@@ -1,0 +1,29 @@
+spring:
+  main:
+    web-application-type: none
+    log-startup-info: false
+  application:
+    name: GMC Daemon
+  banner:
+    location: banner.text
+  shell:
+    history:
+      enabled: false
+    command:
+      stacktrace:
+        enabled: false
+      history:
+        enabled: false
+      quit:
+        enabled: false
+      script:
+        enabled: false
+      version:
+        enabled: false
+      clear:
+        enabled: false
+logging:
+  file:
+    name: gmc.log
+  level:
+    de.swiftbyte: debug
