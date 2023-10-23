@@ -1,6 +1,6 @@
-package de.swiftbyte.utils;
+package de.swiftbyte.gmc.utils;
 
-import de.swiftbyte.Application;
+import de.swiftbyte.gmc.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.shell.component.context.ComponentContext;
 import org.springframework.shell.component.flow.ComponentFlow;
@@ -20,7 +20,6 @@ public class NodeUtils {
             log.debug("Token was not expected size.");
             return null;
         }
-        ;
 
         log.debug("Token was expected size. Checking if token is a valid integer...");
 

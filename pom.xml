@@ -10,7 +10,7 @@
     </parent>
 
 
-    <groupId>de.swiftbyte</groupId>
+    <groupId>de.swiftbyte.gmc</groupId>
     <artifactId>GmcBackend</artifactId>
     <version>0.0.1</version>
     <name>GmcBackend</name>
@@ -21,7 +21,7 @@
     <properties>
         <java.version>17</java.version>
         <spring-shell.version>3.1.4</spring-shell.version>
-        <exec.mainClass>de.swiftbyte.Application</exec.mainClass>
+        <exec.mainClass>de.swiftbyte.gmc.Application</exec.mainClass>
     </properties>
 
 
@@ -80,7 +80,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>de.swiftbyte.Application</mainClass>
+                    <mainClass>de.swiftbyte.gmc.Application</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

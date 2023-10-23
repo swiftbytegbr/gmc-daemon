@@ -1,6 +1,6 @@
-package de.swiftbyte.config;
+package de.swiftbyte.gmc.config;
 
-import de.swiftbyte.Node;
+import de.swiftbyte.gmc.Node;
 import org.jline.utils.AttributedString;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.shell.jline.PromptProvider;

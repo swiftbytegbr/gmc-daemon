@@ -1,11 +1,15 @@
-package de.swiftbyte;
+package de.swiftbyte.gmc;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.jline.terminal.Terminal;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.shell.Shell;
+import org.springframework.shell.ShellApplicationRunner;
 import org.springframework.shell.command.annotation.CommandScan;
 import org.springframework.shell.component.flow.ComponentFlow;
 
@@ -17,20 +21,30 @@ public class Application {
     private static Node node;
 
     @Getter
+    private static Terminal terminal;
+
+    @Getter
     private static ComponentFlow.Builder componentFlowBuilder;
 
-    public Application(ComponentFlow.Builder componentFlowBuilder) {
+    private static final Thread shutdownHook = new Thread(() ->{
+        //TODO add shutdown logic
+    });
+
+    public Application(ComponentFlow.Builder componentFlowBuilder, Terminal terminal) {
         Application.componentFlowBuilder = componentFlowBuilder;
+        Application.terminal = terminal;
     }
 
     public static void main(String[] args) {
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+
         node = new Node();
         node.start();
         SpringApplication.run(Application.class);
     }
 
     @EventListener(ApplicationStartedEvent.class)
-    public void onReady(ApplicationStartedEvent event) throws Exception {
+    public void onReady() {
 
         log.debug("Daemon ready...");
 

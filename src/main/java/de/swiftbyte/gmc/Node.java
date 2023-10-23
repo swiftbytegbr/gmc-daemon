@@ -1,8 +1,9 @@
-package de.swiftbyte;
+package de.swiftbyte.gmc;
 
-import de.swiftbyte.utils.NodeUtils;
+import de.swiftbyte.gmc.utils.NodeUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.jline.terminal.impl.DumbTerminal;
 import org.springframework.shell.component.context.ComponentContext;
 
 import java.util.NoSuchElementException;
@@ -54,8 +55,15 @@ public class Node extends Thread {
             joinTeamWithValidatedToken(token);
 
         } catch (NoSuchElementException e) {
-            log.error("The prompt to enter the Invite Token could not be created due to an error. Please try to invite the node with the command 'join <token>'.");
+
             connectionState = ConnectionState.NOT_JOINED;
+
+            if(Application.getTerminal() instanceof DumbTerminal) {
+                log.error("The prompt to enter the Invite Token could not be created due to an error. Please try to invite the node with the command 'join <token>'.");
+            } else {
+                log.debug("An empty entry was made. Restart the join process.");
+                joinTeam();
+            }
         }
     }
 
@@ -75,6 +83,7 @@ public class Node extends Thread {
     }
 
     private void joinTeamWithValidatedToken(int token) {
+
         log.debug("Start joining with Invite Token '" + token + "'...");
         //Todo verify invite token and obtain secret and nodeId from backend
     }
