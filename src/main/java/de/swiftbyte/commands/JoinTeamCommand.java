@@ -10,7 +10,7 @@ import org.springframework.shell.command.annotation.Option;
 @Slf4j
 public class JoinTeamCommand {
 
-    @Command(command = "join", description = "Invite this daemon to a team. Only available when not already joined.", group = "Daemon Management", hidden = false)
+    @Command(command = "join", description = "Invite this daemon to a team. Only available when not already joined.", group = "Daemon Management", hidden = true)
     public String joinCommand(@Option(description = "The Invite Token, which is displayed in the Web Panel.", required = true) String token) {
 
         if (Node.INSTANCE.getConnectionState() != ConnectionState.NOT_JOINED) {

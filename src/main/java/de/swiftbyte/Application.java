@@ -26,7 +26,7 @@ public class Application {
     public static void main(String[] args) {
         node = new Node();
         node.start();
-        SpringApplication.run(Application.class, args);
+        SpringApplication.run(Application.class);
     }
 
     @EventListener(ApplicationStartedEvent.class)
