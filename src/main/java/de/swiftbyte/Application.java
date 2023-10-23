@@ -1,39 +1,30 @@
 package de.swiftbyte;
 
+import de.swiftbyte.commands.JoinTeamCommand;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.jline.builtins.telnet.Telnet;
-import org.jline.reader.LineReader;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.shell.*;
-import org.springframework.shell.boot.SpringShellProperties;
-import org.springframework.shell.component.context.ComponentContext;
+import org.springframework.shell.command.annotation.CommandScan;
+import org.springframework.shell.command.annotation.EnableCommand;
 import org.springframework.shell.component.flow.ComponentFlow;
-import org.springframework.shell.jline.InteractiveShellRunner;
-import org.springframework.shell.jline.ScriptShellRunner;
-import org.springframework.shell.standard.ShellComponent;
-import org.springframework.shell.standard.commands.Help;
-import org.springframework.shell.style.TemplateExecutor;
-
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
 
 @SpringBootApplication
+@CommandScan
 @Slf4j
-@ShellComponent
 public class Application {
 
     private static Node node;
 
-    @Autowired
-    private ComponentFlow.Builder componentFlowBuilder;
+    @Getter
+    private static ComponentFlow.Builder componentFlowBuilder;
+
+    public Application(ComponentFlow.Builder componentFlowBuilder) {
+        Application.componentFlowBuilder = componentFlowBuilder;
+    }
 
     public static void main(String[] args) {
         node = new Node();
@@ -43,13 +34,6 @@ public class Application {
 
     @EventListener(ApplicationStartedEvent.class)
     public void onReady(ApplicationStartedEvent event) throws Exception {
-        Thread.sleep(1000);
-        ComponentFlow flow = componentFlowBuilder.clone().reset()
-                .withStringInput("field1")
-                .name("Field1")
-                .defaultValue("defaultField1Value")
-                .and().build();
-        ComponentContext<?> context = flow.run().getContext();
 
         log.debug("Daemon ready...");
 

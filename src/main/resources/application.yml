@@ -10,6 +10,8 @@ spring:
     history:
       enabled: false
     command:
+      help:
+        groupingMode: FLAT
       stacktrace:
         enabled: false
       history:
@@ -25,5 +27,6 @@ spring:
 logging:
   file:
     name: gmc.log
+    path: log
   level:
     de.swiftbyte: debug
