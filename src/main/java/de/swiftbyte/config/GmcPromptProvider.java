@@ -1,6 +1,5 @@
 package de.swiftbyte.config;
 
-import de.swiftbyte.Application;
 import de.swiftbyte.Node;
 import org.jline.utils.AttributedString;
 import org.springframework.context.annotation.Configuration;

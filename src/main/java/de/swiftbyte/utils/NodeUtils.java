@@ -16,10 +16,11 @@ public class NodeUtils {
 
         log.debug("Token was normalized to '" + normalizedToken + "'. Checking length...");
 
-        if(normalizedToken.length() != 6) {
+        if (normalizedToken.length() != 6) {
             log.debug("Token was not expected size.");
             return null;
-        };
+        }
+        ;
 
         log.debug("Token was expected size. Checking if token is a valid integer...");
 

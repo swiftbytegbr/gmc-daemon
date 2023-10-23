@@ -1,15 +1,12 @@
 package de.swiftbyte;
 
-import de.swiftbyte.commands.JoinTeamCommand;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.shell.command.annotation.CommandScan;
-import org.springframework.shell.command.annotation.EnableCommand;
 import org.springframework.shell.component.flow.ComponentFlow;
 
 @SpringBootApplication
@@ -37,8 +34,8 @@ public class Application {
 
         log.debug("Daemon ready...");
 
-        if(node.getConnectionState() == ConnectionState.NOT_JOINED) node.joinTeam();
-        else if(node.getConnectionState() == ConnectionState.NOT_CONNECTED) node.connect();
+        if (node.getConnectionState() == ConnectionState.NOT_JOINED) node.joinTeam();
+        else if (node.getConnectionState() == ConnectionState.NOT_CONNECTED) node.connect();
         else {
             log.error("Illegal ConnectionState set... Start is aborted!");
             System.exit(1);

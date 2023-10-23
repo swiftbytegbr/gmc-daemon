@@ -3,13 +3,7 @@ package de.swiftbyte;
 import de.swiftbyte.utils.NodeUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.shell.component.context.ComponentContext;
-import org.springframework.shell.component.flow.ComponentFlow;
-import org.springframework.shell.component.flow.ResultMode;
-import org.springframework.shell.standard.commands.Help;
-import org.springframework.stereotype.Component;
 
 import java.util.NoSuchElementException;
 
@@ -71,7 +65,7 @@ public class Node extends Thread {
 
         Integer realToken = NodeUtils.getValidatedToken(token);
 
-        if(realToken == null) {
+        if (realToken == null) {
             log.error("The entered token does not match the expected pattern. Please enter it as follows: XXX-XXX");
             connectionState = ConnectionState.NOT_JOINED;
             return;
@@ -81,7 +75,7 @@ public class Node extends Thread {
     }
 
     private void joinTeamWithValidatedToken(int token) {
-        log.debug("Start joining with Invite Token '"+ token + "'...");
+        log.debug("Start joining with Invite Token '" + token + "'...");
         //Todo verify invite token and obtain secret and nodeId from backend
     }
 
