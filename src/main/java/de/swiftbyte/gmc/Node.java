@@ -1,6 +1,7 @@
 package de.swiftbyte.gmc;
 
 import de.swiftbyte.gmc.utils.ConfigUtils;
+import de.swiftbyte.gmc.utils.ConnectionState;
 import de.swiftbyte.gmc.utils.NodeUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
