@@ -11,10 +11,10 @@
 
 
     <groupId>de.swiftbyte.gmc</groupId>
-    <artifactId>GmcBackend</artifactId>
+    <artifactId>GmcDaemon</artifactId>
     <version>0.0.1</version>
-    <name>GmcBackend</name>
-    <description>GmcBackend</description>
+    <name>GmcDaemon</name>
+    <description>GmcDaemon</description>
     <packaging>jar</packaging>
 
 
