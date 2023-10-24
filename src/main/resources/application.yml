@@ -26,7 +26,7 @@ spring:
         enabled: false
 logging:
   file:
-    name: gmc.log
-    path: log
+    name: ${logging.file.path}gmc.log
+    path: ./log/
   level:
     de.swiftbyte: debug
