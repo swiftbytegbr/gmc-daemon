@@ -1,5 +1,6 @@
 package de.swiftbyte.gmc;
 
+import de.swiftbyte.gmc.utils.ConfigUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jline.terminal.Terminal;
@@ -38,8 +39,6 @@ public class Application {
     public static void main(String[] args) {
         Runtime.getRuntime().addShutdownHook(shutdownHook);
 
-        node = new Node();
-        node.start();
         SpringApplication.run(Application.class);
     }
 
@@ -47,6 +46,11 @@ public class Application {
     public void onReady() {
 
         log.debug("Daemon ready...");
+
+        ConfigUtils.initialiseConfigSystem();
+
+        node = new Node();
+        node.start();
 
         if (node.getConnectionState() == ConnectionState.NOT_JOINED) node.joinTeam();
         else if (node.getConnectionState() == ConnectionState.NOT_CONNECTED) node.connect();

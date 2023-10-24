@@ -1,5 +1,6 @@
 package de.swiftbyte.gmc;
 
+import de.swiftbyte.gmc.utils.ConfigUtils;
 import de.swiftbyte.gmc.utils.NodeUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -18,12 +19,16 @@ public class Node extends Thread {
     private String nodeName;
     private String teamName;
 
+    private String secret;
+    private String nodeId;
+
     public Node() {
 
         INSTANCE = this;
 
         //TODO Check if node has already joined
-        this.connectionState = ConnectionState.NOT_JOINED;
+
+        this.connectionState = (ConfigUtils.hasKey("node.id") && ConfigUtils.hasKey("node.secret")) ? ConnectionState.NOT_CONNECTED : ConnectionState.NOT_JOINED;
 
         this.nodeName = "daemon";
         this.teamName = "gmc";
@@ -86,6 +91,16 @@ public class Node extends Thread {
 
         log.debug("Start joining with Invite Token '" + token + "'...");
         //Todo verify invite token and obtain secret and nodeId from backend
+
+        secret = "secret";
+        nodeId = "id";
+
+        ConfigUtils.store("node.id", nodeId);
+        ConfigUtils.store("node.secret", secret);
+
+        //TODO Getting node information?
+
+        connect();
     }
 
     public void connect() {
