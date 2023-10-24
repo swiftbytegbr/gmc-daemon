@@ -1,4 +1,4 @@
-package de.swiftbyte.gmc;
+package de.swiftbyte.gmc.utils;
 
 public enum ConnectionState {
     NOT_CONNECTED,
