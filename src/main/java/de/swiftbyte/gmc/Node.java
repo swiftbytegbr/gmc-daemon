@@ -64,7 +64,7 @@ public class Node extends Thread {
 
             connectionState = ConnectionState.NOT_JOINED;
 
-            if(Application.getTerminal() instanceof DumbTerminal) {
+            if (Application.getTerminal() instanceof DumbTerminal) {
                 log.error("The prompt to enter the Invite Token could not be created due to an error. Please try to invite the node with the command 'join <token>'.");
             } else {
                 log.debug("An empty entry was made. Restart the join process.");

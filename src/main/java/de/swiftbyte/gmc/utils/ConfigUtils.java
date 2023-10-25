@@ -20,12 +20,12 @@ public class ConfigUtils {
 
         log.debug("Start initialising of config system...");
 
-        if(!CONFIG_FILE.exists()) {
+        if (!CONFIG_FILE.exists()) {
             try {
 
                 log.debug("Creating config file...");
 
-                if(!CONFIG_FILE.createNewFile()) {
+                if (!CONFIG_FILE.createNewFile()) {
                     log.error("The configuration file has already been created, but the existence could not be confirmed by the program. Please delete the file manually.");
                     System.exit(1);
                 }
@@ -53,7 +53,7 @@ public class ConfigUtils {
 
     public static boolean store(String key, String value) {
 
-        if(key == null || value == null) {
+        if (key == null || value == null) {
             log.error("Tried to store null value or key.");
             return false;
         }
@@ -81,7 +81,7 @@ public class ConfigUtils {
 
     public static String get(String key, String defaultValue) {
 
-        if(key == null) {
+        if (key == null) {
             log.error("Tried to get null key.");
             return null;
         }
@@ -97,7 +97,7 @@ public class ConfigUtils {
 
     public static boolean hasKey(String key) {
 
-        if(key == null) {
+        if (key == null) {
             log.error("Tried to check null key.");
             return false;
         }

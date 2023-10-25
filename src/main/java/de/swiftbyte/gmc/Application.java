@@ -26,7 +26,7 @@ public class Application {
     @Getter
     private static ComponentFlow.Builder componentFlowBuilder;
 
-    private static final Thread shutdownHook = new Thread(() ->{
+    private static final Thread shutdownHook = new Thread(() -> {
         //TODO add shutdown logic
     });
 
