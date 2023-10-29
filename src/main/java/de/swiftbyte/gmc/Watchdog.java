@@ -1,12 +1,15 @@
 package de.swiftbyte.gmc;
 
-public class Watchdog extends Thread {
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+public class Watchdog implements Runnable {
 
     @Override
     public void run() {
-        super.run();
 
         //TODO add check logic if node process is running
+
     }
 
 }

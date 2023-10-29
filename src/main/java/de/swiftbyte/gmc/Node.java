@@ -3,12 +3,16 @@ package de.swiftbyte.gmc;
 import de.swiftbyte.gmc.utils.ConfigUtils;
 import de.swiftbyte.gmc.utils.ConnectionState;
 import de.swiftbyte.gmc.utils.NodeUtils;
+import de.swiftbyte.packet.node.LoginPacket;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jline.terminal.impl.DumbTerminal;
 import org.springframework.shell.component.context.ComponentContext;
 
 import java.util.NoSuchElementException;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @Getter
 @Slf4j
@@ -112,5 +116,10 @@ public class Node extends Thread {
     @Override
     public void run() {
         super.run();
+        Application.getExecutor().scheduleAtFixedRate(updateRunnable, 0, 3, TimeUnit.SECONDS);
     }
+
+    private final Runnable updateRunnable = () -> {
+
+    };
 }
