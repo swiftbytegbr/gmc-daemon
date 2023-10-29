@@ -24,6 +24,12 @@
         <exec.mainClass>de.swiftbyte.gmc.Application</exec.mainClass>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>nexus</id>
+            <url>https://registry.system.astroark.xyz/repository/maven-releases/</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -33,6 +39,13 @@
         <dependency>
             <groupId>org.springframework.shell</groupId>
             <artifactId>spring-shell-starter</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>de.swiftbyte</groupId>
+            <artifactId>GmcPackets</artifactId>
+            <version>LATEST</version>
         </dependency>
 
 
