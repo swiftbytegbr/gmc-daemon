@@ -45,7 +45,7 @@
         <dependency>
             <groupId>de.swiftbyte</groupId>
             <artifactId>GmcPackets</artifactId>
-            <version>LATEST</version>
+            <version>1</version>
         </dependency>
 
 
