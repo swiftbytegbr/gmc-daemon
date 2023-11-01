@@ -3,15 +3,12 @@ package de.swiftbyte.gmc;
 import de.swiftbyte.gmc.utils.ConfigUtils;
 import de.swiftbyte.gmc.utils.ConnectionState;
 import de.swiftbyte.gmc.utils.NodeUtils;
-import de.swiftbyte.packet.node.LoginPacket;
 import lombok.Getter;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jline.terminal.impl.DumbTerminal;
 import org.springframework.shell.component.context.ComponentContext;
 
 import java.util.NoSuchElementException;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 @Getter
@@ -38,7 +35,10 @@ public class Node extends Thread {
         this.nodeName = "daemon";
         this.teamName = "gmc";
 
+
+
         getCachedInformation();
+        NodeUtils.checkInstallation();
     }
 
     private void getCachedInformation() {
