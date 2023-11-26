@@ -1,10 +1,18 @@
 package de.swiftbyte.gmc;
 
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import de.swiftbyte.gmc.cache.CacheModel;
+import de.swiftbyte.gmc.cache.GameServerCacheModel;
 import de.swiftbyte.gmc.packet.entity.ResourceUsage;
+import de.swiftbyte.gmc.packet.entity.ServerSettings;
 import de.swiftbyte.gmc.packet.node.NodeHeartbeatPacket;
 import de.swiftbyte.gmc.packet.node.NodeLogoutPacket;
+import de.swiftbyte.gmc.server.AsaServer;
+import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.ConfigUtils;
 import de.swiftbyte.gmc.utils.ConnectionState;
@@ -21,8 +29,11 @@ import org.springframework.shell.component.context.ComponentContext;
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
@@ -57,15 +68,105 @@ public class Node extends Thread {
 
         serverPath = "test";
 
-        getCachedInformation();
+        getCachedNodeInformation();
         NodeUtils.checkInstallation();
     }
 
-    private void getCachedInformation() {
+    private void getCachedNodeInformation() {
 
-        //TODO Check if cache exists and overwrite default values
+        log.debug("Getting cached information...");
+
         nodeId = ConfigUtils.get("node.id", "dummy");
         secret = ConfigUtils.get("node.secret", "dummy");
+
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectReader reader = mapper.reader();
+        try {
+            CacheModel cacheModel = reader.readValue(new File("./cache.json"), CacheModel.class);
+            nodeName = cacheModel.getNodeName();
+            teamName = cacheModel.getTeamName();
+            serverPath = cacheModel.getServerPath();
+            log.debug("Got cached information.");
+        } catch (IOException e) {
+            log.error("An unknown error occurred while getting cached information.", e);
+        }
+    }
+
+    private void getCachedServerInformation() {
+
+        log.debug("Getting cached server information...");
+
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectReader reader = mapper.reader();
+        try {
+            CacheModel cacheModel = reader.readValue(new File("./cache.json"), CacheModel.class);
+            HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
+
+            gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> {
+
+                    GameServer gameServer = new AsaServer(s, gameServerCacheModel.getFriendlyName());
+
+                    ServerSettings serverSettings = new ServerSettings();
+
+                    serverSettings.setMap(gameServerCacheModel.getMap());
+                    serverSettings.setGamePort(gameServerCacheModel.getGamePort());
+                    serverSettings.setRawPort(gameServerCacheModel.getRawPort());
+                    serverSettings.setQueryPort(gameServerCacheModel.getQueryPort());
+                    serverSettings.setRconPort(gameServerCacheModel.getRconPort());
+                    serverSettings.setRconPassword(gameServerCacheModel.getRconPassword());
+                    serverSettings.setLaunchParameters1(gameServerCacheModel.getStartPreArguments());
+                    serverSettings.setLaunchParameters2(gameServerCacheModel.getStartPostArguments1());
+                    serverSettings.setLaunchParameters3(gameServerCacheModel.getStartPostArguments2());
+
+                    gameServer.setSettings(serverSettings);
+            });
+
+        } catch (IOException e) {
+            log.error("An unknown error occurred while getting cached information.", e);
+        }
+
+    }
+
+    public void cacheInformation() {
+
+        log.debug("Caching information...");
+
+        HashMap<String, GameServerCacheModel> gameServers = new HashMap<>();
+
+        for (GameServer gameServer : GameServer.getAllServers()) {
+            GameServerCacheModel gameServerCacheModel = GameServerCacheModel.builder()
+                    .friendlyName(gameServer.getFriendlyName())
+                    .installDir(gameServer.getInstallDir().toString())
+                    .gamePort(gameServer.getGamePort())
+                    .rawPort(gameServer.getRawPort())
+                    .queryPort(gameServer.getQueryPort())
+                    .rconPort(gameServer.getRconPort())
+                    .isAutoRestartEnabled(gameServer.isAutoRestartEnabled())
+                    .rconPassword(gameServer.getRconPassword())
+                    .startPreArguments(gameServer.getStartPreArguments())
+                    .startPostArguments1(gameServer.getStartPostArguments1())
+                    .startPostArguments2(gameServer.getStartPostArguments2())
+                    .map(gameServer.getMap())
+                    .build();
+            gameServers.put(gameServer.getServerId(), gameServerCacheModel);
+        }
+
+        CacheModel cacheModel = CacheModel.builder()
+                .nodeName(nodeName)
+                .teamName(teamName)
+                .serverPath(serverPath)
+                .gameServerCacheModelHashMap(gameServers)
+                .build();
+
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
+        try {
+            File file = new File("./cache.json");
+            if(!file.exists()) file.createNewFile();
+            writer.writeValue(file, cacheModel);
+        } catch (IOException e) {
+            log.error("An unknown error occurred while caching information.", e);
+        }
 
     }
 
@@ -169,6 +270,10 @@ public class Node extends Thread {
         setConnectionState(ConnectionState.CONNECTING);
         if (!StompHandler.initialiseStomp()) {
             setConnectionState(ConnectionState.NOT_CONNECTED);
+            getCachedServerInformation();
+        } else {
+            //TODO remove
+            getCachedServerInformation();
         }
     }
 

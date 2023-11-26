@@ -17,12 +17,12 @@ public class ServerCreatePacketConsumer implements StompPacketConsumer<ServerCre
     public void onReceive(ServerCreatePacket packet) {
         log.info("Created server with id " + packet.getServerId() + " and name " + packet.getServerName() + ".");
         if (packet.getGame().equalsIgnoreCase("ASCENDED")) {
-            AsaServer server = new AsaServer(packet.getServerId(), packet.getServerName(), Path.of(Node.INSTANCE.getServerPath() + "/" + packet.getServerName()).toAbsolutePath());
+            AsaServer server = new AsaServer(packet.getServerId(), packet.getServerName());
 
-            server.setMap(packet.getMap());
             server.setSettings(packet.getDefaultSettings());
 
-            server.installServer();
+            //TODO enable
+            //server.installServer();
         } else {
             log.error("Game " + packet.getGame() + " is not supported!");
         }

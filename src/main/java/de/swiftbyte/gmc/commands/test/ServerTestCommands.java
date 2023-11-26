@@ -18,7 +18,7 @@ public class ServerTestCommands {
 
         if (game.equalsIgnoreCase("asa")) {
 
-            AsaServer server = new AsaServer(id, name, Paths.get("test/" + name).toAbsolutePath());
+            AsaServer server = new AsaServer(id, name);
 
             if (install) server.installServer();
 

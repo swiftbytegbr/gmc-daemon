@@ -46,6 +46,7 @@ public class Application {
     private static final Thread shutdownHook = new Thread(() -> {
         if (node == null) return;
         log.debug("Shutting down...");
+        node.cacheInformation();
         node.shutdown();
         log.info("Goodbye!");
     });

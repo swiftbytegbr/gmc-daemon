@@ -85,7 +85,6 @@ public class StompHandler {
 
             } else {
                 log.error("Found class annotated with @StompPacketInfo that does not implement StompPacketConsumer: " + clazz.getName());
-                return;
             }
         });
     }

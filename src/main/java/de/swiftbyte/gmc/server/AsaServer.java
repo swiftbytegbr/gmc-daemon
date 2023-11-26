@@ -3,6 +3,8 @@ package de.swiftbyte.gmc.server;
 import de.swiftbyte.gmc.packet.entity.GameServerState;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.NodeUtils;
+import lombok.Data;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import xyz.astroark.Rcon;
@@ -19,12 +21,9 @@ public class AsaServer extends GameServer {
 
     private static final String STEAM_CMD_ID = "2430930";
 
-    @Setter
-    private String map;
+    public AsaServer(String id, String friendlyName) {
 
-    public AsaServer(String id, String friendlyName, Path installDir) {
-
-        super(id, friendlyName, installDir);
+        super(id, friendlyName);
 
         this.map = "TheIsland_WP";
         this.gamePort = 29012;
@@ -106,7 +105,6 @@ public class AsaServer extends GameServer {
 
     @Override
     public void update() {
-        log.debug("Running update loop for server '" + friendlyName + "' while in state " + state + "...");
         switch (state) {
             case INITIALIZING -> {
                 if (sendRconCommand("ping") == null) {

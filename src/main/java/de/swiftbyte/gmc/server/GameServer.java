@@ -1,9 +1,11 @@
 package de.swiftbyte.gmc.server;
 
 import de.swiftbyte.gmc.Application;
+import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.packet.entity.GameServerState;
 import de.swiftbyte.gmc.packet.entity.ServerSettings;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
@@ -23,6 +25,9 @@ public abstract class GameServer {
     protected String PID;
 
     @Getter
+    protected GameServerState state = GameServerState.OFFLINE;
+
+    @Getter
     protected String friendlyName;
 
     @Getter
@@ -32,7 +37,7 @@ public abstract class GameServer {
     protected Path installDir;
 
     @Getter
-    protected GameServerState state = GameServerState.OFFLINE;
+    protected String map;
 
     @Getter
     protected int gamePort;
@@ -49,10 +54,16 @@ public abstract class GameServer {
     @Getter
     protected boolean isAutoRestartEnabled;
 
+    @Getter
     protected String rconPassword;
 
+    @Getter
     protected List<String> startPreArguments = new ArrayList<>();
+
+    @Getter
     protected List<String> startPostArguments1 = new ArrayList<>();
+
+    @Getter
     protected List<String> startPostArguments2 = new ArrayList<>();
 
     protected Process serverProcess;
@@ -74,11 +85,11 @@ public abstract class GameServer {
 
     public abstract String sendRconCommand(String command);
 
-    public GameServer(String id, String friendlyName, Path installDir) {
+    public GameServer(String id, String friendlyName) {
 
         this.serverId = id;
         this.friendlyName = friendlyName;
-        this.installDir = installDir;
+        this.installDir = Path.of(Node.INSTANCE.getServerPath() + "/" + friendlyName.toLowerCase()).toAbsolutePath();
 
         GAME_SERVERS.put(id, this);
         Application.getExecutor().scheduleAtFixedRate(this::update, 0, updateInterval, TimeUnit.SECONDS);
@@ -92,6 +103,7 @@ public abstract class GameServer {
     }
 
     public void setSettings(ServerSettings settings) {
+        this.map = settings.getMap();
         this.gamePort = settings.getGamePort();
         this.rawPort = settings.getRawPort();
         this.queryPort = settings.getQueryPort();
