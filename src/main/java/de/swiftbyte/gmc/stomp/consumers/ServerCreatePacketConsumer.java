@@ -1,0 +1,30 @@
+package de.swiftbyte.gmc.stomp.consumers;
+
+import de.swiftbyte.gmc.Node;
+import de.swiftbyte.gmc.packet.server.ServerCreatePacket;
+import de.swiftbyte.gmc.server.AsaServer;
+import de.swiftbyte.gmc.stomp.StompPacketConsumer;
+import de.swiftbyte.gmc.stomp.StompPacketInfo;
+import lombok.extern.slf4j.Slf4j;
+
+import java.nio.file.Path;
+
+@Slf4j
+@StompPacketInfo(path = "/user/queue/server/create", packetClass = ServerCreatePacket.class)
+public class ServerCreatePacketConsumer implements StompPacketConsumer<ServerCreatePacket> {
+
+    @Override
+    public void onReceive(ServerCreatePacket packet) {
+        log.info("Created server with id " + packet.getServerId() + " and name " + packet.getServerName() + ".");
+        if (packet.getGame().equalsIgnoreCase("ASCENDED")) {
+            AsaServer server = new AsaServer(packet.getServerId(), packet.getServerName(), Path.of(Node.INSTANCE.getServerPath() + "/" + packet.getServerName()).toAbsolutePath());
+
+            server.setMap(packet.getMap());
+            server.setSettings(packet.getDefaultSettings());
+
+            server.installServer();
+        } else {
+            log.error("Game " + packet.getGame() + " is not supported!");
+        }
+    }
+}

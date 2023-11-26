@@ -1,38 +1,93 @@
 package de.swiftbyte.gmc.stomp;
 
+import com.sun.management.OperatingSystemMXBean;
+import de.swiftbyte.gmc.Application;
+import de.swiftbyte.gmc.Node;
+import de.swiftbyte.gmc.packet.entity.NodeData;
+import de.swiftbyte.gmc.packet.node.NodeLoginPacket;
+import de.swiftbyte.gmc.utils.CommonUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.reflections.Reflections;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.*;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
 
 @Slf4j
 public class StompHandler {
 
-    public static void initialiseStomp() {
+    private static StompSession session;
+
+    public static boolean initialiseStomp() {
 
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
         WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
-        headers.add("Node-Id", "65320b0563b6a95179a650ff");
-        headers.add("Node-Secret", "test_secret");
+        headers.add("Node-Id", Node.INSTANCE.getNodeId());
+        headers.add("Node-Secret", Node.INSTANCE.getSecret());
 
 
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
-
-        String url = "ws://localhost:8080/websocket-nodes";
-        StompSessionHandler sessionHandler = new StompSessionHandler();
         try {
-            StompSession session = stompClient.connectAsync(url, headers, sessionHandler).get();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
+            session = stompClient.connectAsync(Application.BACKEND_WS_URL, headers, new StompSessionHandler()).get();
+            scanForPacketListeners();
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("Failed to establish connection to backend. Is the backend running?");
+            log.debug("Error: ", e);
+            return false;
         }
+        return true;
+    }
 
+    public static void send(String destination, Object payload) {
+        session.send(destination, payload);
+    }
+
+    private static void scanForPacketListeners() {
+
+        Reflections reflections = new Reflections(Application.class.getPackageName().split("\\.")[0]);
+
+        reflections.getTypesAnnotatedWith(StompPacketInfo.class).forEach(clazz -> {
+
+            if (StompPacketConsumer.class.isAssignableFrom(clazz)) {
+
+                StompPacketInfo annotation = clazz.getAnnotation(StompPacketInfo.class);
+                StompPacketConsumer<Object> packetConsumer;
+
+                try {
+                    Constructor<?> constructor = clazz.getConstructor();
+                    packetConsumer = (StompPacketConsumer<Object>) constructor.newInstance();
+                } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
+                         InvocationTargetException e) {
+                    log.error("Failed to find default constructor for class " + clazz.getName() + ".", e);
+                    return;
+                }
+
+                session.subscribe(annotation.path(), new StompFrameHandler() {
+                    @Override
+                    public Type getPayloadType(StompHeaders headers) {
+                        return annotation.packetClass();
+                    }
+
+                    @Override
+                    public void handleFrame(StompHeaders headers, Object payload) {
+                        packetConsumer.onReceive(payload);
+                    }
+                });
+
+            } else {
+                log.error("Found class annotated with @StompPacketInfo that does not implement StompPacketConsumer: " + clazz.getName());
+                return;
+            }
+        });
     }
 
     private static class StompSessionHandler extends StompSessionHandlerAdapter {
@@ -42,8 +97,29 @@ public class StompHandler {
             log.debug("Connected to session: " + session.getSessionId());
             super.afterConnected(session, connectedHeaders);
 
-            //TODO handle login package
+            NodeLoginPacket loginPacket = new NodeLoginPacket();
 
+            loginPacket.setNodeId(Node.INSTANCE.getNodeId());
+            loginPacket.setDaemonVersion(Application.getVersion());
+
+            NodeData nodeData = new NodeData();
+            nodeData.setOs(System.getProperty("os.name"));
+            try {
+                nodeData.setHostname(InetAddress.getLocalHost().getHostName());
+            } catch (UnknownHostException e) {
+                nodeData.setHostname("UNKNOWN");
+                log.warn("Failed to fetch hostname.");
+            }
+            nodeData.setRam((int) (((OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean()).getTotalMemorySize() / (1024 * 1024)));
+            nodeData.setIpAddresses(CommonUtils.getSystemIpAddresses());
+            nodeData.setStorage(CommonUtils.getSystemStorages());
+            nodeData.setCpu(CommonUtils.getSystemCpu());
+
+            loginPacket.setNodeData(nodeData);
+
+            log.debug("Sending login packet: " + loginPacket + " to /node/login");
+
+            session.send("/app/node/login", loginPacket);
         }
 
         @Override

@@ -4,6 +4,7 @@ spring:
     log-startup-info: false
   application:
     name: GMC Daemon
+    version: @project.version@
   banner:
     location: banner.text
   shell:
@@ -30,3 +31,4 @@ logging:
     path: ./log/
   level:
     de.swiftbyte: debug
+    org.reflections: error

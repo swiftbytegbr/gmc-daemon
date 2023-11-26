@@ -5,6 +5,7 @@ import de.swiftbyte.gmc.utils.ConnectionState;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jline.terminal.Terminal;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
@@ -21,6 +22,14 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class Application {
 
+    public final static String
+            BACKEND_DOMAIN = "api.gmc.system.astroark.xyz",
+            BACKEND_URL = "https://" + BACKEND_DOMAIN,
+            BACKEND_WS_URL = "wss://" + BACKEND_DOMAIN + "/websocket-nodes";
+
+    @Getter
+    private static String version;
+
     @Getter
     private static Node node;
     private static Thread watchdog;
@@ -35,7 +44,10 @@ public class Application {
     private static final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
     private static final Thread shutdownHook = new Thread(() -> {
-        //TODO add shutdown logic
+        if (node == null) return;
+        log.debug("Shutting down...");
+        node.shutdown();
+        log.info("Goodbye!");
     });
 
     public Application(ComponentFlow.Builder componentFlowBuilder, Terminal terminal) {
@@ -52,7 +64,7 @@ public class Application {
     @EventListener(ApplicationStartedEvent.class)
     public void onReady() {
 
-        log.debug("Daemon ready...");
+        log.debug("Daemon ready... Version: " + version);
 
         ConfigUtils.initialiseConfigSystem();
 
@@ -67,5 +79,10 @@ public class Application {
             log.error("Illegal ConnectionState set... Start is aborted!");
             System.exit(1);
         }
+    }
+
+    @Value("${spring.application.version}")
+    public void setVersion(String version) {
+        Application.version = version;
     }
 }
