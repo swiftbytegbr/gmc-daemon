@@ -75,12 +75,12 @@ public class NodeUtils {
     private static void installSteamCmd() {
         log.debug("Downloading SteamCMD from " + STEAM_CMD_DOWNLOAD_URL + "...");
 
+        File tmp = new File(TMP_PATH);
         try {
             FileUtils.copyURLToFile(
                     new URL(STEAM_CMD_DOWNLOAD_URL),
                     new File(TMP_PATH + "steamcmd.zip"));
 
-            File tmp = new File(TMP_PATH);
             if (!CommonUtils.unzip(TMP_PATH + "steamcmd.zip", STEAM_CMD_DIR)) {
                 FileUtils.deleteDirectory(tmp);
                 System.exit(1);
@@ -90,6 +90,11 @@ public class NodeUtils {
 
         } catch (IOException e) {
             log.error("An error occurred while downloading SteamCMD. Please check your internet connection!", e);
+            try {
+                FileUtils.deleteDirectory(tmp);
+            } catch (IOException ex) {
+                log.warn("An error occurred while deleting the temporary directory.", ex);
+            }
             System.exit(1);
         }
     }

@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.Scanner;
+import java.util.UUID;
 
 @Slf4j
 public class AsaServer extends GameServer {
@@ -30,7 +31,7 @@ public class AsaServer extends GameServer {
         this.queryPort = 29014;
         this.rconPort = 30004;
         this.rconPassword = "1234";
-        this.isAutoRestartEnabled = false;
+        this.isAutoRestartEnabled = true;
 
     }
 
@@ -75,8 +76,7 @@ public class AsaServer extends GameServer {
                 log.debug("cmd /c start \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
                 serverProcess = Runtime.getRuntime().exec("cmd /c start /min \"" + "\" \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
                 Scanner scanner = new Scanner(serverProcess.getInputStream());
-                while (scanner.hasNextLine()) {
-                }
+                while (scanner.hasNextLine()) {}
 
                 if (isAutoRestartEnabled && state != GameServerState.OFFLINE) {
                     super.setState(GameServerState.RESTARTING);
@@ -135,10 +135,19 @@ public class AsaServer extends GameServer {
     @Override
     public void writeStartupBatch() {
 
+        if(map == null || map.isEmpty()) {
+            log.error("Map is not set for server '" + friendlyName + "'. Falling back to default map.");
+            map = "TheIsland_WP";
+        }
+
+        if(rconPassword == null || rconPassword.isEmpty()) {
+            rconPassword = "gmc-rp-" + UUID.randomUUID();
+        }
+
         String realStartPostArguments = CommonUtils.generateServerArgs(startPostArguments1, startPostArguments2, rconPassword, map, "listen", "Port=" + gamePort, "QueryPort=" + queryPort, "RCONEnabled=True", "RCONPort=" + rconPort);
         String realStartPreArguments = String.join(" ", startPreArguments);
 
-        String changeDirectoryCommand = "cd /d \"" + CommonUtils.convertPathSeparator(installDir) + "\"";
+        String changeDirectoryCommand = "cd /d \"" + CommonUtils.convertPathSeparator(installDir) + "\\ShooterGame\\Binaries\\Win64\"";
 
 
         String startCommand = "start \"" + friendlyName + "\""

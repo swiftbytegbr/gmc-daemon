@@ -79,6 +79,13 @@ public class Node extends Thread {
         nodeId = ConfigUtils.get("node.id", "dummy");
         secret = ConfigUtils.get("node.secret", "dummy");
 
+        File cacheFile = new File("./cache.json");
+
+        if(!cacheFile.exists()) {
+            log.debug("No cache file found. Skipping...");
+            return;
+        }
+
         ObjectMapper mapper = new ObjectMapper();
         ObjectReader reader = mapper.reader();
         try {
@@ -96,10 +103,17 @@ public class Node extends Thread {
 
         log.debug("Getting cached server information...");
 
+        File cacheFile = new File("./cache.json");
+
+        if(!cacheFile.exists()) {
+            log.debug("No cache file found. Skipping...");
+            return;
+        }
+
         ObjectMapper mapper = new ObjectMapper();
         ObjectReader reader = mapper.reader();
         try {
-            CacheModel cacheModel = reader.readValue(new File("./cache.json"), CacheModel.class);
+            CacheModel cacheModel = reader.readValue(cacheFile, CacheModel.class);
             HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
 
             gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> {
@@ -176,6 +190,7 @@ public class Node extends Thread {
         log.info("Sending shutdown packet...");
         StompHandler.send("/app/node/logout", logoutPacket);
         log.info("Disconnecting from backend...");
+        cacheInformation();
     }
 
     public void joinTeam() {
@@ -283,7 +298,6 @@ public class Node extends Thread {
         Application.getExecutor().scheduleAtFixedRate(updateRunnable, 0, 10, TimeUnit.SECONDS);
     }
 
-    long[] prevTicks = new long[CentralProcessor.TickType.values().length];
     private final Runnable updateRunnable = () -> {
 
         if (connectionState == ConnectionState.CONNECTED) {
