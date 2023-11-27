@@ -92,12 +92,12 @@
             <version>0.10.2</version>
         </dependency>
 
-        <dependency>
+        <!--<dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
@@ -136,7 +136,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>de.swiftbyte.gmc.Application</mainClass>
+                    <mainClass>${exec.mainClass}</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -147,38 +147,25 @@
             </plugin>
 
             <plugin>
-                <groupId>com.akathist.maven.plugins.launch4j</groupId>
-                <artifactId>launch4j-maven-plugin</artifactId>
-                <version>2.4.1</version>
+                <groupId>io.github.fvarrui</groupId>
+                <artifactId>javapackager</artifactId>
+                <version>1.7.5</version>
                 <executions>
                     <execution>
-                        <id>l4j-clui</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>launch4j</goal>
+                            <goal>package</goal>
                         </goals>
                         <configuration>
-                            <headerType>console</headerType>
-                            <jar>target/GmcDaemon-${project.version}.jar</jar>
-                            <outfile>target/GmcDaemon-${project.version}.exe</outfile>
-                            <restartOnCrash>true</restartOnCrash>
-                            <classPath>
-                                <mainClass>de.swiftbyte.gmc.Application</mainClass>
-                            </classPath>
-                            <jre>
-                                <path>./lib/jre</path>
-                            </jre>
-                            <versionInfo>
-                                <fileVersion>${project.version}.0</fileVersion>
-                                <txtFileVersion>${project.version}</txtFileVersion>
-                                <fileDescription>${project.description}</fileDescription>
-                                <copyright>(C) SwiftByte</copyright>
-                                <productVersion>${project.version}.0</productVersion>
-                                <txtProductVersion>${project.version}</txtProductVersion>
-                                <productName>${project.name}</productName>
-                                <internalName>${project.name}</internalName>
-                                <originalFilename>GmcDaemon-${project.version}.exe</originalFilename>
-                            </versionInfo>
+                            <mainClass>${exec.mainClass}</mainClass>
+                            <bundleJre>true</bundleJre>
+                            <customizedJre>false</customizedJre>
+                            <generateInstaller>false</generateInstaller>
+                            <administratorRequired>true</administratorRequired>
+                            <platform>windows</platform>
+                            <winConfig>
+                                <headerType>console</headerType>
+                            </winConfig>
                         </configuration>
                     </execution>
                 </executions>

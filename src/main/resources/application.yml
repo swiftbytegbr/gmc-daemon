@@ -5,6 +5,9 @@ spring:
   application:
     name: GMC Daemon
     version: @project.version@
+  output:
+    ansi:
+      enabled: always
   banner:
     location: banner.text
   shell:
