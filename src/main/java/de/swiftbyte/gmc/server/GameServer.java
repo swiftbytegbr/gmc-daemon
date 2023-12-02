@@ -4,6 +4,8 @@ import de.swiftbyte.gmc.Application;
 import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.packet.entity.GameServerState;
 import de.swiftbyte.gmc.packet.entity.ServerSettings;
+import de.swiftbyte.gmc.packet.server.ServerStatePacket;
+import de.swiftbyte.gmc.stomp.StompHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -101,6 +103,12 @@ public abstract class GameServer {
         log.debug("Changing state of server '" + friendlyName + "' from '" + this.state + "' to '" + state + "'.");
 
         this.state = state;
+
+        ServerStatePacket packet = new ServerStatePacket();
+        packet.setServerId(serverId);
+        packet.setState(state);
+
+        StompHandler.send("/app/server/state", packet);
     }
 
     public void setSettings(ServerSettings settings) {
@@ -110,7 +118,6 @@ public abstract class GameServer {
         this.queryPort = settings.getQueryPort();
         this.rconPort = settings.getRconPort();
         if (rconPassword != null) this.rconPassword = settings.getRconPassword();
-        this.isAutoRestartEnabled = false;
         if (settings.getLaunchParameters1() != null) this.startPreArguments = settings.getLaunchParameters1();
         if (settings.getLaunchParameters2() != null) this.startPostArguments1 = settings.getLaunchParameters2();
         if (settings.getLaunchParameters3() != null) this.startPostArguments2 = settings.getLaunchParameters3();
