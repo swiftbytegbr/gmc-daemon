@@ -25,7 +25,7 @@ public class ChangeServerSettingsPacketConsumer implements StompPacketConsumer<S
             responsePacket.setServerId(server.getServerId());
             responsePacket.setSettings(server.getSettings());
 
-            StompHandler.send("/topic/server/settings", responsePacket);
+            StompHandler.send("/app/server/settings", responsePacket);
 
         } else {
             log.error("Server with id " + packet.getServerId() + " not found!");

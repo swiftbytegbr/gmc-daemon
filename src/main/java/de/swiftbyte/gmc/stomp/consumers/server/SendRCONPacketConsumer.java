@@ -4,6 +4,7 @@ import de.swiftbyte.gmc.packet.server.ServerRconPacket;
 import de.swiftbyte.gmc.packet.server.ServerRconResponsePacket;
 import de.swiftbyte.gmc.packet.server.ServerStartPacket;
 import de.swiftbyte.gmc.server.GameServer;
+import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.stomp.StompPacketInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,8 @@ public class SendRCONPacketConsumer implements StompPacketConsumer<ServerRconPac
             ServerRconResponsePacket responsePacket = new ServerRconResponsePacket();
             responsePacket.setServerId(packet.getServerId());
             responsePacket.setCommand(responsePacket.getCommand());
+
+            StompHandler.send("/app/server/rcon", responsePacket);
 
         } else {
             log.error("Server with id " + packet.getServerId() + " not found!");
