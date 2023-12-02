@@ -1,6 +1,5 @@
 package de.swiftbyte.gmc.stomp.consumers.server;
 
-import de.swiftbyte.gmc.packet.server.ServerCreatePacket;
 import de.swiftbyte.gmc.packet.server.ServerSettingsPacket;
 import de.swiftbyte.gmc.packet.server.ServerSettingsResponsePacket;
 import de.swiftbyte.gmc.server.GameServer;
@@ -11,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @StompPacketInfo(path = "/user/queue/server/settings", packetClass = ServerSettingsPacket.class)
-public class ChangeServerSettingsPacket implements StompPacketConsumer<ServerSettingsPacket> {
+public class ChangeServerSettingsPacketConsumer implements StompPacketConsumer<ServerSettingsPacket> {
 
     @Override
     public void onReceive(ServerSettingsPacket packet) {

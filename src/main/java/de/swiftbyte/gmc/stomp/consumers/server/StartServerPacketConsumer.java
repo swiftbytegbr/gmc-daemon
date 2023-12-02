@@ -1,6 +1,5 @@
 package de.swiftbyte.gmc.stomp.consumers.server;
 
-import de.swiftbyte.gmc.packet.node.NodeLoginAckPacket;
 import de.swiftbyte.gmc.packet.server.ServerStartPacket;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
@@ -9,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @StompPacketInfo(path = "/user/queue/server/start", packetClass = ServerStartPacket.class)
-public class StartServerConsumer implements StompPacketConsumer<ServerStartPacket> {
+public class StartServerPacketConsumer implements StompPacketConsumer<ServerStartPacket> {
 
     @Override
     public void onReceive(ServerStartPacket packet) {
