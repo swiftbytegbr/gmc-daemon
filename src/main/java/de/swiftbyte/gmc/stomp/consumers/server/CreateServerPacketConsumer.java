@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @StompPacketInfo(path = "/user/queue/server/create", packetClass = ServerCreatePacket.class)
-public class ServerCreatePacketConsumer implements StompPacketConsumer<ServerCreatePacket> {
+public class CreateServerPacketConsumer implements StompPacketConsumer<ServerCreatePacket> {
 
     @Override
     public void onReceive(ServerCreatePacket packet) {
