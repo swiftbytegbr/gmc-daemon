@@ -98,7 +98,6 @@ public class StompHandler {
 
             NodeLoginPacket loginPacket = new NodeLoginPacket();
 
-            loginPacket.setNodeId(Node.INSTANCE.getNodeId());
             loginPacket.setDaemonVersion(Application.getVersion());
 
             NodeData nodeData = new NodeData();

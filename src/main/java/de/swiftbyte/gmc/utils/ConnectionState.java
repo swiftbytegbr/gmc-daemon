@@ -5,5 +5,6 @@ public enum ConnectionState {
     CONNECTED,
     CONNECTING,
     JOINING,
-    NOT_JOINED
+    NOT_JOINED,
+    CONNECTION_FAILED
 }

@@ -6,8 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 
-import java.nio.file.Paths;
-
 @Command
 @Slf4j
 public class ServerTestCommands {

@@ -27,11 +27,9 @@ import okhttp3.Response;
 import org.jline.terminal.impl.DumbTerminal;
 import org.springframework.shell.component.context.ComponentContext;
 import oshi.SystemInfo;
-import oshi.hardware.CentralProcessor;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
@@ -81,7 +79,7 @@ public class Node extends Thread {
 
         File cacheFile = new File("./cache.json");
 
-        if(!cacheFile.exists()) {
+        if (!cacheFile.exists()) {
             log.debug("No cache file found. Skipping...");
             return;
         }
@@ -105,7 +103,7 @@ public class Node extends Thread {
 
         File cacheFile = new File("./cache.json");
 
-        if(!cacheFile.exists()) {
+        if (!cacheFile.exists()) {
             log.debug("No cache file found. Skipping...");
             return;
         }
@@ -118,21 +116,21 @@ public class Node extends Thread {
 
             gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> {
 
-                    GameServer gameServer = new AsaServer(s, gameServerCacheModel.getFriendlyName());
+                GameServer gameServer = new AsaServer(s, gameServerCacheModel.getFriendlyName());
 
-                    ServerSettings serverSettings = new ServerSettings();
+                ServerSettings serverSettings = new ServerSettings();
 
-                    serverSettings.setMap(gameServerCacheModel.getMap());
-                    serverSettings.setGamePort(gameServerCacheModel.getGamePort());
-                    serverSettings.setRawPort(gameServerCacheModel.getRawPort());
-                    serverSettings.setQueryPort(gameServerCacheModel.getQueryPort());
-                    serverSettings.setRconPort(gameServerCacheModel.getRconPort());
-                    serverSettings.setRconPassword(gameServerCacheModel.getRconPassword());
-                    serverSettings.setLaunchParameters1(gameServerCacheModel.getStartPreArguments());
-                    serverSettings.setLaunchParameters2(gameServerCacheModel.getStartPostArguments1());
-                    serverSettings.setLaunchParameters3(gameServerCacheModel.getStartPostArguments2());
+                serverSettings.setMap(gameServerCacheModel.getMap());
+                serverSettings.setGamePort(gameServerCacheModel.getGamePort());
+                serverSettings.setRawPort(gameServerCacheModel.getRawPort());
+                serverSettings.setQueryPort(gameServerCacheModel.getQueryPort());
+                serverSettings.setRconPort(gameServerCacheModel.getRconPort());
+                serverSettings.setRconPassword(gameServerCacheModel.getRconPassword());
+                serverSettings.setLaunchParameters1(gameServerCacheModel.getStartPreArguments());
+                serverSettings.setLaunchParameters2(gameServerCacheModel.getStartPostArguments1());
+                serverSettings.setLaunchParameters3(gameServerCacheModel.getStartPostArguments2());
 
-                    gameServer.setSettings(serverSettings);
+                gameServer.setSettings(serverSettings);
             });
 
         } catch (IOException e) {
@@ -142,8 +140,6 @@ public class Node extends Thread {
     }
 
     public void cacheInformation() {
-
-        log.debug("Caching information...");
 
         HashMap<String, GameServerCacheModel> gameServers = new HashMap<>();
 
@@ -176,7 +172,7 @@ public class Node extends Thread {
         ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
         try {
             File file = new File("./cache.json");
-            if(!file.exists()) file.createNewFile();
+            if (!file.exists()) file.createNewFile();
             writer.writeValue(file, cacheModel);
         } catch (IOException e) {
             log.error("An unknown error occurred while caching information.", e);
@@ -190,6 +186,7 @@ public class Node extends Thread {
         log.info("Sending shutdown packet...");
         StompHandler.send("/app/node/logout", logoutPacket);
         log.info("Disconnecting from backend...");
+        log.debug("Caching information...");
         cacheInformation();
     }
 
@@ -284,7 +281,7 @@ public class Node extends Thread {
         log.debug("Start connection to backend...");
         setConnectionState(ConnectionState.CONNECTING);
         if (!StompHandler.initialiseStomp()) {
-            setConnectionState(ConnectionState.NOT_CONNECTED);
+            setConnectionState(ConnectionState.CONNECTION_FAILED);
             getCachedServerInformation();
         } else {
             //TODO remove
@@ -302,22 +299,24 @@ public class Node extends Thread {
 
         if (connectionState == ConnectionState.CONNECTED) {
 
+            cacheInformation();
+
             SystemInfo systemInfo = new SystemInfo();
             NodeHeartbeatPacket heartbeatPacket = new NodeHeartbeatPacket();
 
-            heartbeatPacket.setNodeId(nodeId);
-
             ResourceUsage resourceUsage = new ResourceUsage();
-            resourceUsage.setRamUsage((int) ((systemInfo.getHardware().getMemory().getTotal() - systemInfo.getHardware().getMemory().getAvailable()) / (1024 * 1024)));
-            resourceUsage.setCpuUsage(-1);
-            resourceUsage.setNetworkUsage(-1);
-            resourceUsage.setDiskUsage(-1);
+            resourceUsage.setRamBytes((systemInfo.getHardware().getMemory().getTotal() - systemInfo.getHardware().getMemory().getAvailable()) / (1024 * 1024));
+            resourceUsage.setCpuPercentage(-1);
+            resourceUsage.setCpuPercentage(-1);
+            resourceUsage.setDiskBytes(-1);
             heartbeatPacket.setResourceUsage(resourceUsage);
 
             heartbeatPacket.setGameServers(new ArrayList<>());
 
             StompHandler.send("/app/node/heartbeat", heartbeatPacket);
-
+        } else if (connectionState == ConnectionState.CONNECTION_FAILED) {
+            log.info("Reconnecting to backend...");
+            connect();
         }
     };
 

@@ -3,9 +3,6 @@ package de.swiftbyte.gmc.server;
 import de.swiftbyte.gmc.packet.entity.GameServerState;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.NodeUtils;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import xyz.astroark.Rcon;
 import xyz.astroark.exception.AuthenticationException;
@@ -13,7 +10,7 @@ import xyz.astroark.exception.AuthenticationException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Path;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -70,13 +67,17 @@ public class AsaServer extends GameServer {
     @Override
     public void start() {
         super.setState(GameServerState.INITIALIZING);
+
+        killServerProcess();
+
         new Thread(() -> {
             writeStartupBatch();
             try {
                 log.debug("cmd /c start \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
                 serverProcess = Runtime.getRuntime().exec("cmd /c start /min \"" + "\" \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
                 Scanner scanner = new Scanner(serverProcess.getInputStream());
-                while (scanner.hasNextLine()) {}
+                while (scanner.hasNextLine()) {
+                }
 
                 if (isAutoRestartEnabled && state != GameServerState.OFFLINE) {
                     super.setState(GameServerState.RESTARTING);
@@ -94,17 +95,24 @@ public class AsaServer extends GameServer {
     public void stop() {
         super.setState(GameServerState.OFFLINE);
         new Thread(() -> {
-            sendRconCommand("saveworld");
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException ignored) {
+            if (sendRconCommand("saveworld") == null) {
+                log.debug("No connection to server '" + friendlyName + "'. Killing process...");
+                killServerProcess();
+            } else {
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException ignored) {
+                }
+                sendRconCommand("doexit");
             }
-            sendRconCommand("doexit");
         }).start();
     }
 
     @Override
     public void update() {
+
+        if (PID == null) PID = CommonUtils.getProcessPID(String.valueOf(installDir));
+
         switch (state) {
             case INITIALIZING -> {
                 if (sendRconCommand("ping") == null) {
@@ -116,6 +124,11 @@ public class AsaServer extends GameServer {
             }
             case ONLINE -> {
                 if (sendRconCommand("ping") == null) {
+
+                    log.warn("Server crash detected! Restarting server...");
+
+                    killServerProcess();
+
                     if (isAutoRestartEnabled) {
                         log.debug("Restarting server '" + friendlyName + "'...");
                         start();
@@ -133,14 +146,26 @@ public class AsaServer extends GameServer {
     }
 
     @Override
+    protected void killServerProcess() {
+
+        if (PID == null) return;
+
+        Optional<ProcessHandle> handle = ProcessHandle.of(Long.parseLong(PID));
+        if (handle.isPresent()) {
+            log.debug("Server process still running... Killing process...");
+            handle.get().destroy();
+        }
+    }
+
+    @Override
     public void writeStartupBatch() {
 
-        if(map == null || map.isEmpty()) {
+        if (map == null || map.isEmpty()) {
             log.error("Map is not set for server '" + friendlyName + "'. Falling back to default map.");
             map = "TheIsland_WP";
         }
 
-        if(rconPassword == null || rconPassword.isEmpty()) {
+        if (rconPassword == null || rconPassword.isEmpty()) {
             rconPassword = "gmc-rp-" + UUID.randomUUID();
         }
 

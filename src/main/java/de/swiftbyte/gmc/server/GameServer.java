@@ -5,14 +5,12 @@ import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.packet.entity.GameServerState;
 import de.swiftbyte.gmc.packet.entity.ServerSettings;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -77,6 +75,8 @@ public abstract class GameServer {
 
     public abstract void update();
 
+    protected abstract void killServerProcess();
+
     public void restart() {
         stop();
         start();
@@ -109,11 +109,11 @@ public abstract class GameServer {
         this.rawPort = settings.getRawPort();
         this.queryPort = settings.getQueryPort();
         this.rconPort = settings.getRconPort();
-        if(rconPassword != null) this.rconPassword = settings.getRconPassword();
+        if (rconPassword != null) this.rconPassword = settings.getRconPassword();
         this.isAutoRestartEnabled = false;
-        if(settings.getLaunchParameters1() != null) this.startPreArguments = settings.getLaunchParameters1();
-        if(settings.getLaunchParameters2() != null) this.startPostArguments1 = settings.getLaunchParameters2();
-        if(settings.getLaunchParameters3() != null) this.startPostArguments2 = settings.getLaunchParameters3();
+        if (settings.getLaunchParameters1() != null) this.startPreArguments = settings.getLaunchParameters1();
+        if (settings.getLaunchParameters2() != null) this.startPostArguments1 = settings.getLaunchParameters2();
+        if (settings.getLaunchParameters3() != null) this.startPostArguments2 = settings.getLaunchParameters3();
     }
 
     public static GameServer getServerById(String id) {

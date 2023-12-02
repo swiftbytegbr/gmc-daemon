@@ -15,9 +15,10 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
     public void onReceive(NodeLoginAckPacket packet) {
 
         Node.INSTANCE.setNodeName(packet.getNodeSettings().getName());
+        Node.INSTANCE.setTeamName(packet.getTeamName());
 
         log.info("Backend running in profile '" + packet.getBackendProfile() + "' with version '" + packet.getBackendVersion() + "'.");
-        log.info("I am '" + packet.getNodeSettings().getName() + "'!");
+        log.info("I am '" + packet.getNodeSettings().getName() + "' in team " + packet.getTeamName() + "!");
 
         Node.INSTANCE.setConnectionState(ConnectionState.CONNECTED);
     }

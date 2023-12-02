@@ -126,16 +126,16 @@ public class CommonUtils {
         return ipAddresses;
     }
 
-    public static List<NodeData.Storage> getSystemStorages() {
-        List<NodeData.Storage> storages = new ArrayList<>();
+    public static HashMap<String, NodeData.Storage> getSystemStorages() {
+        HashMap<String, NodeData.Storage> storages = new HashMap<>();
         File[] roots = File.listRoots();
         for (File root : roots) {
             NodeData.Storage storage = new NodeData.Storage();
             storage.setName(root.getAbsolutePath());
             storage.setSize(root.getTotalSpace());
-            storage.setAvailable(root.getFreeSpace());
-            storage.setUsed(root.getTotalSpace() - root.getFreeSpace());
-            storages.add(storage);
+            storage.setTotalBytes(root.getFreeSpace());
+            storage.setUsedBytes(root.getTotalSpace() - root.getFreeSpace());
+            storages.put(root.getAbsolutePath(), storage);
         }
         return storages;
     }

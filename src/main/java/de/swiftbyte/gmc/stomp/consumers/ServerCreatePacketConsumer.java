@@ -1,13 +1,10 @@
 package de.swiftbyte.gmc.stomp.consumers;
 
-import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.packet.server.ServerCreatePacket;
 import de.swiftbyte.gmc.server.AsaServer;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.stomp.StompPacketInfo;
 import lombok.extern.slf4j.Slf4j;
-
-import java.nio.file.Path;
 
 @Slf4j
 @StompPacketInfo(path = "/user/queue/server/create", packetClass = ServerCreatePacket.class)
@@ -20,7 +17,6 @@ public class ServerCreatePacketConsumer implements StompPacketConsumer<ServerCre
             AsaServer server = new AsaServer(packet.getServerId(), packet.getServerName());
 
             server.setSettings(packet.getDefaultSettings());
-
             //TODO enable
             //server.installServer();
         } else {
