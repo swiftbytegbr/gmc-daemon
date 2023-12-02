@@ -165,6 +165,7 @@
                             <platform>windows</platform>
                             <winConfig>
                                 <headerType>console</headerType>
+                                <icoFile>icon.ico</icoFile>
                             </winConfig>
                         </configuration>
                     </execution>
