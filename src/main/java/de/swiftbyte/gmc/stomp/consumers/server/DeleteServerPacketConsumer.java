@@ -1,6 +1,5 @@
 package de.swiftbyte.gmc.stomp.consumers.server;
 
-import de.swiftbyte.gmc.packet.server.ServerCreatePacket;
 import de.swiftbyte.gmc.packet.server.ServerDeletePacket;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
@@ -16,7 +15,7 @@ public class DeleteServerPacketConsumer implements StompPacketConsumer<ServerDel
         log.info("Deleting server with id " + packet.getServerId() + ".");
         GameServer server = GameServer.getServerById(packet.getServerId());
 
-        if(server != null) {
+        if (server != null) {
             server.delete();
         } else {
             log.error("Server with id " + packet.getServerId() + " not found!");

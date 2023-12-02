@@ -17,7 +17,7 @@ public class ChangeServerSettingsPacketConsumer implements StompPacketConsumer<S
         log.info("Changing server settings with id " + packet.getServerId() + ".");
         GameServer server = GameServer.getServerById(packet.getServerId());
 
-        if(server != null) {
+        if (server != null) {
 
             server.setSettings(packet.getSettings());
 

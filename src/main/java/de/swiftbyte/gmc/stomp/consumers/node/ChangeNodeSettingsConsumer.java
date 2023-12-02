@@ -1,7 +1,6 @@
 package de.swiftbyte.gmc.stomp.consumers.node;
 
 import de.swiftbyte.gmc.Node;
-import de.swiftbyte.gmc.packet.node.NodeLoginAckPacket;
 import de.swiftbyte.gmc.packet.node.NodeSettingsPacket;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.stomp.StompPacketInfo;

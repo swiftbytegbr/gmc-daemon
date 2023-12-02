@@ -2,7 +2,6 @@ package de.swiftbyte.gmc.stomp.consumers.server;
 
 import de.swiftbyte.gmc.packet.server.ServerRconPacket;
 import de.swiftbyte.gmc.packet.server.ServerRconResponsePacket;
-import de.swiftbyte.gmc.packet.server.ServerStartPacket;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
@@ -18,7 +17,7 @@ public class SendRCONPacketConsumer implements StompPacketConsumer<ServerRconPac
         log.info("Sending RCON command to server with id " + packet.getServerId() + ".");
         GameServer server = GameServer.getServerById(packet.getServerId());
 
-        if(server != null) {
+        if (server != null) {
             String response = server.sendRconCommand(packet.getCommand().getCommand());
             packet.getCommand().setResponse(response);
 

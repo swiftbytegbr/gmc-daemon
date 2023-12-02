@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import xyz.astroark.Rcon;
 import xyz.astroark.exception.AuthenticationException;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -73,9 +72,10 @@ public class AsaServer extends GameServer {
     public void delete() {
         new Thread(() -> {
             try {
-                if(state != GameServerState.OFFLINE && state != GameServerState.CREATING) {
+                if (state != GameServerState.OFFLINE && state != GameServerState.CREATING) {
                     stop();
-                    while (state != GameServerState.OFFLINE) {}
+                    while (state != GameServerState.OFFLINE) {
+                    }
                 }
                 Files.delete(installDir);
                 //TODO remove Backups
@@ -130,7 +130,8 @@ public class AsaServer extends GameServer {
             } else {
                 try {
                     Thread.sleep(10000);
-                } catch (InterruptedException ignored) {}
+                } catch (InterruptedException ignored) {
+                }
                 sendRconCommand("doexit");
             }
         }).start();
