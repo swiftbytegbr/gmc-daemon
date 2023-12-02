@@ -127,6 +127,21 @@ public abstract class GameServer {
         if (settings.getLaunchParameters1() != null) this.startPreArguments = settings.getLaunchParameters1();
         if (settings.getLaunchParameters2() != null) this.startPostArguments1 = settings.getLaunchParameters2();
         if (settings.getLaunchParameters3() != null) this.startPostArguments2 = settings.getLaunchParameters3();
+        Node.INSTANCE.cacheInformation();
+    }
+
+    public ServerSettings getSettings() {
+        ServerSettings settings = new ServerSettings();
+        settings.setMap(map);
+        settings.setGamePort(gamePort);
+        settings.setRawPort(rawPort);
+        settings.setQueryPort(queryPort);
+        settings.setRconPort(rconPort);
+        settings.setRconPassword(rconPassword);
+        settings.setLaunchParameters1(startPreArguments);
+        settings.setLaunchParameters2(startPostArguments1);
+        settings.setLaunchParameters3(startPostArguments2);
+        return settings;
     }
 
     protected static GameServer removeServerById(String id) {
