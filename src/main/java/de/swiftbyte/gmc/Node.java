@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.cache.GameServerCacheModel;
+import de.swiftbyte.gmc.packet.entity.NodeSettings;
 import de.swiftbyte.gmc.packet.entity.ResourceUsage;
 import de.swiftbyte.gmc.packet.entity.ServerSettings;
 import de.swiftbyte.gmc.packet.node.NodeHeartbeatPacket;
@@ -287,6 +288,12 @@ public class Node extends Thread {
             //TODO remove
             getCachedServerInformation();
         }
+    }
+
+    public void updateSettings(NodeSettings nodeSettings) {
+        log.debug("Updating settings...");
+        nodeName = nodeSettings.getName();
+        cacheInformation();
     }
 
     @Override
