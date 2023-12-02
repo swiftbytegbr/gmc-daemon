@@ -1,15 +1,20 @@
 package de.swiftbyte.gmc.server;
 
+import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.packet.entity.GameServerState;
+import de.swiftbyte.gmc.packet.server.ServerDeletePacket;
+import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.NodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import xyz.astroark.Rcon;
 import xyz.astroark.exception.AuthenticationException;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.UUID;
@@ -65,6 +70,30 @@ public class AsaServer extends GameServer {
     }
 
     @Override
+    public void delete() {
+        new Thread(() -> {
+            try {
+                if(state != GameServerState.OFFLINE && state != GameServerState.CREATING) {
+                    stop();
+                    while (state != GameServerState.OFFLINE) {}
+                }
+                Files.delete(installDir);
+                //TODO remove Backups
+                GameServer.removeServerById(serverId);
+                updateScheduler.cancel(false);
+                Node.INSTANCE.cacheInformation();
+
+                ServerDeletePacket packet = new ServerDeletePacket();
+                packet.setServerId(serverId);
+                StompHandler.send("/app/server/delete", packet);
+
+            } catch (IOException e) {
+                log.error("An unknown exception occurred while deleting the server '" + friendlyName + "'.", e);
+            }
+        });
+    }
+
+    @Override
     public void start() {
         super.setState(GameServerState.INITIALIZING);
 
@@ -101,11 +130,15 @@ public class AsaServer extends GameServer {
             } else {
                 try {
                     Thread.sleep(10000);
-                } catch (InterruptedException ignored) {
-                }
+                } catch (InterruptedException ignored) {}
                 sendRconCommand("doexit");
             }
         }).start();
+    }
+
+    @Override
+    public void backup() {
+
     }
 
     @Override

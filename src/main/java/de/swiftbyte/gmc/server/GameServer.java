@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -21,6 +22,7 @@ public abstract class GameServer {
     private static final HashMap<String, GameServer> GAME_SERVERS = new HashMap<>();
 
     private final int updateInterval = 10;
+    protected ScheduledFuture<?> updateScheduler;
 
     @Getter
     protected String PID;
@@ -71,9 +73,13 @@ public abstract class GameServer {
 
     public abstract void installServer();
 
+    public abstract void delete();
+
     public abstract void start();
 
     public abstract void stop();
+
+    public abstract void backup();
 
     public abstract void update();
 
@@ -95,7 +101,7 @@ public abstract class GameServer {
         this.installDir = Path.of(Node.INSTANCE.getServerPath() + "/" + friendlyName.toLowerCase()).toAbsolutePath();
 
         GAME_SERVERS.put(id, this);
-        Application.getExecutor().scheduleAtFixedRate(this::update, 0, updateInterval, TimeUnit.SECONDS);
+        updateScheduler = Application.getExecutor().scheduleAtFixedRate(this::update, 0, updateInterval, TimeUnit.SECONDS);
     }
 
     public void setState(GameServerState state) {
@@ -123,6 +129,9 @@ public abstract class GameServer {
         if (settings.getLaunchParameters3() != null) this.startPostArguments2 = settings.getLaunchParameters3();
     }
 
+    protected static GameServer removeServerById(String id) {
+        return GAME_SERVERS.remove(id);
+    }
     public static GameServer getServerById(String id) {
         return GAME_SERVERS.get(id);
     }
