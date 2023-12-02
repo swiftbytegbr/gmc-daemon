@@ -55,6 +55,11 @@ public class StompHandler {
         session.send(destination, payload);
     }
 
+    public static void disconnect() {
+        session.disconnect();
+        session = null;
+    }
+
     private static void scanForPacketListeners() {
 
         Reflections reflections = new Reflections(Application.class.getPackageName().split("\\.")[0]);
