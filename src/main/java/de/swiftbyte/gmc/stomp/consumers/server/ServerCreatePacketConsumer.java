@@ -1,4 +1,4 @@
-package de.swiftbyte.gmc.stomp.consumers;
+package de.swiftbyte.gmc.stomp.consumers.server;
 
 import de.swiftbyte.gmc.packet.server.ServerCreatePacket;
 import de.swiftbyte.gmc.server.AsaServer;

@@ -1,4 +1,4 @@
-package de.swiftbyte.gmc.stomp.consumers;
+package de.swiftbyte.gmc.stomp.consumers.node;
 
 import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.packet.node.NodeLoginAckPacket;
