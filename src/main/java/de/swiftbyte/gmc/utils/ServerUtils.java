@@ -12,26 +12,36 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.util.*;
 
 @Slf4j
 public class ServerUtils {
 
-    public static String generateAsaServerArgs(List<String> argsType1, List<String> argsType2, String adminPassword, String... requiredArgs) {
+    public static String generateAsaServerArgs(List<String> argsType1, List<String> argsType2, List<String> requiredArgs1, List<String> requiredArgs2) {
 
         StringBuilder preArgs = new StringBuilder();
 
-        Arrays.stream(requiredArgs).forEach(arg -> preArgs.append(arg).append("?"));
+        requiredArgs1.forEach(arg -> preArgs.append(arg).append("?"));
+
+        preArgs.delete(preArgs.length() - 1, preArgs.length());
 
         argsType1.stream()
-                .filter(arg -> Arrays.stream(requiredArgs).noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]) || arg.contains("ServerAdminPassword"))))
-                .forEach(arg -> preArgs.append(arg).append("?"));
+                .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]))))
+                .forEach(arg -> {
+                    if(!arg.contains("?")) preArgs.append("?");
+                    preArgs.append(arg);
+                });
 
-        preArgs.append("ServerAdminPassword=").append(adminPassword);
+        requiredArgs2.forEach(arg -> {
+            preArgs.append(" -").append(arg);
+        });
 
-        if (!argsType2.isEmpty()) preArgs.append(" ");
-
-        argsType2.forEach(arg -> preArgs.append(arg).append(" "));
+        argsType2.forEach(arg -> {
+            if(!arg.contains("-")) preArgs.append(" -");
+            else preArgs.append(" ");
+            preArgs.append(arg);
+        });
 
         return preArgs.toString();
     }
@@ -40,30 +50,29 @@ public class ServerUtils {
 
         ServerSettings settings = server.getSettings();
 
-        if (settings.getMap() == null || settings.getMap().isEmpty()) {
+        if (CommonUtils.isNullOrEmpty(settings.getMap())) {
             log.error("Map is not set for server '" + server.getFriendlyName() + "'. Falling back to default map.");
             settings.setMap("TheIsland_WP");
         }
 
-        if (settings.getRconPassword() == null || settings.getRconPassword().isEmpty()) {
+        if (CommonUtils.isNullOrEmpty(settings.getRconPassword())) {
             settings.setRconPassword("gmc-rp-" + UUID.randomUUID());
         }
 
         server.setRconPort(settings.getRconPort());
         server.setRconPassword(settings.getRconPassword());
 
-        String realStartPostArguments = generateAsaServerArgs(
-                settings.getLaunchParameters2(),
-                settings.getLaunchParameters3(),
-                settings.getRconPassword(),
-                settings.getMap(),
-                "listen",
-                "Port=" + settings.getGamePort(),
-                "QueryPort=" + settings.getQueryPort(),
-                "RCONEnabled=True",
-                "RCONPort=" + settings.getRconPort());
+        List<String> requiredLaunchParameters1 = getRequiredLaunchArgs1(server, settings);
+        List<String> requiredLaunchParameters2 = getRequiredLaunchArgs2(settings);
 
-        String realStartPreArguments = String.join(" ", settings.getLaunchParameters1());
+        String realStartPostArguments = generateAsaServerArgs(
+                settings.getLaunchParameters2() == null ? new ArrayList<>() : settings.getLaunchParameters2(),
+                settings.getLaunchParameters3() == null ? new ArrayList<>() : settings.getLaunchParameters3(),
+                requiredLaunchParameters1,
+                requiredLaunchParameters2
+        );
+
+        String realStartPreArguments = String.join(" ", settings.getLaunchParameters1() == null ? new ArrayList<>() : settings.getLaunchParameters1());
 
         String changeDirectoryCommand = "cd /d \"" + CommonUtils.convertPathSeparator(server.getInstallDir()) + "\\ShooterGame\\Binaries\\Win64\"";
 
@@ -86,6 +95,35 @@ public class ServerUtils {
         } catch (IOException e) {
             log.error("An unknown exception occurred while writing the startup batch for server '" + server.getFriendlyName() + "'.", e);
         }
+    }
+
+    private static List<String> getRequiredLaunchArgs1(AsaServer server, ServerSettings settings) {
+        List<String> requiredLaunchParameters1 = new ArrayList<>(List.of(
+                settings.getMap(),
+                "listen",
+                "Port=" + settings.getGamePort(),
+                "QueryPort=" + settings.getQueryPort(),
+                "RCONEnabled=True",
+                "RCONPort=" + settings.getRconPort(),
+                "SessionName='" + (settings.getName() == null ? server.getFriendlyName() : settings.getName()) + "'",
+                "ServerAdminPassword='" + settings.getRconPassword() + "'",
+                "ClampItemStats=" + settings.isClampItemStats()
+        ));
+
+        if(!CommonUtils.isNullOrEmpty(settings.getServerIp())) requiredLaunchParameters1.add("MultiHome=" + settings.getServerIp());
+        if(!CommonUtils.isNullOrEmpty(settings.getServerPassword())) requiredLaunchParameters1.add("ServerPassword='" + settings.getServerPassword()+"'");
+        if(!CommonUtils.isNullOrEmpty(settings.getSpecPassword())) requiredLaunchParameters1.add("SpectatorPassword='" + settings.getSpecPassword()+"'");
+        return requiredLaunchParameters1;
+    }
+
+    private static List<String> getRequiredLaunchArgs2(ServerSettings settings) {
+        List<String> requiredLaunchParameters1 = new ArrayList<>();
+
+        if(settings.getMaxPlayers() != 0) requiredLaunchParameters1.add("WinLiveMaxPlayers=" + settings.getMaxPlayers());
+        if(!CommonUtils.isNullOrEmpty(settings.getModIds())) requiredLaunchParameters1.add("mods=" + settings.getModIds());
+        if(!settings.isEnableBattlEye()) requiredLaunchParameters1.add("NoBattlEye");
+        if(!CommonUtils.isNullOrEmpty(settings.getCulture())) requiredLaunchParameters1.add("culture=" + settings.getCulture());
+        return requiredLaunchParameters1;
     }
 
     public static void killServerProcess(String PID) {
@@ -116,7 +154,7 @@ public class ServerUtils {
             CacheModel cacheModel = reader.readValue(cacheFile, CacheModel.class);
             HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
 
-            gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> new AsaServer(s, gameServerCacheModel.getFriendlyName(), gameServerCacheModel.getSettings()));
+            gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> new AsaServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings()));
 
         } catch (IOException e) {
             log.error("An unknown error occurred while getting cached information.", e);

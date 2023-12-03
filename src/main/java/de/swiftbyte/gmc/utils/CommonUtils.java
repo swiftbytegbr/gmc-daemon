@@ -21,6 +21,10 @@ import java.util.zip.ZipInputStream;
 @Slf4j
 public class CommonUtils {
 
+    public static boolean isNullOrEmpty(String string) {
+        return string == null || string.isEmpty();
+    }
+
     public static boolean unzip(String zipFilePath, String destDir) {
         log.debug("Start unzipping '" + zipFilePath + "' to '" + destDir + "'...");
         File dir = new File(destDir);
