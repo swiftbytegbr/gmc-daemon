@@ -32,6 +32,7 @@ public class AsaServer extends GameServer {
 
         super(id, friendlyName, settings);
 
+        if(settings.isStartOnBoot()) start();
     }
 
     public AsaServer(String id, String friendlyName, Path installDir, ServerSettings settings) {
@@ -39,6 +40,7 @@ public class AsaServer extends GameServer {
         super(id, friendlyName, settings);
         this.installDir = installDir;
 
+        if(settings.isStartOnBoot()) start();
     }
 
     @Override
@@ -122,7 +124,7 @@ public class AsaServer extends GameServer {
 
     @Override
     public void stop() {
-        super.setState(GameServerState.OFFLINE);
+        super.setState(GameServerState.STOPPING);
         new Thread(() -> {
             if (sendRconCommand("saveworld") == null) {
                 log.debug("No connection to server '" + friendlyName + "'. Killing process...");
@@ -131,9 +133,12 @@ public class AsaServer extends GameServer {
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException ignored) {
+                    ServerUtils.killServerProcess(PID);
+                    super.setState(GameServerState.OFFLINE);
                 }
                 sendRconCommand("doexit");
             }
+            super.setState(GameServerState.OFFLINE);
         }).start();
     }
 
