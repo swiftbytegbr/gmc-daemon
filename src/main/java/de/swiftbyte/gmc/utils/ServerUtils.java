@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -76,10 +77,13 @@ public class ServerUtils {
 
         String changeDirectoryCommand = "cd /d \"" + CommonUtils.convertPathSeparator(server.getInstallDir()) + "\\ShooterGame\\Binaries\\Win64\"";
 
+        String serverExeName = "ArkAscendedServer.exe";
+
+        if(Files.exists(Path.of(server.getInstallDir() + "/ShooterGame/Binaries/Win64/AsaApiLoader.exe"))) serverExeName = "AsaApiLoader.exe";
 
         String startCommand = "start \"" + server.getFriendlyName() + "\""
                 + (realStartPreArguments.isEmpty() ? "" : " " + realStartPreArguments)
-                + " \"" + CommonUtils.convertPathSeparator(server.getInstallDir() + "/ShooterGame/Binaries/Win64/ArkAscendedServer.exe") + "\""
+                + " \"" + CommonUtils.convertPathSeparator(server.getInstallDir() + "/ShooterGame/Binaries/Win64/"+serverExeName) + "\""
                 + " " + realStartPostArguments;
         log.debug("Starting server with command " + startCommand);
 
