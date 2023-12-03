@@ -22,15 +22,15 @@ machines in one panel.**
 - With console commands, you can manage servers directly through the daemon, even if our site takes a short nap.
 - See all commands by entering help in deamon.
 
-### 🏗️ Early Access
+### 🏗️ Early Access Roadmap
 
-- Connect multiple nodes (dedicated server)
-- Create ASA servers (ASA API aswell)
-- Start/Stop
-- Auto-Restart
-- Auto-Backup
-- Rollback Function
-- RCON Web Console
+- [✅] Connect multiple nodes (dedicated server)
+- [✅] Create ASA servers (ASA API aswell)
+- [✅] Start/Stop
+- [✅] Auto-Restart
+- [✅] RCON Web Console
+- [🚧] Auto-Backup
+- [🚧] Rollback Function
 
 ### 📝 Installation
 
