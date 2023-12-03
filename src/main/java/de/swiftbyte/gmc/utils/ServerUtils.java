@@ -30,18 +30,16 @@ public class ServerUtils {
         argsType1.stream()
                 .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
-                    if(!arg.contains("?")) preArgs.append("?");
+                    if (!arg.contains("?")) preArgs.append("?");
                     preArgs.append(arg);
                 });
 
         preArgs.append("?ServerAdminPassword=\"").append(rconPassword).append("\"");
 
-        requiredArgs2.forEach(arg -> {
-            preArgs.append(" -").append(arg);
-        });
+        requiredArgs2.forEach(arg -> preArgs.append(" -").append(arg));
 
         argsType2.forEach(arg -> {
-            if(!arg.contains("-")) preArgs.append(" -");
+            if (!arg.contains("-")) preArgs.append(" -");
             else preArgs.append(" ");
             preArgs.append(arg);
         });
@@ -82,11 +80,12 @@ public class ServerUtils {
 
         String serverExeName = "ArkAscendedServer.exe";
 
-        if(Files.exists(Path.of(server.getInstallDir() + "/ShooterGame/Binaries/Win64/AsaApiLoader.exe"))) serverExeName = "AsaApiLoader.exe";
+        if (Files.exists(Path.of(server.getInstallDir() + "/ShooterGame/Binaries/Win64/AsaApiLoader.exe")))
+            serverExeName = "AsaApiLoader.exe";
 
         String startCommand = "start \"" + server.getFriendlyName() + "\""
                 + (realStartPreArguments.isEmpty() ? "" : " " + realStartPreArguments)
-                + " \"" + CommonUtils.convertPathSeparator(server.getInstallDir() + "/ShooterGame/Binaries/Win64/"+serverExeName) + "\""
+                + " \"" + CommonUtils.convertPathSeparator(server.getInstallDir() + "/ShooterGame/Binaries/Win64/" + serverExeName) + "\""
                 + " " + realStartPostArguments;
         log.debug("Starting server with command " + startCommand);
 
@@ -116,19 +115,25 @@ public class ServerUtils {
                 "ClampItemStats=" + settings.isClampItemStats()
         ));
 
-        if(!CommonUtils.isNullOrEmpty(settings.getServerIp())) requiredLaunchParameters1.add("MultiHome=" + settings.getServerIp());
-        if(!CommonUtils.isNullOrEmpty(settings.getServerPassword())) requiredLaunchParameters1.add("ServerPassword=\"" + settings.getServerPassword()+"\"");
-        if(!CommonUtils.isNullOrEmpty(settings.getSpecPassword())) requiredLaunchParameters1.add("SpectatorPassword=\"" + settings.getSpecPassword()+"\"");
+        if (!CommonUtils.isNullOrEmpty(settings.getServerIp()))
+            requiredLaunchParameters1.add("MultiHome=" + settings.getServerIp());
+        if (!CommonUtils.isNullOrEmpty(settings.getServerPassword()))
+            requiredLaunchParameters1.add("ServerPassword=\"" + settings.getServerPassword() + "\"");
+        if (!CommonUtils.isNullOrEmpty(settings.getSpecPassword()))
+            requiredLaunchParameters1.add("SpectatorPassword=\"" + settings.getSpecPassword() + "\"");
         return requiredLaunchParameters1;
     }
 
     private static List<String> getRequiredLaunchArgs2(ServerSettings settings) {
         List<String> requiredLaunchParameters1 = new ArrayList<>();
 
-        if(settings.getMaxPlayers() != 0) requiredLaunchParameters1.add("WinLiveMaxPlayers=" + settings.getMaxPlayers());
-        if(!CommonUtils.isNullOrEmpty(settings.getModIds())) requiredLaunchParameters1.add("mods=" + settings.getModIds());
-        if(!settings.isEnableBattlEye()) requiredLaunchParameters1.add("NoBattlEye");
-        if(!CommonUtils.isNullOrEmpty(settings.getCulture())) requiredLaunchParameters1.add("culture=" + settings.getCulture());
+        if (settings.getMaxPlayers() != 0)
+            requiredLaunchParameters1.add("WinLiveMaxPlayers=" + settings.getMaxPlayers());
+        if (!CommonUtils.isNullOrEmpty(settings.getModIds()))
+            requiredLaunchParameters1.add("mods=" + settings.getModIds());
+        if (!settings.isEnableBattlEye()) requiredLaunchParameters1.add("NoBattlEye");
+        if (!CommonUtils.isNullOrEmpty(settings.getCulture()))
+            requiredLaunchParameters1.add("culture=" + settings.getCulture());
         return requiredLaunchParameters1;
     }
 

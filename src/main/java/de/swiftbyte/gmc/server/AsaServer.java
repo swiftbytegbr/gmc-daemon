@@ -32,7 +32,7 @@ public class AsaServer extends GameServer {
 
         super(id, friendlyName, settings);
 
-        if(settings.isStartOnBoot()) start();
+        if (settings.isStartOnBoot()) start();
     }
 
     public AsaServer(String id, String friendlyName, Path installDir, ServerSettings settings) {
@@ -40,7 +40,7 @@ public class AsaServer extends GameServer {
         super(id, friendlyName, settings);
         this.installDir = installDir;
 
-        if(settings.isStartOnBoot()) start();
+        if (settings.isStartOnBoot()) start();
     }
 
     @Override
@@ -190,7 +190,7 @@ public class AsaServer extends GameServer {
     @Override
     public String sendRconCommand(String command) {
         try {
-            if(rconPort == 0 || CommonUtils.isNullOrEmpty(rconPassword)) return null;
+            if (rconPort == 0 || CommonUtils.isNullOrEmpty(rconPassword)) return null;
             Rcon rcon = new Rcon("127.0.0.1", rconPort, rconPassword.getBytes());
             return rcon.command(command);
         } catch (IOException e) {
