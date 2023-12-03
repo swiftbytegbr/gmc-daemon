@@ -54,14 +54,9 @@ public class AsaServer extends GameServer {
 
                 Scanner scanner = new Scanner(process.getInputStream());
 
-                while (scanner.hasNextLine()) {
+                while (scanner.hasNextLine()) {}
 
-                    String line = scanner.nextLine();
-                    log.debug(line);
-
-                }
-
-                if (process.exitValue() == 0) {
+                if (process.exitValue() == 7) {
                     log.debug("Server was installed successfully!");
                 } else {
                     log.error("Server installation returned error code " + process.exitValue() + ".");
