@@ -30,7 +30,7 @@ public abstract class GameServer {
     protected Process serverProcess;
 
     @Getter
-    protected GameServerState state = GameServerState.OFFLINE;
+    protected GameServerState state;
 
     @Getter
     protected String friendlyName;
@@ -44,6 +44,19 @@ public abstract class GameServer {
     @Getter
     @Setter
     protected ServerSettings settings;
+
+    public GameServer(String id, String friendlyName, ServerSettings settings) {
+
+        this.serverId = id;
+        this.friendlyName = friendlyName;
+        this.installDir = Path.of(Node.INSTANCE.getServerPath() + "/" + friendlyName.toLowerCase()).toAbsolutePath();
+        this.settings = settings;
+
+        GAME_SERVERS.put(id, this);
+        updateScheduler = Application.getExecutor().scheduleAtFixedRate(this::update, 0, 10, TimeUnit.SECONDS);
+
+        setState(GameServerState.OFFLINE);
+    }
 
     public abstract void install();
 
@@ -64,17 +77,6 @@ public abstract class GameServer {
     public abstract void update();
 
     public abstract String sendRconCommand(String command);
-
-    public GameServer(String id, String friendlyName, ServerSettings settings) {
-
-        this.serverId = id;
-        this.friendlyName = friendlyName;
-        this.installDir = Path.of(Node.INSTANCE.getServerPath() + "/" + friendlyName.toLowerCase()).toAbsolutePath();
-        this.settings = settings;
-
-        GAME_SERVERS.put(id, this);
-        updateScheduler = Application.getExecutor().scheduleAtFixedRate(this::update, 0, 10, TimeUnit.SECONDS);
-    }
 
     public void setState(GameServerState state) {
 
