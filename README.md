@@ -37,4 +37,4 @@ machines in one panel.**
 - GMC for Early Access is almost ready, please be patient for a few more days!
 
 ***
-Copyright (C) 2023 SwiftByte
+Copyright © 2023 SwiftByte Kaspereit Faust Steurer GbR
