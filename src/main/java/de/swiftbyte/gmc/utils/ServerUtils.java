@@ -1,0 +1,126 @@
+package de.swiftbyte.gmc.utils;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import de.swiftbyte.gmc.cache.CacheModel;
+import de.swiftbyte.gmc.cache.GameServerCacheModel;
+import de.swiftbyte.gmc.packet.entity.ServerSettings;
+import de.swiftbyte.gmc.server.AsaServer;
+import lombok.extern.slf4j.Slf4j;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.*;
+
+@Slf4j
+public class ServerUtils {
+
+    public static String generateAsaServerArgs(List<String> argsType1, List<String> argsType2, String adminPassword, String... requiredArgs) {
+
+        StringBuilder preArgs = new StringBuilder();
+
+        Arrays.stream(requiredArgs).forEach(arg -> preArgs.append(arg).append("?"));
+
+        argsType1.stream()
+                .filter(arg -> Arrays.stream(requiredArgs).noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]) || arg.contains("ServerAdminPassword"))))
+                .forEach(arg -> preArgs.append(arg).append("?"));
+
+        preArgs.append("ServerAdminPassword=").append(adminPassword);
+
+        if (!argsType2.isEmpty()) preArgs.append(" ");
+
+        argsType2.forEach(arg -> preArgs.append(arg).append(" "));
+
+        return preArgs.toString();
+    }
+
+    public static void writeAsaStartupBatch(AsaServer server) {
+
+        ServerSettings settings = server.getSettings();
+
+        if (settings.getMap() == null || settings.getMap().isEmpty()) {
+            log.error("Map is not set for server '" + server.getFriendlyName() + "'. Falling back to default map.");
+            settings.setMap("TheIsland_WP");
+        }
+
+        if (settings.getRconPassword() == null || settings.getRconPassword().isEmpty()) {
+            settings.setRconPassword("gmc-rp-" + UUID.randomUUID());
+        }
+
+        server.setRconPort(settings.getRconPort());
+        server.setRconPassword(settings.getRconPassword());
+
+        String realStartPostArguments = generateAsaServerArgs(
+                settings.getLaunchParameters2(),
+                settings.getLaunchParameters3(),
+                settings.getRconPassword(),
+                settings.getMap(),
+                "listen",
+                "Port=" + settings.getGamePort(),
+                "QueryPort=" + settings.getQueryPort(),
+                "RCONEnabled=True",
+                "RCONPort=" + settings.getRconPort());
+
+        String realStartPreArguments = String.join(" ", settings.getLaunchParameters1());
+
+        String changeDirectoryCommand = "cd /d \"" + CommonUtils.convertPathSeparator(server.getInstallDir()) + "\\ShooterGame\\Binaries\\Win64\"";
+
+
+        String startCommand = "start \"" + server.getFriendlyName() + "\""
+                + (realStartPreArguments.isEmpty() ? "" : " " + realStartPreArguments)
+                + " \"" + CommonUtils.convertPathSeparator(server.getInstallDir() + "/ShooterGame/Binaries/Win64/ArkAscendedServer.exe") + "\""
+                + " " + realStartPostArguments;
+        log.debug("Starting server with command " + startCommand);
+
+        try {
+            FileWriter fileWriter = new FileWriter(server.getInstallDir() + "/start.bat");
+            PrintWriter printWriter = new PrintWriter(fileWriter);
+
+            printWriter.println(changeDirectoryCommand);
+            printWriter.println(startCommand);
+            printWriter.println("exit");
+            printWriter.close();
+
+        } catch (IOException e) {
+            log.error("An unknown exception occurred while writing the startup batch for server '" + server.getFriendlyName() + "'.", e);
+        }
+    }
+
+    public static void killServerProcess(String PID) {
+
+        if (PID == null) return;
+
+        Optional<ProcessHandle> handle = ProcessHandle.of(Long.parseLong(PID));
+        if (handle.isPresent()) {
+            log.debug("Server process still running... Killing process...");
+            handle.get().destroy();
+        }
+    }
+
+    public static void getCachedServerInformation() {
+
+        log.debug("Getting cached server information...");
+
+        File cacheFile = new File("./cache.json");
+
+        if (!cacheFile.exists()) {
+            log.debug("No cache file found. Skipping...");
+            return;
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectReader reader = mapper.reader();
+        try {
+            CacheModel cacheModel = reader.readValue(cacheFile, CacheModel.class);
+            HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
+
+            gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> new AsaServer(s, gameServerCacheModel.getFriendlyName(), gameServerCacheModel.getSettings()));
+
+        } catch (IOException e) {
+            log.error("An unknown error occurred while getting cached information.", e);
+        }
+    }
+
+}

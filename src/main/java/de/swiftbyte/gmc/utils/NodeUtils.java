@@ -1,6 +1,13 @@
 package de.swiftbyte.gmc.utils;
 
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import de.swiftbyte.gmc.Application;
+import de.swiftbyte.gmc.Node;
+import de.swiftbyte.gmc.cache.CacheModel;
+import de.swiftbyte.gmc.cache.GameServerCacheModel;
+import de.swiftbyte.gmc.server.GameServer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.shell.component.context.ComponentContext;
@@ -12,6 +19,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 
 @Slf4j
 public class NodeUtils {
@@ -61,15 +69,12 @@ public class NodeUtils {
     }
 
     public static void checkInstallation() {
-        //TODO Check if installation is valid
-
         if (Files.exists(Paths.get(STEAM_CMD_PATH))) {
             log.debug("SteamCMD installation found.");
         } else {
             log.error("SteamCMD installation not found. Try to install...");
             installSteamCmd();
         }
-
     }
 
     private static void installSteamCmd() {
@@ -97,5 +102,37 @@ public class NodeUtils {
             }
             System.exit(1);
         }
+    }
+
+    public static void cacheInformation(Node node) {
+
+        HashMap<String, GameServerCacheModel> gameServers = new HashMap<>();
+
+        for (GameServer gameServer : GameServer.getAllServers()) {
+            GameServerCacheModel gameServerCacheModel = GameServerCacheModel.builder()
+                    .friendlyName(gameServer.getFriendlyName())
+                    .installDir(gameServer.getInstallDir().toString())
+                    .settings(gameServer.getSettings())
+                    .build();
+            gameServers.put(gameServer.getServerId(), gameServerCacheModel);
+        }
+
+        CacheModel cacheModel = CacheModel.builder()
+                .nodeName(node.getNodeName())
+                .teamName(node.getTeamName())
+                .serverPath(node.getServerPath())
+                .gameServerCacheModelHashMap(gameServers)
+                .build();
+
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
+        try {
+            File file = new File("./cache.json");
+            if (!file.exists()) file.createNewFile();
+            writer.writeValue(file, cacheModel);
+        } catch (IOException e) {
+            log.error("An unknown error occurred while caching information.", e);
+        }
+
     }
 }

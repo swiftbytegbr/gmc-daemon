@@ -44,11 +44,9 @@ public class CommonUtils {
                     fos.write(buffer, 0, len);
                 }
                 fos.close();
-                //close this ZipEntry
                 zis.closeEntry();
                 ze = zis.getNextEntry();
             }
-            //close last ZipEntry
             zis.closeEntry();
             zis.close();
             fis.close();
@@ -75,36 +73,12 @@ public class CommonUtils {
         return convertPathSeparator(path.toString());
     }
 
-    public static String generateServerArgs(List<String> argsType1, List<String> argsType2, String adminPassword, String... requiredArgs) {
-
-        StringBuilder preArgs = new StringBuilder();
-
-        Arrays.stream(requiredArgs).forEach(arg -> preArgs.append(arg).append("?"));
-
-        argsType1.stream()
-                .filter(arg -> Arrays.stream(requiredArgs).noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]) || arg.contains("ServerAdminPassword"))))
-                .forEach(arg -> preArgs.append(arg).append("?"));
-
-        preArgs.append("ServerAdminPassword=").append(adminPassword);
-
-        if (!argsType2.isEmpty()) preArgs.append(" ");
-
-        argsType2.forEach(arg -> preArgs.append(arg).append(" "));
-
-        return preArgs.toString();
-    }
-
     public static String getProcessPID(String command) {
         Optional<ProcessHandle> processHandle = ProcessHandle.allProcesses()
                 .filter(ph -> ph.info().command().isPresent() && ph.info().command().get().contains(command))
                 .findFirst();
 
-        if (processHandle.isPresent()) {
-            return String.valueOf(processHandle.get().pid());
-        } else {
-            log.warn("Server process '" + command + "' not found!");
-            return null;
-        }
+        return processHandle.map(handle -> String.valueOf(handle.pid())).orElse(null);
     }
 
     public static List<String> getSystemIpAddresses() {
@@ -132,7 +106,6 @@ public class CommonUtils {
         for (File root : roots) {
             NodeData.Storage storage = new NodeData.Storage();
             storage.setName(root.getAbsolutePath());
-            storage.setSize(root.getTotalSpace());
             storage.setTotalBytes(root.getFreeSpace());
             storage.setUsedBytes(root.getTotalSpace() - root.getFreeSpace());
             storages.put(root.getAbsolutePath(), storage);

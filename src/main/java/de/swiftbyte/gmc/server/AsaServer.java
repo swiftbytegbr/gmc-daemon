@@ -2,42 +2,47 @@ package de.swiftbyte.gmc.server;
 
 import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.packet.entity.GameServerState;
+import de.swiftbyte.gmc.packet.entity.ServerSettings;
 import de.swiftbyte.gmc.packet.server.ServerDeletePacket;
 import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.NodeUtils;
+import de.swiftbyte.gmc.utils.ServerUtils;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import xyz.astroark.Rcon;
 import xyz.astroark.exception.AuthenticationException;
 
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Files;
-import java.util.Optional;
+import java.nio.file.Path;
 import java.util.Scanner;
-import java.util.UUID;
 
 @Slf4j
 public class AsaServer extends GameServer {
 
     private static final String STEAM_CMD_ID = "2430930";
 
-    public AsaServer(String id, String friendlyName) {
+    @Setter
+    private int rconPort;
+    @Setter
+    private String rconPassword;
 
-        super(id, friendlyName);
+    public AsaServer(String id, String friendlyName, ServerSettings settings) {
 
-        this.map = "TheIsland_WP";
-        this.gamePort = 29012;
-        this.queryPort = 29014;
-        this.rconPort = 30004;
-        this.rconPassword = "1234";
-        this.isAutoRestartEnabled = true;
+        super(id, friendlyName, settings);
+
+    }
+
+    public AsaServer(String id, String friendlyName, Path installDir, ServerSettings settings) {
+
+        super(id, friendlyName, settings);
+        this.installDir = installDir;
 
     }
 
     @Override
-    public void installServer() {
+    public void install() {
         super.setState(GameServerState.CREATING);
         new Thread(() -> {
             String installCommand = "\"" + CommonUtils.convertPathSeparator(NodeUtils.getSteamCmdPath().toAbsolutePath()) + "\""
@@ -81,7 +86,7 @@ public class AsaServer extends GameServer {
                 //TODO remove Backups
                 GameServer.removeServerById(serverId);
                 updateScheduler.cancel(false);
-                Node.INSTANCE.cacheInformation();
+                NodeUtils.cacheInformation(Node.INSTANCE);
 
                 ServerDeletePacket packet = new ServerDeletePacket();
                 packet.setServerId(serverId);
@@ -97,10 +102,10 @@ public class AsaServer extends GameServer {
     public void start() {
         super.setState(GameServerState.INITIALIZING);
 
-        killServerProcess();
+        ServerUtils.killServerProcess(PID);
 
         new Thread(() -> {
-            writeStartupBatch();
+            ServerUtils.writeAsaStartupBatch(this);
             try {
                 log.debug("cmd /c start \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
                 serverProcess = Runtime.getRuntime().exec("cmd /c start /min \"" + "\" \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
@@ -108,7 +113,7 @@ public class AsaServer extends GameServer {
                 while (scanner.hasNextLine()) {
                 }
 
-                if (isAutoRestartEnabled && state != GameServerState.OFFLINE) {
+                if (settings.isRestartOnCrash() && state != GameServerState.OFFLINE) {
                     super.setState(GameServerState.RESTARTING);
                 } else {
                     super.setState(GameServerState.OFFLINE);
@@ -126,7 +131,7 @@ public class AsaServer extends GameServer {
         new Thread(() -> {
             if (sendRconCommand("saveworld") == null) {
                 log.debug("No connection to server '" + friendlyName + "'. Killing process...");
-                killServerProcess();
+                ServerUtils.killServerProcess(PID);
             } else {
                 try {
                     Thread.sleep(10000);
@@ -161,9 +166,9 @@ public class AsaServer extends GameServer {
 
                     log.warn("Server crash detected! Restarting server...");
 
-                    killServerProcess();
+                    ServerUtils.killServerProcess(PID);
 
-                    if (isAutoRestartEnabled) {
+                    if (settings.isRestartOnCrash()) {
                         log.debug("Restarting server '" + friendlyName + "'...");
                         start();
                     } else {
@@ -176,56 +181,6 @@ public class AsaServer extends GameServer {
                 stop();
                 start();
             }
-        }
-    }
-
-    @Override
-    protected void killServerProcess() {
-
-        if (PID == null) return;
-
-        Optional<ProcessHandle> handle = ProcessHandle.of(Long.parseLong(PID));
-        if (handle.isPresent()) {
-            log.debug("Server process still running... Killing process...");
-            handle.get().destroy();
-        }
-    }
-
-    @Override
-    public void writeStartupBatch() {
-
-        if (map == null || map.isEmpty()) {
-            log.error("Map is not set for server '" + friendlyName + "'. Falling back to default map.");
-            map = "TheIsland_WP";
-        }
-
-        if (rconPassword == null || rconPassword.isEmpty()) {
-            rconPassword = "gmc-rp-" + UUID.randomUUID();
-        }
-
-        String realStartPostArguments = CommonUtils.generateServerArgs(startPostArguments1, startPostArguments2, rconPassword, map, "listen", "Port=" + gamePort, "QueryPort=" + queryPort, "RCONEnabled=True", "RCONPort=" + rconPort);
-        String realStartPreArguments = String.join(" ", startPreArguments);
-
-        String changeDirectoryCommand = "cd /d \"" + CommonUtils.convertPathSeparator(installDir) + "\\ShooterGame\\Binaries\\Win64\"";
-
-
-        String startCommand = "start \"" + friendlyName + "\""
-                + (realStartPreArguments.isEmpty() ? "" : " " + realStartPreArguments)
-                + " \"" + CommonUtils.convertPathSeparator(installDir + "/ShooterGame/Binaries/Win64/ArkAscendedServer.exe") + "\""
-                + " " + realStartPostArguments;
-        log.debug("Starting server with command " + startCommand);
-
-        try {
-            FileWriter fileWriter = new FileWriter(installDir + "/start.bat");
-            PrintWriter printWriter = new PrintWriter(fileWriter);
-
-            printWriter.println(changeDirectoryCommand);
-            printWriter.println(startCommand);
-            printWriter.println("exit");
-            printWriter.close();
-
-        } catch (IOException e) {
-            log.error("An unknown exception occurred while writing the startup batch for server '" + friendlyName + "'.", e);
         }
     }
 

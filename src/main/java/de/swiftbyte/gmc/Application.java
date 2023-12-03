@@ -15,7 +15,6 @@ import org.springframework.shell.component.flow.ComponentFlow;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 @SpringBootApplication
 @CommandScan
@@ -32,7 +31,6 @@ public class Application {
 
     @Getter
     private static Node node;
-    private static Thread watchdog;
 
     @Getter
     private static Terminal terminal;
@@ -70,8 +68,6 @@ public class Application {
 
         node = new Node();
         node.start();
-
-        executor.scheduleAtFixedRate(new Watchdog(), 0, 3, TimeUnit.SECONDS);
 
         if (node.getConnectionState() == ConnectionState.NOT_JOINED) node.joinTeam();
         else if (node.getConnectionState() == ConnectionState.NOT_CONNECTED) node.connect();

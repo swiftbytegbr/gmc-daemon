@@ -103,5 +103,5 @@ Temporary Items
 *.gz
 gmc.properties
 steamcmd
-test
+servers
 cache.json

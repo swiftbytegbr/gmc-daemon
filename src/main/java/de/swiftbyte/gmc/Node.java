@@ -1,23 +1,18 @@
 package de.swiftbyte.gmc;
 
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import de.swiftbyte.gmc.cache.CacheModel;
-import de.swiftbyte.gmc.cache.GameServerCacheModel;
 import de.swiftbyte.gmc.packet.entity.NodeSettings;
 import de.swiftbyte.gmc.packet.entity.ResourceUsage;
-import de.swiftbyte.gmc.packet.entity.ServerSettings;
 import de.swiftbyte.gmc.packet.node.NodeHeartbeatPacket;
 import de.swiftbyte.gmc.packet.node.NodeLogoutPacket;
-import de.swiftbyte.gmc.server.AsaServer;
-import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.ConfigUtils;
 import de.swiftbyte.gmc.utils.ConnectionState;
 import de.swiftbyte.gmc.utils.NodeUtils;
+import de.swiftbyte.gmc.utils.ServerUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +27,6 @@ import oshi.SystemInfo;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
@@ -48,7 +42,7 @@ public class Node extends Thread {
     private String nodeName;
     @Setter
     private String teamName;
-
+    @Setter
     private String serverPath;
 
     private String secret;
@@ -58,14 +52,12 @@ public class Node extends Thread {
 
         INSTANCE = this;
 
-        //TODO Check if node has already joined
-
         this.connectionState = (ConfigUtils.hasKey("node.id") && ConfigUtils.hasKey("node.secret")) ? ConnectionState.NOT_CONNECTED : ConnectionState.NOT_JOINED;
 
         this.nodeName = "daemon";
         this.teamName = "gmc";
 
-        serverPath = "test";
+        serverPath = "servers";
 
         getCachedNodeInformation();
         NodeUtils.checkInstallation();
@@ -98,89 +90,6 @@ public class Node extends Thread {
         }
     }
 
-    private void getCachedServerInformation() {
-
-        log.debug("Getting cached server information...");
-
-        File cacheFile = new File("./cache.json");
-
-        if (!cacheFile.exists()) {
-            log.debug("No cache file found. Skipping...");
-            return;
-        }
-
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectReader reader = mapper.reader();
-        try {
-            CacheModel cacheModel = reader.readValue(cacheFile, CacheModel.class);
-            HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
-
-            gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> {
-
-                GameServer gameServer = new AsaServer(s, gameServerCacheModel.getFriendlyName());
-
-                ServerSettings serverSettings = new ServerSettings();
-
-                serverSettings.setMap(gameServerCacheModel.getMap());
-                serverSettings.setGamePort(gameServerCacheModel.getGamePort());
-                serverSettings.setRawPort(gameServerCacheModel.getRawPort());
-                serverSettings.setQueryPort(gameServerCacheModel.getQueryPort());
-                serverSettings.setRconPort(gameServerCacheModel.getRconPort());
-                serverSettings.setRconPassword(gameServerCacheModel.getRconPassword());
-                serverSettings.setLaunchParameters1(gameServerCacheModel.getStartPreArguments());
-                serverSettings.setLaunchParameters2(gameServerCacheModel.getStartPostArguments1());
-                serverSettings.setLaunchParameters3(gameServerCacheModel.getStartPostArguments2());
-
-                gameServer.setSettings(serverSettings);
-            });
-
-        } catch (IOException e) {
-            log.error("An unknown error occurred while getting cached information.", e);
-        }
-
-    }
-
-    public void cacheInformation() {
-
-        HashMap<String, GameServerCacheModel> gameServers = new HashMap<>();
-
-        for (GameServer gameServer : GameServer.getAllServers()) {
-            GameServerCacheModel gameServerCacheModel = GameServerCacheModel.builder()
-                    .friendlyName(gameServer.getFriendlyName())
-                    .installDir(gameServer.getInstallDir().toString())
-                    .gamePort(gameServer.getGamePort())
-                    .rawPort(gameServer.getRawPort())
-                    .queryPort(gameServer.getQueryPort())
-                    .rconPort(gameServer.getRconPort())
-                    .isAutoRestartEnabled(gameServer.isAutoRestartEnabled())
-                    .rconPassword(gameServer.getRconPassword())
-                    .startPreArguments(gameServer.getStartPreArguments())
-                    .startPostArguments1(gameServer.getStartPostArguments1())
-                    .startPostArguments2(gameServer.getStartPostArguments2())
-                    .map(gameServer.getMap())
-                    .build();
-            gameServers.put(gameServer.getServerId(), gameServerCacheModel);
-        }
-
-        CacheModel cacheModel = CacheModel.builder()
-                .nodeName(nodeName)
-                .teamName(teamName)
-                .serverPath(serverPath)
-                .gameServerCacheModelHashMap(gameServers)
-                .build();
-
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
-        try {
-            File file = new File("./cache.json");
-            if (!file.exists()) file.createNewFile();
-            writer.writeValue(file, cacheModel);
-        } catch (IOException e) {
-            log.error("An unknown error occurred while caching information.", e);
-        }
-
-    }
-
     public void shutdown() {
         NodeLogoutPacket logoutPacket = new NodeLogoutPacket();
         logoutPacket.setReason("Terminated by user");
@@ -188,7 +97,7 @@ public class Node extends Thread {
         StompHandler.send("/app/node/logout", logoutPacket);
         log.info("Disconnecting from backend...");
         log.debug("Caching information...");
-        cacheInformation();
+        NodeUtils.cacheInformation(this);
     }
 
     public void joinTeam() {
@@ -283,17 +192,17 @@ public class Node extends Thread {
         setConnectionState(ConnectionState.CONNECTING);
         if (!StompHandler.initialiseStomp()) {
             setConnectionState(ConnectionState.CONNECTION_FAILED);
-            getCachedServerInformation();
+            ServerUtils.getCachedServerInformation();
         } else {
             //TODO remove
-            getCachedServerInformation();
+            ServerUtils.getCachedServerInformation();
         }
     }
 
     public void updateSettings(NodeSettings nodeSettings) {
         log.debug("Updating settings...");
         nodeName = nodeSettings.getName();
-        cacheInformation();
+        NodeUtils.cacheInformation(this);
     }
 
     @Override
@@ -306,7 +215,7 @@ public class Node extends Thread {
 
         if (connectionState == ConnectionState.CONNECTED) {
 
-            cacheInformation();
+            NodeUtils.cacheInformation(this);
 
             SystemInfo systemInfo = new SystemInfo();
             NodeHeartbeatPacket heartbeatPacket = new NodeHeartbeatPacket();
