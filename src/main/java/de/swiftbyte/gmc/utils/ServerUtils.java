@@ -19,7 +19,7 @@ import java.util.*;
 @Slf4j
 public class ServerUtils {
 
-    public static String generateAsaServerArgs(List<String> argsType1, List<String> argsType2, List<String> requiredArgs1, List<String> requiredArgs2) {
+    public static String generateAsaServerArgs(List<String> argsType1, List<String> argsType2, List<String> requiredArgs1, String rconPassword, List<String> requiredArgs2) {
 
         StringBuilder preArgs = new StringBuilder();
 
@@ -33,6 +33,8 @@ public class ServerUtils {
                     if(!arg.contains("?")) preArgs.append("?");
                     preArgs.append(arg);
                 });
+
+        preArgs.append("?ServerAdminPassword=\"").append(rconPassword).append("\"");
 
         requiredArgs2.forEach(arg -> {
             preArgs.append(" -").append(arg);
@@ -70,6 +72,7 @@ public class ServerUtils {
                 settings.getLaunchParameters2() == null ? new ArrayList<>() : settings.getLaunchParameters2(),
                 settings.getLaunchParameters3() == null ? new ArrayList<>() : settings.getLaunchParameters3(),
                 requiredLaunchParameters1,
+                settings.getRconPassword(),
                 requiredLaunchParameters2
         );
 
@@ -109,14 +112,13 @@ public class ServerUtils {
                 "QueryPort=" + settings.getQueryPort(),
                 "RCONEnabled=True",
                 "RCONPort=" + settings.getRconPort(),
-                "SessionName='" + (settings.getName() == null ? server.getFriendlyName() : settings.getName()) + "'",
-                "ServerAdminPassword='" + settings.getRconPassword() + "'",
+                "SessionName=\"" + (settings.getName() == null ? server.getFriendlyName() : settings.getName()) + "\"",
                 "ClampItemStats=" + settings.isClampItemStats()
         ));
 
         if(!CommonUtils.isNullOrEmpty(settings.getServerIp())) requiredLaunchParameters1.add("MultiHome=" + settings.getServerIp());
-        if(!CommonUtils.isNullOrEmpty(settings.getServerPassword())) requiredLaunchParameters1.add("ServerPassword='" + settings.getServerPassword()+"'");
-        if(!CommonUtils.isNullOrEmpty(settings.getSpecPassword())) requiredLaunchParameters1.add("SpectatorPassword='" + settings.getSpecPassword()+"'");
+        if(!CommonUtils.isNullOrEmpty(settings.getServerPassword())) requiredLaunchParameters1.add("ServerPassword=\"" + settings.getServerPassword()+"\"");
+        if(!CommonUtils.isNullOrEmpty(settings.getSpecPassword())) requiredLaunchParameters1.add("SpectatorPassword=\"" + settings.getSpecPassword()+"\"");
         return requiredLaunchParameters1;
     }
 
