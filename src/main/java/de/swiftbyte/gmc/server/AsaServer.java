@@ -56,10 +56,13 @@ public class AsaServer extends GameServer {
 
                 Scanner scanner = new Scanner(process.getInputStream());
 
-                while (scanner.hasNextLine()) {}
+                while (scanner.hasNextLine()) {
+                    scanner.nextLine();
+                }
 
-                if (process.exitValue() == 7) {
+                if (process.exitValue() == 7 || process.exitValue() == 0) {
                     log.debug("Server was installed successfully!");
+                    super.setState(GameServerState.OFFLINE);
                 } else {
                     log.error("Server installation returned error code " + process.exitValue() + ".");
                 }
@@ -97,9 +100,9 @@ public class AsaServer extends GameServer {
 
     @Override
     public void start() {
-        super.setState(GameServerState.INITIALIZING);
-
         ServerUtils.killServerProcess(PID);
+
+        super.setState(GameServerState.INITIALIZING);
 
         new Thread(() -> {
             ServerUtils.writeAsaStartupBatch(this);
@@ -187,6 +190,7 @@ public class AsaServer extends GameServer {
     @Override
     public String sendRconCommand(String command) {
         try {
+            if(rconPort == 0 || CommonUtils.isNullOrEmpty(rconPassword)) return null;
             Rcon rcon = new Rcon("127.0.0.1", rconPort, rconPassword.getBytes());
             return rcon.command(command);
         } catch (IOException e) {
