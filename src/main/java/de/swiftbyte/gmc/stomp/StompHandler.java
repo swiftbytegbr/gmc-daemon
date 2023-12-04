@@ -8,6 +8,7 @@ import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.packet.entity.NodeData;
 import de.swiftbyte.gmc.packet.node.NodeLoginPacket;
 import de.swiftbyte.gmc.utils.CommonUtils;
+import de.swiftbyte.gmc.utils.ConnectionState;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
@@ -57,6 +58,13 @@ public class StompHandler {
             log.error("Failed to send packet to " + destination + " because the session is null.");
             return;
         }
+
+        if(!session.isConnected()) {
+            log.error("Failed to send packet to " + destination + " because the session is not connected. Is the backend running?");
+            Node.INSTANCE.setConnectionState(ConnectionState.CONNECTION_FAILED);
+            return;
+        }
+
         session.send(destination, payload);
     }
 
