@@ -211,6 +211,8 @@ public class Node extends Thread {
         log.debug("Updating settings...");
         nodeName = nodeSettings.getName();
 
+        serverPath = nodeSettings.getServerPath();
+
         if(nodeSettings.getAutoBackup() != null) autoBackup = nodeSettings.getAutoBackup();
         else autoBackup = new NodeSettings.AutoBackup();
 
