@@ -90,7 +90,7 @@ public class NodeUtils {
 
             ZipUtil.unpack(new File(TMP_PATH + "steamcmd.zip"), new File(STEAM_CMD_DIR));
             FileUtils.deleteDirectory(tmp);
-
+            log.info("SteamCMD successfully installed!");
         } catch (IOException e) {
             log.error("An error occurred while downloading SteamCMD. Please check your internet connection!", e);
             try {
