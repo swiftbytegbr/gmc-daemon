@@ -1,8 +1,13 @@
 package de.swiftbyte.gmc.utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.packet.entity.NodeData;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
+import org.zeroturnaround.zip.ZipUtil;
 import oshi.SystemInfo;
 
 import java.io.File;
@@ -13,53 +18,19 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 @Slf4j
 public class CommonUtils {
 
     public static boolean isNullOrEmpty(String string) {
         return string == null || string.isEmpty();
-    }
-
-    public static boolean unzip(String zipFilePath, String destDir) {
-        log.debug("Start unzipping '" + zipFilePath + "' to '" + destDir + "'...");
-        File dir = new File(destDir);
-
-        if (!dir.exists()) dir.mkdirs();
-        FileInputStream fis;
-
-        byte[] buffer = new byte[1024];
-        try {
-            fis = new FileInputStream(zipFilePath);
-            ZipInputStream zis = new ZipInputStream(fis);
-            ZipEntry ze = zis.getNextEntry();
-            while (ze != null) {
-                String fileName = ze.getName();
-                File newFile = new File(destDir + File.separator + fileName);
-
-                new File(newFile.getParent()).mkdirs();
-                FileOutputStream fos = new FileOutputStream(newFile);
-                int len;
-                while ((len = zis.read(buffer)) > 0) {
-                    fos.write(buffer, 0, len);
-                }
-                fos.close();
-                zis.closeEntry();
-                ze = zis.getNextEntry();
-            }
-            zis.closeEntry();
-            zis.close();
-            fis.close();
-            return true;
-        } catch (IOException e) {
-            log.error("Unzipping failed: " + e.getMessage());
-            return false;
-        }
-
     }
 
     public static String convertPathSeparator(String path) {
@@ -125,5 +96,11 @@ public class CommonUtils {
         cpu.setThreads(systemInfo.getHardware().getProcessor().getLogicalProcessorCount());
         cpu.setFrequency(systemInfo.getHardware().getProcessor().getMaxFreq());
         return cpu;
+    }
+
+    public static ObjectReader getObjectReader() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModules(new JavaTimeModule());
+        return mapper.reader();
     }
 }

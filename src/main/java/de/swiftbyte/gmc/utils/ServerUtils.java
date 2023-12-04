@@ -2,6 +2,7 @@ package de.swiftbyte.gmc.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.cache.GameServerCacheModel;
 import de.swiftbyte.gmc.packet.entity.ServerSettings;
@@ -159,10 +160,8 @@ public class ServerUtils {
             return;
         }
 
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectReader reader = mapper.reader();
         try {
-            CacheModel cacheModel = reader.readValue(cacheFile, CacheModel.class);
+            CacheModel cacheModel = CommonUtils.getObjectReader().readValue(cacheFile, CacheModel.class);
             HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
 
             gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> new AsaServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings()));

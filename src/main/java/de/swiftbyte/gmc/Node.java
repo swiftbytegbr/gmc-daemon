@@ -3,16 +3,14 @@ package de.swiftbyte.gmc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.packet.entity.NodeSettings;
 import de.swiftbyte.gmc.packet.entity.ResourceUsage;
 import de.swiftbyte.gmc.packet.node.NodeHeartbeatPacket;
 import de.swiftbyte.gmc.packet.node.NodeLogoutPacket;
 import de.swiftbyte.gmc.stomp.StompHandler;
-import de.swiftbyte.gmc.utils.ConfigUtils;
-import de.swiftbyte.gmc.utils.ConnectionState;
-import de.swiftbyte.gmc.utils.NodeUtils;
-import de.swiftbyte.gmc.utils.ServerUtils;
+import de.swiftbyte.gmc.utils.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +18,7 @@ import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.commons.io.FileUtils;
 import org.jline.terminal.impl.DumbTerminal;
 import org.springframework.shell.component.context.ComponentContext;
 import oshi.SystemInfo;
@@ -60,6 +59,7 @@ public class Node extends Thread {
         serverPath = "servers";
 
         getCachedNodeInformation();
+        BackupService.initialiseBackupService();
         NodeUtils.checkInstallation();
     }
 
@@ -77,14 +77,13 @@ public class Node extends Thread {
             return;
         }
 
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectReader reader = mapper.reader();
         try {
-            CacheModel cacheModel = reader.readValue(new File("./cache.json"), CacheModel.class);
+            CacheModel cacheModel = CommonUtils.getObjectReader().readValue(new File("./cache.json"), CacheModel.class);
             nodeName = cacheModel.getNodeName();
             teamName = cacheModel.getTeamName();
             serverPath = cacheModel.getServerPath();
             log.debug("Got cached information.");
+
         } catch (IOException e) {
             log.error("An unknown error occurred while getting cached information.", e);
         }
@@ -96,6 +95,12 @@ public class Node extends Thread {
         log.info("Sending shutdown packet...");
         StompHandler.send("/app/node/logout", logoutPacket);
         log.info("Disconnecting from backend...");
+        log.debug("Deleting temporary files...");
+        try {
+            FileUtils.deleteDirectory(new File(NodeUtils.TMP_PATH));
+        } catch (IOException e) {
+            log.warn("An error occurred while deleting the temporary directory.");
+        }
         log.debug("Caching information...");
         NodeUtils.cacheInformation(this);
     }

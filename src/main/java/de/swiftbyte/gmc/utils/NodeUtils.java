@@ -3,6 +3,7 @@ package de.swiftbyte.gmc.utils;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.swiftbyte.gmc.Application;
 import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.cache.CacheModel;
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.shell.component.context.ComponentContext;
 import org.springframework.shell.component.flow.ComponentFlow;
+import org.zeroturnaround.zip.ZipUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -86,12 +88,8 @@ public class NodeUtils {
                     new URL(STEAM_CMD_DOWNLOAD_URL),
                     new File(TMP_PATH + "steamcmd.zip"));
 
-            if (!CommonUtils.unzip(TMP_PATH + "steamcmd.zip", STEAM_CMD_DIR)) {
-                FileUtils.deleteDirectory(tmp);
-                System.exit(1);
-            } else {
-                FileUtils.deleteDirectory(tmp);
-            }
+            ZipUtil.unpack(new File(TMP_PATH + "steamcmd.zip"), new File(STEAM_CMD_DIR));
+            FileUtils.deleteDirectory(tmp);
 
         } catch (IOException e) {
             log.error("An error occurred while downloading SteamCMD. Please check your internet connection!", e);
@@ -125,6 +123,7 @@ public class NodeUtils {
                 .build();
 
         ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
         ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
         try {
             File file = new File("./cache.json");
