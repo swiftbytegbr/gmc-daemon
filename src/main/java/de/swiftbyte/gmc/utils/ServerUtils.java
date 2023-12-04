@@ -39,7 +39,9 @@ public class ServerUtils {
 
         requiredArgs2.forEach(arg -> preArgs.append(" -").append(arg));
 
-        argsType2.forEach(arg -> {
+        argsType2.stream()
+                .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]))))
+                .forEach(arg -> {
             if (!arg.contains("-")) preArgs.append(" -");
             else preArgs.append(" ");
             preArgs.append(arg);
@@ -126,7 +128,12 @@ public class ServerUtils {
     }
 
     private static List<String> getRequiredLaunchArgs2(ServerSettings settings) {
-        List<String> requiredLaunchParameters1 = new ArrayList<>();
+        List<String> requiredLaunchParameters1 = new ArrayList<>(List.of(
+                "game",
+                "server",
+                "log",
+                "oldconsole"
+        ));
 
         if (settings.getMaxPlayers() != 0)
             requiredLaunchParameters1.add("WinLiveMaxPlayers=" + settings.getMaxPlayers());
