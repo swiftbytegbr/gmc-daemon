@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import de.swiftbyte.gmc.Application;
 import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.packet.entity.Backup;
@@ -29,12 +30,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class BackupService {
 
     private static HashMap<String, Backup> backups = new HashMap<>();
-
+    private static ScheduledFuture<?> backupScheduler;
 
     public static void initialiseBackupService() {
 
@@ -59,7 +62,24 @@ public class BackupService {
             log.error("An unknown error occurred while loading backups.", e);
         }
 
+        updateAutoBackupSettings();
+    }
 
+    public static void updateAutoBackupSettings() {
+        if(backupScheduler != null) {
+            backupScheduler.cancel(false);
+        }
+
+        log.debug(String.valueOf(Node.INSTANCE.getAutoBackup().isEnabled()));
+        if(Node.INSTANCE.getAutoBackup().isEnabled() && Node.INSTANCE.getAutoBackup().getIntervallMinutes() > 0) {
+            log.debug("Starting backup scheduler...");
+
+            backupScheduler = Application.getExecutor().scheduleAtFixedRate(() -> {
+                log.debug("Starting auto backup...");
+                BackupService.backupAllServers(true);
+            }, 0, Node.INSTANCE.getAutoBackup().getIntervallMinutes(), TimeUnit.MINUTES);
+
+        }
     }
 
     private static void saveBackupCache() {

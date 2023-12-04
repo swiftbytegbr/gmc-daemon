@@ -119,6 +119,7 @@ public class NodeUtils {
                 .nodeName(node.getNodeName())
                 .teamName(node.getTeamName())
                 .serverPath(node.getServerPath())
+                .autoBackup(node.getAutoBackup())
                 .gameServerCacheModelHashMap(gameServers)
                 .build();
 

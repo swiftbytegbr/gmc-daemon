@@ -17,7 +17,7 @@ public class CreateServerPacketConsumer implements StompPacketConsumer<ServerCre
             AsaServer server = new AsaServer(packet.getServerId(), packet.getServerName(), packet.getDefaultSettings());
 
             //TODO enable
-            //server.installServer();
+            server.install();
         } else {
             log.error("Game " + packet.getGame() + " is not supported!");
         }

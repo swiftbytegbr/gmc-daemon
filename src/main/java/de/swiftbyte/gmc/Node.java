@@ -44,6 +44,8 @@ public class Node extends Thread {
     @Setter
     private String serverPath;
 
+    private NodeSettings.AutoBackup autoBackup;
+
     private String secret;
     private String nodeId;
 
@@ -82,6 +84,10 @@ public class Node extends Thread {
             nodeName = cacheModel.getNodeName();
             teamName = cacheModel.getTeamName();
             serverPath = cacheModel.getServerPath();
+
+            if(cacheModel.getAutoBackup() != null) autoBackup = cacheModel.getAutoBackup();
+            else autoBackup = new NodeSettings.AutoBackup();
+
             log.debug("Got cached information.");
 
         } catch (IOException e) {
@@ -207,7 +213,12 @@ public class Node extends Thread {
     public void updateSettings(NodeSettings nodeSettings) {
         log.debug("Updating settings...");
         nodeName = nodeSettings.getName();
+
+        if(nodeSettings.getAutoBackup() != null) autoBackup = nodeSettings.getAutoBackup();
+        else autoBackup = new NodeSettings.AutoBackup();
+
         NodeUtils.cacheInformation(this);
+        BackupService.updateAutoBackupSettings();
     }
 
     @Override
