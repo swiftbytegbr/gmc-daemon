@@ -27,7 +27,7 @@ public class ServerManagementCommands {
         return "The specified game type does not exist!";
     }
 
-    @Command(command = "server list", description = "List all servers.", group = "Daemon Management", hidden = true)
+    @Command(command = "server list", description = "List all servers.", group = "Daemon Management")
     public String listServerCommand() {
 
         StringBuilder list = new StringBuilder();
