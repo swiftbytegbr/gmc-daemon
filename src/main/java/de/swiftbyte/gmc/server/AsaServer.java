@@ -47,12 +47,12 @@ public class AsaServer extends GameServer {
     public void install() {
         super.setState(GameServerState.CREATING);
         new Thread(() -> {
-            String installCommand = "\"" + CommonUtils.convertPathSeparator(NodeUtils.getSteamCmdPath().toAbsolutePath()) + "\""
+            String installCommand = "cmd /c start \"steamcmd\" \"" + CommonUtils.convertPathSeparator(NodeUtils.getSteamCmdPath().toAbsolutePath()) + "\""
                     + " +force_install_dir \"" + CommonUtils.convertPathSeparator(installDir.toAbsolutePath()) + "\""
                     + " +login anonymous +app_update " + STEAM_CMD_ID + " validate +quit";
             log.debug("Starting server installation with command " + installCommand);
             try {
-                Process process = Runtime.getRuntime().exec(installCommand.replace("/", "\\"));
+                Process process = Runtime.getRuntime().exec(installCommand);
 
                 Scanner scanner = new Scanner(process.getInputStream());
 
