@@ -7,7 +7,7 @@ import org.springframework.shell.command.annotation.Command;
 @Slf4j
 public class DaemonStopCommand {
 
-    @Command(command = "stop", alias = {"exit", "doexit"}, description = "Stop the daemon.", group = "Daemon Management")
+    @Command(command = "stop daemon", description = "Stop the daemon.", group = "Daemon Management")
     public void stopCommand() {
         System.exit(0);
     }
