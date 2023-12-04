@@ -114,6 +114,12 @@ public class AsaServer extends GameServer {
 
         super.setState(GameServerState.INITIALIZING);
 
+        if(!Files.exists(installDir)) {
+            super.setState(GameServerState.OFFLINE);
+            install();
+            return;
+        }
+
         new Thread(() -> {
             ServerUtils.writeAsaStartupBatch(this);
             try {
