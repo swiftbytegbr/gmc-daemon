@@ -70,7 +70,6 @@ public class BackupService {
             backupScheduler.cancel(false);
         }
 
-        log.debug(String.valueOf(Node.INSTANCE.getAutoBackup().isEnabled()));
         if(Node.INSTANCE.getAutoBackup().isEnabled() && Node.INSTANCE.getAutoBackup().getIntervallMinutes() > 0) {
             log.debug("Starting backup scheduler...");
 
