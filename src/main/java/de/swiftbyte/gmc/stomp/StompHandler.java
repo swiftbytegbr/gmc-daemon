@@ -1,5 +1,7 @@
 package de.swiftbyte.gmc.stomp;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.management.OperatingSystemMXBean;
 import de.swiftbyte.gmc.Application;
 import de.swiftbyte.gmc.Node;
@@ -35,7 +37,10 @@ public class StompHandler {
         headers.add("Node-Secret", Node.INSTANCE.getSecret());
 
 
-        stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+        MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+        converter.setObjectMapper(new ObjectMapper().registerModule(new JavaTimeModule()));
+
+        stompClient.setMessageConverter(converter);
         try {
             session = stompClient.connectAsync(Application.BACKEND_WS_URL, headers, new StompSessionHandler()).get();
             scanForPacketListeners();

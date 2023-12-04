@@ -8,7 +8,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.packet.entity.Backup;
+import de.swiftbyte.gmc.packet.server.ServerBackupResponsePacket;
 import de.swiftbyte.gmc.server.GameServer;
+import de.swiftbyte.gmc.stomp.StompHandler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -74,10 +76,14 @@ public class BackupService {
     }
 
     public static void backupServer(String serverId, boolean autoBackup) {
-        backupServer(GameServer.getServerById(serverId), autoBackup);
+        backupServer(GameServer.getServerById(serverId), autoBackup, null);
     }
 
     public static void backupServer(GameServer server, boolean autoBackup) {
+        backupServer(server, autoBackup, null);
+    }
+
+    public static void backupServer(GameServer server, boolean autoBackup, String name) {
 
         if(server == null) {
             log.error("Could not backup server because server id was not found!");
@@ -91,7 +97,8 @@ public class BackupService {
         backup.setBackupId("gmc-back-" + UUID.randomUUID());
         backup.setCreatedAt(Instant.now());
         backup.setServerId(server.getServerId());
-        backup.setName(DateTimeFormatter.ofPattern("yyyy.MM.dd_HH-mm-ss").withZone(ZoneId.systemDefault()).format(LocalDateTime.now()) + "_" + server.getSettings().getMap());
+        if(CommonUtils.isNullOrEmpty(name)) backup.setName(DateTimeFormatter.ofPattern("yyyy.MM.dd_HH-mm-ss").withZone(ZoneId.systemDefault()).format(LocalDateTime.now()) + "_" + server.getSettings().getMap());
+        else backup.setName(name);
         backup.setAutoBackup(autoBackup);
 
         File tempBackupLocation = new File(NodeUtils.TMP_PATH + server.getServerId() + "/" + backup.getBackupId());
@@ -129,6 +136,11 @@ public class BackupService {
             log.debug("Gathering backup information...");
             backup.setSize(backupLocation.length());
             backups.put(backup.getBackupId(), backup);
+
+            ServerBackupResponsePacket responsePacket = new ServerBackupResponsePacket();
+            responsePacket.setBackup(backup);
+            responsePacket.setServerId(server.getServerId());
+            StompHandler.send("/app/server/backup", responsePacket);
 
             log.debug("Cleaning up temporary backup location...");
             FileUtils.deleteDirectory(tempBackupLocation);

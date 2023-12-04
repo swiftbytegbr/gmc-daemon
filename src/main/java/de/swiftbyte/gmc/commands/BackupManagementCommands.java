@@ -17,13 +17,13 @@ import java.util.List;
 public class BackupManagementCommands {
 
     @Command(command = "backup create", description = "Create a backup.", group = "Backup Management")
-    public String createBackupCommand(@Option(description = "The server", required = true) String serverId) {
+    public String createBackupCommand(@Option(description = "The server", required = true) String serverId, @Option(description = "The backup name", required = false) String backupName) {
 
         GameServer server = GameServer.getServerById(serverId);
 
         if (server != null) {
 
-            BackupService.backupServer(server, false);
+            BackupService.backupServer(server, false, backupName);
 
         } else {
             return "Server with id " + serverId + " not found!";
