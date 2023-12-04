@@ -36,7 +36,7 @@ public class AsaServer extends GameServer {
         rconPort = settings.getRconPort();
 
         PID = CommonUtils.getProcessPID(String.valueOf(installDir));
-        if(PID == null && settings.isStartOnBoot()) start();
+        if (PID == null && settings.isStartOnBoot()) start();
         else if (PID != null) super.setState(GameServerState.ONLINE);
     }
 
@@ -49,7 +49,7 @@ public class AsaServer extends GameServer {
         rconPort = settings.getRconPort();
 
         PID = CommonUtils.getProcessPID(String.valueOf(installDir));
-        if(PID == null && settings.isStartOnBoot()) start();
+        if (PID == null && settings.isStartOnBoot()) start();
         else if (PID != null) super.setState(GameServerState.ONLINE);
     }
 
@@ -114,7 +114,7 @@ public class AsaServer extends GameServer {
 
         super.setState(GameServerState.INITIALIZING);
 
-        if(!Files.exists(installDir)) {
+        if (!Files.exists(installDir)) {
             super.setState(GameServerState.OFFLINE);
             install();
             return;

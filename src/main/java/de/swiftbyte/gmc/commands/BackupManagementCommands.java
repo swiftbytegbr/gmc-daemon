@@ -1,15 +1,12 @@
 package de.swiftbyte.gmc.commands;
 
 import de.swiftbyte.gmc.packet.entity.Backup;
-import de.swiftbyte.gmc.server.AsaServer;
 import de.swiftbyte.gmc.server.GameServer;
-import de.swiftbyte.gmc.stomp.consumers.server.RestartServerPacketConsumer;
 import de.swiftbyte.gmc.utils.BackupService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Command
@@ -37,7 +34,7 @@ public class BackupManagementCommands {
 
         List<Backup> backupList;
 
-        if(serverId == null) {
+        if (serverId == null) {
             backupList = BackupService.getAllBackups();
         } else {
             backupList = BackupService.getBackupsByServer(serverId);

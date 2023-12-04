@@ -1,6 +1,5 @@
 package de.swiftbyte.gmc.cache;
 
-import de.swiftbyte.gmc.packet.entity.Backup;
 import de.swiftbyte.gmc.packet.entity.NodeSettings;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

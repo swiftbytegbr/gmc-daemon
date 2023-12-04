@@ -3,7 +3,6 @@ package de.swiftbyte.gmc.stomp.consumers.node;
 import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.packet.node.NodeLoginAckPacket;
 import de.swiftbyte.gmc.server.AsaServer;
-import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.utils.ConnectionState;
@@ -32,7 +31,7 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
 
             String serverInstallDir = ServerUtils.getCachedServerInstallDir(gameServer.getId());
 
-            if(serverInstallDir == null) {
+            if (serverInstallDir == null) {
                 //TODO change to real server name
                 new AsaServer(gameServer.getId(), gameServer.getSettings().getName(), gameServer.getSettings());
             } else {

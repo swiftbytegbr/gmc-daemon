@@ -7,13 +7,10 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.swiftbyte.gmc.Application;
 import de.swiftbyte.gmc.Node;
-import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.packet.entity.Backup;
 import de.swiftbyte.gmc.packet.server.ServerBackupResponsePacket;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompHandler;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
@@ -51,7 +48,8 @@ public class BackupService {
         }
 
         try {
-            TypeReference<HashMap<String, Backup>> typeRef = new TypeReference<>() {};
+            TypeReference<HashMap<String, Backup>> typeRef = new TypeReference<>() {
+            };
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModules(new JavaTimeModule());
             backups = mapper.readValue(new File("./backups.json"), typeRef);
@@ -66,11 +64,11 @@ public class BackupService {
     }
 
     public static void updateAutoBackupSettings() {
-        if(backupScheduler != null) {
+        if (backupScheduler != null) {
             backupScheduler.cancel(false);
         }
 
-        if(Node.INSTANCE.getAutoBackup().isEnabled() && Node.INSTANCE.getAutoBackup().getIntervallMinutes() > 0) {
+        if (Node.INSTANCE.getAutoBackup().isEnabled() && Node.INSTANCE.getAutoBackup().getIntervallMinutes() > 0) {
             log.debug("Starting backup scheduler...");
 
             backupScheduler = Application.getExecutor().scheduleAtFixedRate(() -> {
@@ -104,7 +102,7 @@ public class BackupService {
 
     public static void backupServer(GameServer server, boolean autoBackup, String name) {
 
-        if(server == null) {
+        if (server == null) {
             log.error("Could not backup server because server id was not found!");
             return;
         }
@@ -112,11 +110,12 @@ public class BackupService {
         log.debug("Backing up server '" + server.getFriendlyName() + "'...");
 
         Backup backup = new Backup();
-        
+
         backup.setBackupId("gmc-back-" + UUID.randomUUID());
         backup.setCreatedAt(Instant.now());
         backup.setServerId(server.getServerId());
-        if(CommonUtils.isNullOrEmpty(name)) backup.setName(DateTimeFormatter.ofPattern("yyyy.MM.dd_HH-mm-ss").withZone(ZoneId.systemDefault()).format(LocalDateTime.now()) + "_" + server.getSettings().getMap());
+        if (CommonUtils.isNullOrEmpty(name))
+            backup.setName(DateTimeFormatter.ofPattern("yyyy.MM.dd_HH-mm-ss").withZone(ZoneId.systemDefault()).format(LocalDateTime.now()) + "_" + server.getSettings().getMap());
         else backup.setName(name);
         backup.setAutoBackup(autoBackup);
 
@@ -126,15 +125,15 @@ public class BackupService {
 
         log.debug("Creating backup directories...");
 
-        if(!tempBackupLocation.exists()) {
+        if (!tempBackupLocation.exists()) {
             tempBackupLocation.mkdirs();
         }
 
-        if(!backupLocation.getParentFile().exists()) {
+        if (!backupLocation.getParentFile().exists()) {
             backupLocation.getParentFile().mkdirs();
         }
 
-        if(!saveLocation.exists()) {
+        if (!saveLocation.exists()) {
             log.error("Could not backup server because save location does not exist!");
             return;
         }

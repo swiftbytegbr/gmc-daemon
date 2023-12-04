@@ -1,8 +1,5 @@
 package de.swiftbyte.gmc.utils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.cache.GameServerCacheModel;
 import de.swiftbyte.gmc.packet.entity.ServerSettings;
@@ -42,10 +39,10 @@ public class ServerUtils {
         argsType2.stream()
                 .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
-            if (!arg.contains("-")) preArgs.append(" -");
-            else preArgs.append(" ");
-            preArgs.append(arg);
-        });
+                    if (!arg.contains("-")) preArgs.append(" -");
+                    else preArgs.append(" ");
+                    preArgs.append(arg);
+                });
 
         return preArgs.toString();
     }
@@ -192,7 +189,7 @@ public class ServerUtils {
             HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
 
             for (Map.Entry<String, GameServerCacheModel> entry : gameServerCacheModelHashMap.entrySet()) {
-                if(entry.getKey().equals(id)) return entry.getValue().getInstallDir();
+                if (entry.getKey().equals(id)) return entry.getValue().getInstallDir();
             }
 
         } catch (IOException e) {

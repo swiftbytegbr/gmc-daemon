@@ -59,7 +59,7 @@ public class StompHandler {
             return;
         }
 
-        if(!session.isConnected()) {
+        if (!session.isConnected()) {
             log.error("Failed to send packet to " + destination + " because the session is not connected. Is the backend running?");
             Node.INSTANCE.setConnectionState(ConnectionState.CONNECTION_FAILED);
             return;

@@ -2,8 +2,6 @@ package de.swiftbyte.gmc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.packet.entity.NodeSettings;
 import de.swiftbyte.gmc.packet.entity.ResourceUsage;
@@ -85,7 +83,7 @@ public class Node extends Thread {
             teamName = cacheModel.getTeamName();
             serverPath = cacheModel.getServerPath();
 
-            if(cacheModel.getAutoBackup() != null) autoBackup = cacheModel.getAutoBackup();
+            if (cacheModel.getAutoBackup() != null) autoBackup = cacheModel.getAutoBackup();
             else autoBackup = new NodeSettings.AutoBackup();
 
             log.debug("Got cached information.");
@@ -213,7 +211,7 @@ public class Node extends Thread {
 
         serverPath = nodeSettings.getServerPath();
 
-        if(nodeSettings.getAutoBackup() != null) autoBackup = nodeSettings.getAutoBackup();
+        if (nodeSettings.getAutoBackup() != null) autoBackup = nodeSettings.getAutoBackup();
         else autoBackup = new NodeSettings.AutoBackup();
 
         NodeUtils.cacheInformation(this);
