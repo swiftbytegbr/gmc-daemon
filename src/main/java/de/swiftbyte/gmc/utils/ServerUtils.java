@@ -178,4 +178,27 @@ public class ServerUtils {
         }
     }
 
+    public static String getCachedServerInstallDir(String id) {
+
+        File cacheFile = new File("./cache.json");
+
+        if (!cacheFile.exists()) {
+            log.debug("No cache file found. Skipping...");
+            return null;
+        }
+
+        try {
+            CacheModel cacheModel = CommonUtils.getObjectReader().readValue(cacheFile, CacheModel.class);
+            HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
+
+            for (Map.Entry<String, GameServerCacheModel> entry : gameServerCacheModelHashMap.entrySet()) {
+                if(entry.getKey().equals(id)) return entry.getValue().getInstallDir();
+            }
+
+        } catch (IOException e) {
+            log.error("An unknown error occurred while getting cached information.", e);
+        }
+        return null;
+    }
+
 }

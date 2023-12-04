@@ -204,9 +204,6 @@ public class Node extends Thread {
         if (!StompHandler.initialiseStomp()) {
             setConnectionState(ConnectionState.CONNECTION_FAILED);
             ServerUtils.getCachedServerInformation();
-        } else {
-            //TODO remove
-            ServerUtils.getCachedServerInformation();
         }
     }
 
