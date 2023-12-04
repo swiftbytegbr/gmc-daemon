@@ -32,7 +32,12 @@ public class AsaServer extends GameServer {
 
         super(id, friendlyName, settings);
 
-        if (settings.isStartOnBoot()) start();
+        rconPassword = settings.getRconPassword();
+        rconPort = settings.getRconPort();
+
+        PID = CommonUtils.getProcessPID(String.valueOf(installDir));
+        if(PID == null && settings.isStartOnBoot()) start();
+        else if (PID != null) super.setState(GameServerState.ONLINE);
     }
 
     public AsaServer(String id, String friendlyName, Path installDir, ServerSettings settings) {
@@ -40,7 +45,12 @@ public class AsaServer extends GameServer {
         super(id, friendlyName, settings);
         this.installDir = installDir;
 
-        if (settings.isStartOnBoot()) start();
+        rconPassword = settings.getRconPassword();
+        rconPort = settings.getRconPort();
+
+        PID = CommonUtils.getProcessPID(String.valueOf(installDir));
+        if(PID == null && settings.isStartOnBoot()) start();
+        else if (PID != null) super.setState(GameServerState.ONLINE);
     }
 
     @Override
