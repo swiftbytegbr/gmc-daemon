@@ -119,7 +119,7 @@ public class BackupService {
 
         backup.setBackupId("gmc-back-" + UUID.randomUUID());
         backup.setCreatedAt(Instant.now());
-        backup.setExpiresAt(backup.getCreatedAt().plus(Node.INSTANCE.getAutoBackup().getDeleteBackupsAfterDays(), ChronoUnit.DAYS));
+        backup.setExpiresAt(backup.getCreatedAt().plus((int) (Node.INSTANCE.getAutoBackup().getDeleteBackupsAfterDays() * 24 * 60), ChronoUnit.MINUTES));
         backup.setServerId(server.getServerId());
         if (CommonUtils.isNullOrEmpty(name))
             backup.setName(DateTimeFormatter.ofPattern("yyyy.MM.dd_HH-mm-ss").withZone(ZoneId.systemDefault()).format(LocalDateTime.now()) + "_" + server.getSettings().getMap());
@@ -211,13 +211,42 @@ public class BackupService {
         });
     }
 
-    public static void backupAllServers(boolean autoBackup) {
+    public static void rollbackBackup(String backupId, boolean playerData) {
 
-        GameServer.getAllServers().forEach((server) -> backupServer(server, autoBackup));
+        log.debug("Rolling back backup '" + backupId + "'...");
+
+        Backup backup = backups.get(backupId);
+        if (backup == null) {
+            log.error("Could not delete backup because backup id was not found!");
+            return;
+        }
+
+        GameServer server = GameServer.getServerById(backup.getServerId());
+        if (server == null) {
+            log.error("Could not delete backup because server id was not found!");
+            return;
+        }
+
+        File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
+        File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks/" + server.getSettings().getMap());
+
+        if (!backupLocation.exists()) {
+            log.error("Could not rollback backup because backup location does not exist!");
+            return;
+        }
+
+        if (!saveLocation.exists()) {
+            log.error("Could not rollback backup because server save location does not exist!");
+            return;
+        }
+
+
 
     }
 
-    public static void rollbackBackup(String backupId) {
+    public static void backupAllServers(boolean autoBackup) {
+
+        GameServer.getAllServers().forEach((server) -> backupServer(server, autoBackup));
 
     }
 
