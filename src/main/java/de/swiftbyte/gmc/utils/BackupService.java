@@ -23,6 +23,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -117,6 +119,7 @@ public class BackupService {
 
         backup.setBackupId("gmc-back-" + UUID.randomUUID());
         backup.setCreatedAt(Instant.now());
+        backup.setExpiresAt(backup.getCreatedAt().plus(Node.INSTANCE.getAutoBackup().getDeleteBackupsAfterDays(), ChronoUnit.DAYS));
         backup.setServerId(server.getServerId());
         if (CommonUtils.isNullOrEmpty(name))
             backup.setName(DateTimeFormatter.ofPattern("yyyy.MM.dd_HH-mm-ss").withZone(ZoneId.systemDefault()).format(LocalDateTime.now()) + "_" + server.getSettings().getMap());
@@ -173,6 +176,41 @@ public class BackupService {
         }
     }
 
+    public static void deleteBackup(String backupId) {
+        Backup backup = backups.get(backupId);
+
+        if (backup == null) {
+            log.error("Could not delete backup because backup id was not found!");
+            return;
+        }
+
+        log.debug("Deleting backup '" + backup.getName() + "'...");
+
+        File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + GameServer.getServerById(backup.getServerId()).getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
+
+        if (!backupLocation.exists()) {
+            log.error("Could not delete backup because backup location does not exist!");
+            return;
+        }
+
+        try {
+            FileUtils.forceDelete(backupLocation);
+            backups.remove(backupId);
+            saveBackupCache();
+        } catch (IOException e) {
+            log.error("An unknown error occurred while deleting backup '" + backup.getName() + "'.", e);
+        }
+    }
+
+    public static void deleteAllExpiredBackups() {
+        List<Backup> expiredBackups = backups.values().stream().filter(backup -> backup.getExpiresAt().isBefore(Instant.now())).toList();
+
+        expiredBackups.forEach(backup -> {
+            log.debug("Deleting expired backup '" + backup.getName() + "'...");
+            deleteBackup(backup.getBackupId());
+        });
+    }
+
     public static void backupAllServers(boolean autoBackup) {
 
         GameServer.getAllServers().forEach((server) -> backupServer(server, autoBackup));
@@ -197,5 +235,9 @@ public class BackupService {
 
     public static List<Backup> getBackupsByServer(GameServer server) {
         return backups.values().stream().filter(backup -> backup.getServerId().equals(server.getServerId())).toList();
+    }
+
+    public static void deleteAllBackupsByServer(GameServer server) {
+        getBackupsByServer(server).forEach(backup -> deleteBackup(backup.getBackupId()));
     }
 }

@@ -17,6 +17,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jline.terminal.impl.DumbTerminal;
 import org.springframework.shell.component.context.ComponentContext;
 import oshi.SystemInfo;
@@ -230,24 +231,32 @@ public class Node extends Thread {
 
             NodeUtils.cacheInformation(this);
 
-            SystemInfo systemInfo = new SystemInfo();
-            NodeHeartbeatPacket heartbeatPacket = new NodeHeartbeatPacket();
-
-            ResourceUsage resourceUsage = new ResourceUsage();
-            resourceUsage.setRamBytes((systemInfo.getHardware().getMemory().getTotal() - systemInfo.getHardware().getMemory().getAvailable()) / (1024 * 1024));
-            resourceUsage.setCpuPercentage(-1);
-            resourceUsage.setCpuPercentage(-1);
-            resourceUsage.setDiskBytes(-1);
-            heartbeatPacket.setResourceUsage(resourceUsage);
-
-            heartbeatPacket.setGameServers(new ArrayList<>());
+            NodeHeartbeatPacket heartbeatPacket = getNodeHeartbeatPacket();
 
             StompHandler.send("/app/node/heartbeat", heartbeatPacket);
+
+            BackupService.deleteAllExpiredBackups();
         } else if (connectionState == ConnectionState.CONNECTION_FAILED) {
             log.info("Reconnecting to backend...");
             connect();
         }
     };
+
+    @NotNull
+    private static NodeHeartbeatPacket getNodeHeartbeatPacket() {
+        SystemInfo systemInfo = new SystemInfo();
+        NodeHeartbeatPacket heartbeatPacket = new NodeHeartbeatPacket();
+
+        ResourceUsage resourceUsage = new ResourceUsage();
+        resourceUsage.setRamBytes((systemInfo.getHardware().getMemory().getTotal() - systemInfo.getHardware().getMemory().getAvailable()) / (1024 * 1024));
+        resourceUsage.setCpuPercentage(-1);
+        resourceUsage.setCpuPercentage(-1);
+        resourceUsage.setDiskBytes(-1);
+        heartbeatPacket.setResourceUsage(resourceUsage);
+
+        heartbeatPacket.setGameServers(new ArrayList<>());
+        return heartbeatPacket;
+    }
 
     public void setConnectionState(ConnectionState connectionState) {
         log.debug("Connection state changed from " + this.connectionState + " to " + connectionState.name());
