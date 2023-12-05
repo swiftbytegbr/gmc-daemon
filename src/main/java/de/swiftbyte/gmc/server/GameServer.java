@@ -6,6 +6,7 @@ import de.swiftbyte.gmc.packet.entity.GameServerState;
 import de.swiftbyte.gmc.packet.entity.ServerSettings;
 import de.swiftbyte.gmc.packet.server.ServerStatePacket;
 import de.swiftbyte.gmc.stomp.StompHandler;
+import de.swiftbyte.gmc.utils.AsyncAction;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -58,21 +59,17 @@ public abstract class GameServer {
         setState(GameServerState.OFFLINE);
     }
 
-    public abstract void install();
+    public abstract AsyncAction<Boolean> install();
 
-    public abstract void delete();
+    public abstract AsyncAction<Boolean> delete();
 
-    public abstract void start();
+    public abstract AsyncAction<Boolean> start();
 
-    public abstract void stop();
+    public abstract AsyncAction<Boolean> stop();
 
-    public void restart() {
-        stop();
-        start();
+    public AsyncAction<Boolean> restart() {
+        return () -> (stop().complete() && start().complete());
     }
-
-
-    public abstract void backup();
 
     public abstract void update();
 

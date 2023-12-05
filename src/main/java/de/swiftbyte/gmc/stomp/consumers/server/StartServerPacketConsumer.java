@@ -16,7 +16,7 @@ public class StartServerPacketConsumer implements StompPacketConsumer<ServerStar
         GameServer server = GameServer.getServerById(packet.getServerId());
 
         if (server != null) {
-            server.start();
+            server.start().queue();
         } else {
             log.error("Server with id " + packet.getServerId() + " not found!");
         }

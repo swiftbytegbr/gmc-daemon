@@ -19,7 +19,7 @@ public class ServerManagementCommands {
 
             AsaServer server = new AsaServer(id, name, new ServerSettings());
 
-            if (install) server.install();
+            if (install) server.install().queue();
 
             return "The specified server was installed!";
         }
@@ -44,7 +44,7 @@ public class ServerManagementCommands {
 
         GameServer server = GameServer.getServerById(id);
 
-        server.start();
+        server.start().queue();
 
         return "Server is starting...";
     }
@@ -54,7 +54,7 @@ public class ServerManagementCommands {
 
         GameServer server = GameServer.getServerById(id);
 
-        server.stop();
+        server.stop().queue();
 
         return "Server is stopping...";
     }
@@ -64,7 +64,7 @@ public class ServerManagementCommands {
 
         GameServer server = GameServer.getServerById(id);
 
-        server.restart();
+        server.restart().queue();
 
         return "Server is restarting...";
     }

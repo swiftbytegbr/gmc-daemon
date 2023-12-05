@@ -5,10 +5,8 @@ import de.swiftbyte.gmc.packet.entity.GameServerState;
 import de.swiftbyte.gmc.packet.entity.ServerSettings;
 import de.swiftbyte.gmc.packet.server.ServerDeletePacket;
 import de.swiftbyte.gmc.stomp.StompHandler;
-import de.swiftbyte.gmc.utils.BackupService;
-import de.swiftbyte.gmc.utils.CommonUtils;
-import de.swiftbyte.gmc.utils.NodeUtils;
-import de.swiftbyte.gmc.utils.ServerUtils;
+import de.swiftbyte.gmc.utils.*;
+import de.swiftbyte.gmc.utils.AsyncAction;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import xyz.astroark.Rcon;
@@ -37,7 +35,7 @@ public class AsaServer extends GameServer {
         rconPort = settings.getRconPort();
 
         PID = CommonUtils.getProcessPID(String.valueOf(installDir));
-        if (PID == null && settings.isStartOnBoot()) start();
+        if (PID == null && settings.isStartOnBoot()) start().queue();
         else if (PID != null) super.setState(GameServerState.ONLINE);
     }
 
@@ -50,14 +48,14 @@ public class AsaServer extends GameServer {
         rconPort = settings.getRconPort();
 
         PID = CommonUtils.getProcessPID(String.valueOf(installDir));
-        if (PID == null && settings.isStartOnBoot()) start();
+        if (PID == null && settings.isStartOnBoot()) start().queue();
         else if (PID != null) super.setState(GameServerState.ONLINE);
     }
 
     @Override
-    public void install() {
-        super.setState(GameServerState.CREATING);
-        new Thread(() -> {
+    public AsyncAction<Boolean> install() {
+        return () -> {
+            super.setState(GameServerState.CREATING);
             String installCommand = "cmd /c start \"steamcmd\" \"" + CommonUtils.convertPathSeparator(NodeUtils.getSteamCmdPath().toAbsolutePath()) + "\""
                     + " +force_install_dir \"" + CommonUtils.convertPathSeparator(installDir.toAbsolutePath()) + "\""
                     + " +login anonymous +app_update " + STEAM_CMD_ID + " validate +quit";
@@ -76,22 +74,23 @@ public class AsaServer extends GameServer {
                     super.setState(GameServerState.OFFLINE);
                 } else {
                     log.error("Server installation returned error code " + process.exitValue() + ".");
+                    return false;
                 }
 
             } catch (IOException e) {
                 log.error("An unknown exception occurred while installing the server '" + friendlyName + "'.", e);
+                return false;
             }
-        }).start();
+            return true;
+        };
     }
 
     @Override
-    public void delete() {
-        new Thread(() -> {
+    public AsyncAction<Boolean> delete() {
+        return () -> {
             try {
                 if (state != GameServerState.OFFLINE && state != GameServerState.CREATING) {
-                    stop();
-                    while (state != GameServerState.OFFLINE) {
-                    }
+                    stop().complete();
                 }
                 Files.delete(installDir);
                 BackupService.deleteAllBackupsByServer(this);
@@ -105,47 +104,55 @@ public class AsaServer extends GameServer {
 
             } catch (IOException e) {
                 log.error("An unknown exception occurred while deleting the server '" + friendlyName + "'.", e);
+                return false;
             }
-        });
+            return true;
+        };
     }
 
     @Override
-    public void start() {
-        ServerUtils.killServerProcess(PID);
+    public AsyncAction<Boolean> start() {
 
-        super.setState(GameServerState.INITIALIZING);
+        return () -> {
+            ServerUtils.killServerProcess(PID);
 
-        if (!Files.exists(installDir)) {
-            super.setState(GameServerState.OFFLINE);
-            install();
-            return;
-        }
+            super.setState(GameServerState.INITIALIZING);
 
-        new Thread(() -> {
-            ServerUtils.writeAsaStartupBatch(this);
-            try {
-                log.debug("cmd /c start \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
-                serverProcess = Runtime.getRuntime().exec("cmd /c start /min \"" + "\" \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
-                Scanner scanner = new Scanner(serverProcess.getInputStream());
-                while (scanner.hasNextLine()) {
-                }
-
-                if (settings.isRestartOnCrash() && state != GameServerState.OFFLINE) {
-                    super.setState(GameServerState.RESTARTING);
-                } else {
-                    super.setState(GameServerState.OFFLINE);
-                }
-
-            } catch (IOException e) {
-                log.error("An unknown exception occurred while starting the server '" + friendlyName + "'.", e);
+            if (!Files.exists(installDir)) {
+                super.setState(GameServerState.OFFLINE);
+                install().queue();
+                return false;
             }
-        }).start();
+
+            new Thread(() -> {
+                ServerUtils.writeAsaStartupBatch(this);
+                try {
+                    log.debug("cmd /c start \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
+                    serverProcess = Runtime.getRuntime().exec("cmd /c start /min \"" + "\" \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
+                    Scanner scanner = new Scanner(serverProcess.getInputStream());
+                    while (scanner.hasNextLine()) {
+                    }
+
+                    if (settings.isRestartOnCrash() && state != GameServerState.OFFLINE) {
+                        super.setState(GameServerState.RESTARTING);
+                    } else {
+                        super.setState(GameServerState.OFFLINE);
+                    }
+
+                } catch (IOException e) {
+                    log.error("An unknown exception occurred while starting the server '" + friendlyName + "'.", e);
+                }
+            }).start();
+
+            return true;
+        };
     }
 
     @Override
-    public void stop() {
-        super.setState(GameServerState.STOPPING);
-        new Thread(() -> {
+    public AsyncAction<Boolean> stop() {
+        return () -> {
+            super.setState(GameServerState.STOPPING);
+
             if (sendRconCommand("saveworld") == null) {
                 log.debug("No connection to server '" + friendlyName + "'. Killing process...");
                 ServerUtils.killServerProcess(PID);
@@ -158,13 +165,12 @@ public class AsaServer extends GameServer {
                 }
                 sendRconCommand("doexit");
             }
+
+            while (state != GameServerState.OFFLINE) {}
+
             super.setState(GameServerState.OFFLINE);
-        }).start();
-    }
-
-    @Override
-    public void backup() {
-
+            return true;
+        };
     }
 
     @Override
@@ -190,7 +196,7 @@ public class AsaServer extends GameServer {
 
                     if (settings.isRestartOnCrash()) {
                         log.debug("Restarting server '" + friendlyName + "'...");
-                        start();
+                        start().queue();
                     } else {
                         super.setState(GameServerState.OFFLINE);
                     }
@@ -198,8 +204,8 @@ public class AsaServer extends GameServer {
             }
             case RESTARTING -> {
                 log.debug("Server '" + friendlyName + "' is restarting...");
-                stop();
-                start();
+                stop().complete();
+                start().complete();
             }
         }
     }
