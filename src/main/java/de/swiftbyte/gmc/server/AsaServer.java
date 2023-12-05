@@ -5,6 +5,7 @@ import de.swiftbyte.gmc.packet.entity.GameServerState;
 import de.swiftbyte.gmc.packet.entity.ServerSettings;
 import de.swiftbyte.gmc.packet.server.ServerDeletePacket;
 import de.swiftbyte.gmc.stomp.StompHandler;
+import de.swiftbyte.gmc.utils.BackupService;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.NodeUtils;
 import de.swiftbyte.gmc.utils.ServerUtils;
@@ -93,7 +94,7 @@ public class AsaServer extends GameServer {
                     }
                 }
                 Files.delete(installDir);
-                //TODO remove Backups
+                BackupService.deleteAllBackupsByServer(this);
                 GameServer.removeServerById(serverId);
                 updateScheduler.cancel(false);
                 NodeUtils.cacheInformation(Node.INSTANCE);
