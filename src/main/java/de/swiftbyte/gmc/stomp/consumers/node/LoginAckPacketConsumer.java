@@ -18,7 +18,6 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
     @Override
     public void onReceive(NodeLoginAckPacket packet) {
 
-        Node.INSTANCE.setNodeName(packet.getNodeSettings().getName());
         Node.INSTANCE.setTeamName(packet.getTeamName());
 
         log.info("Backend running in profile '" + packet.getBackendProfile() + "' with version '" + packet.getBackendVersion() + "'.");
@@ -38,6 +37,8 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
                 new AsaServer(gameServer.getId(), gameServer.getSettings().getName(), Path.of(serverInstallDir), gameServer.getSettings());
             }
         });
+
+        Node.INSTANCE.updateSettings(packet.getNodeSettings());
 
         Node.INSTANCE.setConnectionState(ConnectionState.CONNECTED);
     }

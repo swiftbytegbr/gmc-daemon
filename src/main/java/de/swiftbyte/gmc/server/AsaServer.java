@@ -5,6 +5,7 @@ import de.swiftbyte.gmc.packet.entity.GameServerState;
 import de.swiftbyte.gmc.packet.entity.ServerSettings;
 import de.swiftbyte.gmc.packet.server.ServerDeletePacket;
 import de.swiftbyte.gmc.service.BackupService;
+import de.swiftbyte.gmc.service.FirewallService;
 import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.NodeUtils;
@@ -74,6 +75,15 @@ public class AsaServer extends GameServer {
 
                 if (process.exitValue() == 7 || process.exitValue() == 0) {
                     log.debug("Server was installed successfully!");
+
+                    if (Node.INSTANCE.isManageFirewallAutomatically()) {
+                        log.debug("Adding firewall rules for server '" + friendlyName + "'...");
+
+                        Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ShooterGameServer.exe");
+
+                        FirewallService.allowPort(friendlyName, executablePath, new int[]{settings.getGamePort(), settings.getGamePort() + 1, settings.getQueryPort(), settings.getRconPort()});
+                    }
+
                     super.setState(GameServerState.OFFLINE);
                 } else {
                     log.error("Server installation returned error code " + process.exitValue() + ".");

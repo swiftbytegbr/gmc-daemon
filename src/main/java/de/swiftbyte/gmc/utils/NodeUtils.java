@@ -121,6 +121,9 @@ public class NodeUtils {
                 .serverPath(node.getServerPath())
                 .autoBackup(node.getAutoBackup())
                 .gameServerCacheModelHashMap(gameServers)
+                .manageFirewallAutomatically(node.isManageFirewallAutomatically())
+                .serverRestartMessage(node.getServerRestartMessage())
+                .serverStopMessage(node.getServerStopMessage())
                 .build();
 
         ObjectMapper mapper = new ObjectMapper();

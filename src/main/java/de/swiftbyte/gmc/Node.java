@@ -43,6 +43,7 @@ public class Node extends Thread {
     private String teamName;
     @Setter
     private String serverPath;
+    private boolean manageFirewallAutomatically;
 
     private NodeSettings.AutoBackup autoBackup;
     private String serverStopMessage;
@@ -86,6 +87,10 @@ public class Node extends Thread {
             nodeName = cacheModel.getNodeName();
             teamName = cacheModel.getTeamName();
             serverPath = cacheModel.getServerPath();
+            manageFirewallAutomatically = cacheModel.isManageFirewallAutomatically();
+
+            serverStopMessage = cacheModel.getServerStopMessage();
+            serverRestartMessage = cacheModel.getServerRestartMessage();
 
             if (cacheModel.getAutoBackup() != null) autoBackup = cacheModel.getAutoBackup();
             else autoBackup = new NodeSettings.AutoBackup();
@@ -213,13 +218,15 @@ public class Node extends Thread {
         log.debug("Updating settings...");
         nodeName = nodeSettings.getName();
 
-        serverPath = nodeSettings.getServerPath();
+        if(!CommonUtils.isNullOrEmpty(nodeSettings.getServerPath())) serverPath = nodeSettings.getServerPath();
+        else serverPath = "servers";
 
         if (nodeSettings.getAutoBackup() != null) autoBackup = nodeSettings.getAutoBackup();
         else autoBackup = new NodeSettings.AutoBackup();
 
         serverStopMessage = nodeSettings.getStopMessage();
         serverRestartMessage = nodeSettings.getRestartMessage();
+        manageFirewallAutomatically = nodeSettings.isManageFirewallAutomatically();
 
         NodeUtils.cacheInformation(this);
         BackupService.updateAutoBackupSettings();
