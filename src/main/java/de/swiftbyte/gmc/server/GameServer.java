@@ -5,6 +5,7 @@ import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.packet.entity.GameServerState;
 import de.swiftbyte.gmc.packet.entity.ServerSettings;
 import de.swiftbyte.gmc.packet.server.ServerStatePacket;
+import de.swiftbyte.gmc.service.FirewallService;
 import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.action.AsyncAction;
@@ -44,7 +45,6 @@ public abstract class GameServer {
     protected Path installDir;
 
     @Getter
-    @Setter
     protected ServerSettings settings;
 
     public GameServer(String id, String friendlyName, ServerSettings settings) {
@@ -78,6 +78,11 @@ public abstract class GameServer {
 
     public abstract String sendRconCommand(String command);
 
+    public void allowFirewallPorts() {
+        Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ShooterGameServer.exe");
+        FirewallService.allowPort(friendlyName, executablePath, new int[]{settings.getGamePort(), settings.getGamePort() + 1, settings.getQueryPort(), settings.getRconPort()});
+    }
+
     public void setState(GameServerState state) {
 
         log.debug("Changing state of server '" + friendlyName + "' from '" + this.state + "' to '" + state + "'.");
@@ -91,6 +96,11 @@ public abstract class GameServer {
         StompHandler.send("/app/server/state", packet);
     }
 
+    public void setSettings(ServerSettings settings) {
+        FirewallService.removePort(friendlyName);
+        this.settings = settings;
+        allowFirewallPorts();
+    }
 
     protected static void removeServerById(String id) {
         GAME_SERVERS.remove(id);

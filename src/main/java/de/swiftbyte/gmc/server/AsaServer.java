@@ -79,9 +79,7 @@ public class AsaServer extends GameServer {
                     if (Node.INSTANCE.isManageFirewallAutomatically()) {
                         log.debug("Adding firewall rules for server '" + friendlyName + "'...");
 
-                        Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ShooterGameServer.exe");
-
-                        FirewallService.allowPort(friendlyName, executablePath, new int[]{settings.getGamePort(), settings.getGamePort() + 1, settings.getQueryPort(), settings.getRconPort()});
+                        allowFirewallPorts();
                     }
 
                     super.setState(GameServerState.OFFLINE);
@@ -106,6 +104,7 @@ public class AsaServer extends GameServer {
                     stop(false).complete();
                 }
                 Files.delete(installDir);
+                FirewallService.removePort(friendlyName);
                 BackupService.deleteAllBackupsByServer(this);
                 GameServer.removeServerById(serverId);
                 updateScheduler.cancel(false);

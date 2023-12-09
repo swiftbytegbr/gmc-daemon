@@ -45,4 +45,26 @@ public class FirewallService {
 
     }
 
+    public static void removePort(String ruleName) {
+
+        log.debug("Removing firewall rule " + ruleName + ".");
+
+        String command = String.format("powershell Remove-NetFirewallRule -DisplayName \\\"%s\\\"", ruleName);
+
+        try {
+            Process process = Runtime.getRuntime().exec(command);
+            process.waitFor();
+
+            log.debug("Exit value of command: " + process.exitValue() + ".");
+
+            if (process.exitValue() != 0) {
+                log.warn("Removing firewall rule returned non-zero exit value.");
+            }
+
+        } catch (IOException e) {
+            log.error("Error while removing firewall rule.", e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
