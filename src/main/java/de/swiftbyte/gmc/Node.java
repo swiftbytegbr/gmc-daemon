@@ -19,7 +19,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
 import org.jline.terminal.impl.DumbTerminal;
 import org.springframework.shell.component.context.ComponentContext;
 import oshi.SystemInfo;
@@ -219,7 +218,7 @@ public class Node extends Thread {
         log.debug("Updating settings...");
         nodeName = nodeSettings.getName();
 
-        if(!CommonUtils.isNullOrEmpty(nodeSettings.getServerPath())) serverPath = nodeSettings.getServerPath();
+        if (!CommonUtils.isNullOrEmpty(nodeSettings.getServerPath())) serverPath = nodeSettings.getServerPath();
         else serverPath = "servers";
 
         if (nodeSettings.getAutoBackup() != null) autoBackup = nodeSettings.getAutoBackup();
