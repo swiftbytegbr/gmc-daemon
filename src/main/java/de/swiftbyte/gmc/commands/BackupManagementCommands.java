@@ -29,6 +29,22 @@ public class BackupManagementCommands {
         return "Backup created!";
     }
 
+    @Command(command = "backup rollback", description = "Rollback a backup.", group = "Backup Management")
+    public String rollbackBackupCommand(@Option(description = "The backup", required = true) String backupId, @Option(description = "Should the player data also be restored?") boolean playerData) {
+
+        Backup backup = BackupService.getBackupById(backupId);
+
+        if (backup != null) {
+
+            BackupService.rollbackBackup(backup.getBackupId(), playerData);
+
+        } else {
+            return "Backup with id " + backupId + " not found!";
+        }
+
+        return "Backup rollback complete!";
+    }
+
     @Command(command = "backup list", description = "List all backups.", group = "Backup Management")
     public String listBackupCommand(@Option(description = "Filter for a server id", required = false) String serverId) {
 

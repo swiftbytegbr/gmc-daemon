@@ -115,6 +115,8 @@ public class BackupService {
 
         log.debug("Backing up server '" + server.getFriendlyName() + "'...");
 
+        if(!CommonUtils.isNullOrEmpty(Node.INSTANCE.getAutoBackup().getMessage())) server.sendRconCommand("serverchat " + Node.INSTANCE.getAutoBackup().getMessage());
+
         Backup backup = new Backup();
 
         backup.setBackupId("gmc-back-" + UUID.randomUUID());
@@ -227,6 +229,8 @@ public class BackupService {
             return;
         }
 
+        server.stop(false).complete();
+
         File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
         File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks/" + server.getSettings().getMap());
 
@@ -240,7 +244,15 @@ public class BackupService {
             return;
         }
 
+        if(playerData) {
+            File[] playerDataFiles = saveLocation.listFiles();
 
+            for (File playerDataFile : playerDataFiles) playerDataFile.delete();
+
+            ZipUtil.unpack(backupLocation, saveLocation);
+        } else {
+            ZipUtil.unpackEntry(backupLocation, server.getSettings().getMap() + ".ark", new File(saveLocation + "/" + server.getSettings().getMap() + ".ark"));
+        }
 
     }
 
