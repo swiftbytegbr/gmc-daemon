@@ -54,7 +54,7 @@ public class ServerManagementCommands {
 
         GameServer server = GameServer.getServerById(id);
 
-        server.stop().queue();
+        server.stop(false).queue();
 
         return "Server is stopping...";
     }

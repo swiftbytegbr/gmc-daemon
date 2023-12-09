@@ -44,6 +44,8 @@ public class Node extends Thread {
     private String serverPath;
 
     private NodeSettings.AutoBackup autoBackup;
+    private String serverStopMessage;
+    private String serverRestartMessage;
 
     private String secret;
     private String nodeId;
@@ -214,6 +216,9 @@ public class Node extends Thread {
 
         if (nodeSettings.getAutoBackup() != null) autoBackup = nodeSettings.getAutoBackup();
         else autoBackup = new NodeSettings.AutoBackup();
+
+        serverStopMessage = nodeSettings.getStopMessage();
+        serverRestartMessage = nodeSettings.getRestartMessage();
 
         NodeUtils.cacheInformation(this);
         BackupService.updateAutoBackupSettings();

@@ -90,7 +90,7 @@ public class AsaServer extends GameServer {
         return () -> {
             try {
                 if (state != GameServerState.OFFLINE && state != GameServerState.CREATING) {
-                    stop().complete();
+                    stop(false).complete();
                 }
                 Files.delete(installDir);
                 BackupService.deleteAllBackupsByServer(this);
@@ -133,7 +133,7 @@ public class AsaServer extends GameServer {
                     while (scanner.hasNextLine()) {
                     }
 
-                    if (settings.isRestartOnCrash() && state != GameServerState.OFFLINE) {
+                    if (settings.isRestartOnCrash() && (state != GameServerState.OFFLINE && state != GameServerState.STOPPING)) {
                         super.setState(GameServerState.RESTARTING);
                     } else {
                         super.setState(GameServerState.OFFLINE);
@@ -149,9 +149,29 @@ public class AsaServer extends GameServer {
     }
 
     @Override
-    public AsyncAction<Boolean> stop() {
+    public AsyncAction<Boolean> stop(boolean isRestart) {
         return () -> {
+            if(state == GameServerState.OFFLINE) return true;
             super.setState(GameServerState.STOPPING);
+
+            if(!isRestart && !CommonUtils.isNullOrEmpty(Node.INSTANCE.getServerStopMessage())) {
+                sendRconCommand("serverchat " + Node.INSTANCE.getServerStopMessage());
+            } else {
+                sendRconCommand("serverchat server ist stopping...");
+            }
+
+            try {
+                Thread.sleep(7000);
+                sendRconCommand("serverchat 3");
+                Thread.sleep(1000);
+                sendRconCommand("serverchat 2");
+                Thread.sleep(1000);
+                sendRconCommand("serverchat 1");
+                Thread.sleep(1000);
+                sendRconCommand("serverchat STOP");
+            } catch (InterruptedException e) {
+                log.warn("Failed to send stop message to server '" + friendlyName + "'.");
+            }
 
             if (sendRconCommand("saveworld") == null) {
                 log.debug("No connection to server '" + friendlyName + "'. Killing process...");
@@ -167,8 +187,6 @@ public class AsaServer extends GameServer {
             }
 
             while (state != GameServerState.OFFLINE) {}
-
-            super.setState(GameServerState.OFFLINE);
             return true;
         };
     }
@@ -204,7 +222,7 @@ public class AsaServer extends GameServer {
             }
             case RESTARTING -> {
                 log.debug("Server '" + friendlyName + "' is restarting...");
-                stop().complete();
+                stop(false).complete();
                 start().complete();
             }
         }

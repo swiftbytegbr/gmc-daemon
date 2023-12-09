@@ -18,6 +18,8 @@ public class CacheModel {
     private String teamName;
     private String serverPath;
     private NodeSettings.AutoBackup autoBackup;
+    private String serverStopMessage;
+    private String serverRestartMessage;
 
     private HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap;
 }
