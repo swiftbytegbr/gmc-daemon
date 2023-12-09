@@ -1,4 +1,4 @@
-package de.swiftbyte.gmc.utils;
+package de.swiftbyte.gmc.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
@@ -11,6 +11,8 @@ import de.swiftbyte.gmc.packet.entity.Backup;
 import de.swiftbyte.gmc.packet.server.ServerBackupResponsePacket;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompHandler;
+import de.swiftbyte.gmc.utils.CommonUtils;
+import de.swiftbyte.gmc.utils.NodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
@@ -24,7 +26,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -115,7 +116,8 @@ public class BackupService {
 
         log.debug("Backing up server '" + server.getFriendlyName() + "'...");
 
-        if(!CommonUtils.isNullOrEmpty(Node.INSTANCE.getAutoBackup().getMessage())) server.sendRconCommand("serverchat " + Node.INSTANCE.getAutoBackup().getMessage());
+        if (!CommonUtils.isNullOrEmpty(Node.INSTANCE.getAutoBackup().getMessage()))
+            server.sendRconCommand("serverchat " + Node.INSTANCE.getAutoBackup().getMessage());
 
         Backup backup = new Backup();
 
@@ -244,7 +246,7 @@ public class BackupService {
             return;
         }
 
-        if(playerData) {
+        if (playerData) {
             File[] playerDataFiles = saveLocation.listFiles();
 
             for (File playerDataFile : playerDataFiles) playerDataFile.delete();

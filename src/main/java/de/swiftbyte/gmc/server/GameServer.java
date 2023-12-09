@@ -6,8 +6,8 @@ import de.swiftbyte.gmc.packet.entity.GameServerState;
 import de.swiftbyte.gmc.packet.entity.ServerSettings;
 import de.swiftbyte.gmc.packet.server.ServerStatePacket;
 import de.swiftbyte.gmc.stomp.StompHandler;
-import de.swiftbyte.gmc.utils.AsyncAction;
 import de.swiftbyte.gmc.utils.CommonUtils;
+import de.swiftbyte.gmc.utils.action.AsyncAction;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +69,8 @@ public abstract class GameServer {
     public abstract AsyncAction<Boolean> stop(boolean isRestart);
 
     public AsyncAction<Boolean> restart() {
-        if(!CommonUtils.isNullOrEmpty(Node.INSTANCE.getServerStopMessage())) sendRconCommand("serverchat " + Node.INSTANCE.getServerRestartMessage());
+        if (!CommonUtils.isNullOrEmpty(Node.INSTANCE.getServerStopMessage()))
+            sendRconCommand("serverchat " + Node.INSTANCE.getServerRestartMessage());
         return () -> (stop(true).complete() && start().complete());
     }
 

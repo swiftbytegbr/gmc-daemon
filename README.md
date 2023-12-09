@@ -30,7 +30,7 @@ machines in one panel.**
 - [✅] Auto-Restart
 - [✅] RCON Web Console
 - [✅] Auto-Backup
-- [🚧] Rollback Function
+- [✅] Rollback Function
 
 ### 📝 Installation
 

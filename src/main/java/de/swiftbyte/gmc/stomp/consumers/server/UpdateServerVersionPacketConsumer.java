@@ -16,7 +16,7 @@ public class UpdateServerVersionPacketConsumer implements StompPacketConsumer<Se
         GameServer server = GameServer.getServerById(packet.getServerId());
 
         if (server != null) {
-            if(server.stop(false).complete()) server.install().queue();
+            if (server.stop(false).complete()) server.install().queue();
         } else {
             log.error("Server with id " + packet.getServerId() + " not found!");
         }

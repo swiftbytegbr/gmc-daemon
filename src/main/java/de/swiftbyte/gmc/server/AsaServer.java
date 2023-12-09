@@ -4,9 +4,12 @@ import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.packet.entity.GameServerState;
 import de.swiftbyte.gmc.packet.entity.ServerSettings;
 import de.swiftbyte.gmc.packet.server.ServerDeletePacket;
+import de.swiftbyte.gmc.service.BackupService;
 import de.swiftbyte.gmc.stomp.StompHandler;
-import de.swiftbyte.gmc.utils.*;
-import de.swiftbyte.gmc.utils.AsyncAction;
+import de.swiftbyte.gmc.utils.CommonUtils;
+import de.swiftbyte.gmc.utils.NodeUtils;
+import de.swiftbyte.gmc.utils.ServerUtils;
+import de.swiftbyte.gmc.utils.action.AsyncAction;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import xyz.astroark.Rcon;
@@ -151,10 +154,10 @@ public class AsaServer extends GameServer {
     @Override
     public AsyncAction<Boolean> stop(boolean isRestart) {
         return () -> {
-            if(state == GameServerState.OFFLINE) return true;
+            if (state == GameServerState.OFFLINE) return true;
             super.setState(GameServerState.STOPPING);
 
-            if(!isRestart && !CommonUtils.isNullOrEmpty(Node.INSTANCE.getServerStopMessage())) {
+            if (!isRestart && !CommonUtils.isNullOrEmpty(Node.INSTANCE.getServerStopMessage())) {
                 sendRconCommand("serverchat " + Node.INSTANCE.getServerStopMessage());
             } else {
                 sendRconCommand("serverchat server ist stopping...");
@@ -186,7 +189,8 @@ public class AsaServer extends GameServer {
                 sendRconCommand("doexit");
             }
 
-            while (state != GameServerState.OFFLINE) {}
+            while (state != GameServerState.OFFLINE) {
+            }
             return true;
         };
     }

@@ -2,7 +2,7 @@ package de.swiftbyte.gmc.commands;
 
 import de.swiftbyte.gmc.packet.entity.Backup;
 import de.swiftbyte.gmc.server.GameServer;
-import de.swiftbyte.gmc.utils.BackupService;
+import de.swiftbyte.gmc.service.BackupService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
