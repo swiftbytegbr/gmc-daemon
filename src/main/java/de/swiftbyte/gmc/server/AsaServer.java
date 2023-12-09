@@ -219,7 +219,10 @@ public class AsaServer extends GameServer {
                 }
             }
             case ONLINE -> {
-                if (sendRconCommand("ping") == null) {
+
+                String listPlayersResponse = sendRconCommand("listplayers");
+
+                if (listPlayersResponse == null) {
 
                     log.warn("Server crash detected! Restarting server...");
 
@@ -231,6 +234,9 @@ public class AsaServer extends GameServer {
                     } else {
                         super.setState(GameServerState.OFFLINE);
                     }
+                } else {
+                    String[] listPlayersResponseArray = listPlayersResponse.split("\n");
+                    currentOnlinePlayers = listPlayersResponseArray.length - 2;
                 }
             }
             case RESTARTING -> {

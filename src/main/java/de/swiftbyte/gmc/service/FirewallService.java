@@ -22,8 +22,6 @@ public class FirewallService {
         String commandTcp = String.format("powershell New-NetFirewallRule -DisplayName \\\"%s\\\" -Direction Inbound -LocalPort %s -Protocol TCP -Action Allow -Program \\\"%s\\\" -Group \\\"GameManagerCloud Server Port\\\"", ruleName, portsString, CommonUtils.convertPathSeparator(executablePath.toAbsolutePath()));
         String commandUdp = String.format("powershell New-NetFirewallRule -DisplayName \\\"%s\\\" -Direction Inbound -LocalPort %s -Protocol UDP -Action Allow -Program \\\"%s\\\" -Group \\\"GameManagerCloud Server Port\\\"", ruleName, portsString, CommonUtils.convertPathSeparator(executablePath.toAbsolutePath()));
 
-        log.debug(commandTcp);
-
         try {
             Process tcpProcess = Runtime.getRuntime().exec(commandTcp);
             Process udpProcess = Runtime.getRuntime().exec(commandUdp);
@@ -31,16 +29,12 @@ public class FirewallService {
             tcpProcess.waitFor();
             udpProcess.waitFor();
 
-            log.debug("Exit value of TCP command: " + tcpProcess.exitValue() + " and UDP command: " + udpProcess.exitValue() + ".");
-
             if (tcpProcess.exitValue() != 0 || udpProcess.exitValue() != 0) {
                 log.warn("Adding firewall rule returned non-zero exit value.");
             }
 
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             log.error("Error while adding firewall rule.", e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
 
     }
@@ -55,16 +49,12 @@ public class FirewallService {
             Process process = Runtime.getRuntime().exec(command);
             process.waitFor();
 
-            log.debug("Exit value of command: " + process.exitValue() + ".");
-
             if (process.exitValue() != 0) {
                 log.warn("Removing firewall rule returned non-zero exit value.");
             }
 
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             log.error("Error while removing firewall rule.", e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
     }
 }

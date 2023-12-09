@@ -7,6 +7,7 @@ import de.swiftbyte.gmc.packet.entity.NodeSettings;
 import de.swiftbyte.gmc.packet.entity.ResourceUsage;
 import de.swiftbyte.gmc.packet.node.NodeHeartbeatPacket;
 import de.swiftbyte.gmc.packet.node.NodeLogoutPacket;
+import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.service.BackupService;
 import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.*;
@@ -255,7 +256,6 @@ public class Node extends Thread {
         }
     };
 
-    @NotNull
     private static NodeHeartbeatPacket getNodeHeartbeatPacket() {
         SystemInfo systemInfo = new SystemInfo();
         NodeHeartbeatPacket heartbeatPacket = new NodeHeartbeatPacket();
@@ -267,7 +267,16 @@ public class Node extends Thread {
         resourceUsage.setDiskBytes(-1);
         heartbeatPacket.setResourceUsage(resourceUsage);
 
-        heartbeatPacket.setGameServers(new ArrayList<>());
+
+        ArrayList<NodeHeartbeatPacket.GameServerUpdate> gameServerUpdates = new ArrayList<>();
+        for (GameServer server : GameServer.getAllServers()) {
+            NodeHeartbeatPacket.GameServerUpdate gameServerUpdate = new NodeHeartbeatPacket.GameServerUpdate();
+            gameServerUpdate.setState(server.getState());
+            gameServerUpdate.setId(server.getServerId());
+            gameServerUpdate.setPlayerCount(server.getCurrentOnlinePlayers());
+            gameServerUpdates.add(gameServerUpdate);
+        }
+        heartbeatPacket.setGameServers(gameServerUpdates);
         return heartbeatPacket;
     }
 

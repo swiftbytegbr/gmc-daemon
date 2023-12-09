@@ -47,6 +47,9 @@ public abstract class GameServer {
     @Getter
     protected ServerSettings settings;
 
+    @Getter
+    protected int currentOnlinePlayers = 0;
+
     public GameServer(String id, String friendlyName, ServerSettings settings) {
 
         this.serverId = id;
