@@ -55,7 +55,7 @@ public class StompHandler {
 
     public static void send(String destination, Object payload) {
         if (session == null) {
-            log.error("Failed to send packet to " + destination + " because the session is null.");
+            if(Node.INSTANCE.getConnectionState() != ConnectionState.CONNECTION_FAILED) log.error("Failed to send packet to " + destination + " because the session is null.");
             return;
         }
 
