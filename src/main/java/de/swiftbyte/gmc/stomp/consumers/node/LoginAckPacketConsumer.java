@@ -32,9 +32,9 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
             String serverInstallDir = ServerUtils.getCachedServerInstallDir(gameServer.getId());
 
             if (serverInstallDir == null) {
-                new AsaServer(gameServer.getId(), gameServer.getDisplayName(), gameServer.getSettings());
+                new AsaServer(gameServer.getId(), gameServer.getDisplayName(), gameServer.getSettings(), false);
             } else {
-                new AsaServer(gameServer.getId(), gameServer.getDisplayName(), Path.of(serverInstallDir), gameServer.getSettings());
+                new AsaServer(gameServer.getId(), gameServer.getDisplayName(), Path.of(serverInstallDir), gameServer.getSettings(), false);
             }
         });
 

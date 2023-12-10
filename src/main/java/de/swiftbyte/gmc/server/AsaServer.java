@@ -31,19 +31,21 @@ public class AsaServer extends GameServer {
     @Setter
     private String rconPassword;
 
-    public AsaServer(String id, String friendlyName, ServerSettings settings) {
+    public AsaServer(String id, String friendlyName, ServerSettings settings, boolean overrideAutoStart) {
 
         super(id, friendlyName, settings);
 
         rconPassword = settings.getRconPassword();
         rconPort = settings.getRconPort();
 
-        PID = CommonUtils.getProcessPID(String.valueOf(installDir));
-        if (PID == null && settings.isStartOnBoot()) start().queue();
-        else if (PID != null) super.setState(GameServerState.ONLINE);
+        if(!overrideAutoStart) {
+            PID = CommonUtils.getProcessPID(String.valueOf(installDir));
+            if (PID == null && settings.isStartOnBoot()) start().queue();
+            else if (PID != null) super.setState(GameServerState.ONLINE);
+        }
     }
 
-    public AsaServer(String id, String friendlyName, Path installDir, ServerSettings settings) {
+    public AsaServer(String id, String friendlyName, Path installDir, ServerSettings settings, boolean overrideAutoStart) {
 
         super(id, friendlyName, settings);
         this.installDir = installDir;
@@ -51,9 +53,11 @@ public class AsaServer extends GameServer {
         rconPassword = settings.getRconPassword();
         rconPort = settings.getRconPort();
 
-        PID = CommonUtils.getProcessPID(String.valueOf(installDir));
-        if (PID == null && settings.isStartOnBoot()) start().queue();
-        else if (PID != null) super.setState(GameServerState.ONLINE);
+        if(!overrideAutoStart) {
+            PID = CommonUtils.getProcessPID(String.valueOf(installDir));
+            if (PID == null && settings.isStartOnBoot()) start().queue();
+            else if (PID != null) super.setState(GameServerState.ONLINE);
+        }
     }
 
     @Override
@@ -180,6 +184,7 @@ public class AsaServer extends GameServer {
                 sendRconCommand("serverchat " + Node.INSTANCE.getServerStopMessage());
             } else {
                 sendRconCommand("serverchat server ist stopping...");
+                log.debug("Sending stop message to server 1 '" + friendlyName + "'...");
             }
 
             try {
@@ -194,7 +199,6 @@ public class AsaServer extends GameServer {
             } catch (InterruptedException e) {
                 log.warn("Failed to send stop message to server '" + friendlyName + "'.");
             }
-
             if (sendRconCommand("saveworld") == null) {
                 log.debug("No connection to server '" + friendlyName + "'. Killing process...");
                 ServerUtils.killServerProcess(PID);
@@ -203,7 +207,6 @@ public class AsaServer extends GameServer {
                     Thread.sleep(10000);
                 } catch (InterruptedException ignored) {
                     ServerUtils.killServerProcess(PID);
-                    super.setState(GameServerState.OFFLINE);
                 }
                 sendRconCommand("doexit");
             }
@@ -216,7 +219,7 @@ public class AsaServer extends GameServer {
 
     @Override
     public void update() {
-
+        log.debug("Updating server '" + friendlyName + "'...");
         if (PID == null) PID = CommonUtils.getProcessPID(String.valueOf(installDir));
 
         switch (state) {
@@ -251,8 +254,14 @@ public class AsaServer extends GameServer {
             }
             case RESTARTING -> {
                 log.debug("Server '" + friendlyName + "' is restarting...");
-                stop(false).complete();
-                start().complete();
+                new Thread(() -> {
+                    stop(false).complete();
+                    start().complete();
+                }).start();
+            }
+            case STOPPING -> {
+                log.info(CommonUtils.getProcessPID(String.valueOf(installDir)));
+                if(CommonUtils.getProcessPID(String.valueOf(installDir)) == null) super.setState(GameServerState.OFFLINE);
             }
         }
     }

@@ -168,7 +168,7 @@ public class ServerUtils {
             CacheModel cacheModel = CommonUtils.getObjectReader().readValue(cacheFile, CacheModel.class);
             HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
 
-            gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> new AsaServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings()));
+            gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> new AsaServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings(), false));
 
         } catch (IOException e) {
             log.error("An unknown error occurred while getting cached information.", e);
