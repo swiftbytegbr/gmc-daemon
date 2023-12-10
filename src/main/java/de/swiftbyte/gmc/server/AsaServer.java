@@ -123,6 +123,16 @@ public class AsaServer extends GameServer {
     }
 
     @Override
+    public AsyncAction<Boolean> abandon() {
+        return () -> {
+            GameServer.removeServerById(serverId);
+            updateScheduler.cancel(false);
+            NodeUtils.cacheInformation(Node.INSTANCE);
+            return true;
+        };
+    }
+
+    @Override
     public AsyncAction<Boolean> start() {
 
         return () -> {

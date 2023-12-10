@@ -3,6 +3,7 @@ package de.swiftbyte.gmc.stomp.consumers.node;
 import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.packet.node.NodeLoginAckPacket;
 import de.swiftbyte.gmc.server.AsaServer;
+import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.utils.ConnectionState;
@@ -24,17 +25,16 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
         log.info("I am '" + packet.getNodeSettings().getName() + "' in team " + packet.getTeamName() + "!");
 
         log.info("Loading '" + packet.getGameServers().size() + "' game servers...");
-        log.debug(packet.toString());
+        GameServer.abandonAll();
         packet.getGameServers().forEach(gameServer -> {
             log.debug("Loading game server '" + gameServer.getSettings().getName() + "'...");
 
             String serverInstallDir = ServerUtils.getCachedServerInstallDir(gameServer.getId());
 
             if (serverInstallDir == null) {
-                //TODO change to real server name
-                new AsaServer(gameServer.getId(), gameServer.getSettings().getName(), gameServer.getSettings());
+                new AsaServer(gameServer.getId(), gameServer.getDisplayName(), gameServer.getSettings());
             } else {
-                new AsaServer(gameServer.getId(), gameServer.getSettings().getName(), Path.of(serverInstallDir), gameServer.getSettings());
+                new AsaServer(gameServer.getId(), gameServer.getDisplayName(), Path.of(serverInstallDir), gameServer.getSettings());
             }
         });
 
