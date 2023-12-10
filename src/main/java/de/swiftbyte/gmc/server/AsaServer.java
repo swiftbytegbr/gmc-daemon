@@ -219,7 +219,6 @@ public class AsaServer extends GameServer {
 
     @Override
     public void update() {
-        log.debug("Updating server '" + friendlyName + "'...");
         if (PID == null) PID = CommonUtils.getProcessPID(String.valueOf(installDir));
 
         switch (state) {

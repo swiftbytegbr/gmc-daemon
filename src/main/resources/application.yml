@@ -33,5 +33,4 @@ logging:
     name: ${logging.file.path}gmc.log
     path: ./log/
   level:
-    de.swiftbyte: debug
     org.reflections: error
