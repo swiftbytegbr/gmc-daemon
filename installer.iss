@@ -1,6 +1,6 @@
 #define MyAppName "GameManagerCloud Daemon"
 #define MyAppVersion "1.0"
-#define MyAppPublisher "SwiftByte"
+#define MyAppPublisher "SwiftByte Kaspereit Faust Steurer GbR"
 #define MyAppURL "https://gamemanager.cloud"
 #define MyAppExeName "GmcDaemon.exe"
 
@@ -24,6 +24,7 @@ AllowRootDirectory=True
 DisableWelcomePage=False
 UsePreviousPrivileges=False
 AppCopyright={#myAppPublisher}
+LicenseFile=C:\Users\Lion Kaspereit\IdeaProjects\gmc-daemon\eula.txt
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
