@@ -22,7 +22,7 @@ import java.util.concurrent.ScheduledExecutorService;
 public class Application {
 
     public final static String
-            BACKEND_DOMAIN = "api.gmc.system.astroark.xyz",
+            BACKEND_DOMAIN = "api.gamemanager.cloud",
             BACKEND_URL = "https://" + BACKEND_DOMAIN,
             BACKEND_WS_URL = "wss://" + BACKEND_DOMAIN + "/websocket-nodes";
 
