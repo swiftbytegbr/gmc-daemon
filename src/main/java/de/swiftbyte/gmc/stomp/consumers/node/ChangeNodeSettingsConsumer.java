@@ -12,6 +12,7 @@ public class ChangeNodeSettingsConsumer implements StompPacketConsumer<NodeSetti
 
     @Override
     public void onReceive(NodeSettingsPacket packet) {
+        log.debug("Received node settings packet.");
         Node.INSTANCE.updateSettings(packet.getNodeSettings());
     }
 }
