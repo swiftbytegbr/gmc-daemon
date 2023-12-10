@@ -188,10 +188,16 @@ public class BackupService {
             return;
         }
 
+        GameServer server = GameServer.getServerById(backup.getServerId());
+        if (server == null) {
+            log.error("Could not delete backup on file system because server id was not found!");
+            backups.remove(backupId);
+            saveBackupCache();
+            return;
+        }
+
         log.debug("Deleting backup '" + backup.getName() + "'...");
-
         File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + GameServer.getServerById(backup.getServerId()).getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
-
         if (!backupLocation.exists()) {
             log.error("Could not delete backup because backup location does not exist!");
             return;
