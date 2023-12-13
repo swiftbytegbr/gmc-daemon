@@ -82,7 +82,7 @@ public abstract class GameServer {
     public abstract String sendRconCommand(String command);
 
     public void allowFirewallPorts() {
-        Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ShooterGameServer.exe");
+        Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ArkAscendedServer.exe");
         FirewallService.allowPort(friendlyName, executablePath, new int[]{settings.getGamePort(), settings.getGamePort() + 1, settings.getQueryPort(), settings.getRconPort()});
     }
 
