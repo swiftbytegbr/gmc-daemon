@@ -28,6 +28,7 @@ public class ServerUtils {
         argsType1.stream()
                 .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
+                    if(arg.isEmpty()) return;
                     if (!arg.contains("?")) preArgs.append("?");
                     preArgs.append(arg);
                 });
