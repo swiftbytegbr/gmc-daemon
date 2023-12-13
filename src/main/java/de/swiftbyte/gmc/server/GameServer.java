@@ -90,7 +90,10 @@ public abstract class GameServer {
 
         log.debug("Changing state of server '" + friendlyName + "' from '" + this.state + "' to '" + state + "'.");
 
-        this.state = state;
+        synchronized (this) {
+            this.state = state;
+            this.notifyAll();
+        }
 
         ServerStatePacket packet = new ServerStatePacket();
         packet.setServerId(serverId);

@@ -184,7 +184,7 @@ public class AsaServer extends GameServer {
                 sendRconCommand("serverchat " + Node.INSTANCE.getServerStopMessage());
             } else {
                 sendRconCommand("serverchat server ist stopping...");
-                log.debug("Sending stop message to server 1 '" + friendlyName + "'...");
+                log.debug("Sending stop message to server '" + friendlyName + "'...");
             }
 
             try {
@@ -211,9 +211,17 @@ public class AsaServer extends GameServer {
                 sendRconCommand("doexit");
             }
 
-            while (state != GameServerState.OFFLINE) {
+            synchronized (this) {
+                while (state != GameServerState.OFFLINE) {
+                    try {
+                        this.wait(1000);
+                    } catch (InterruptedException e) {
+                        log.error("An unknown exception occurred while stopping the server '" + friendlyName + "'.", e);
+                    }
+                }
+                log.debug("Server '" + friendlyName + "' is offline.");
+                return true;
             }
-            return true;
         };
     }
 
@@ -259,7 +267,6 @@ public class AsaServer extends GameServer {
                 }).start();
             }
             case STOPPING -> {
-                log.info(CommonUtils.getProcessPID(String.valueOf(installDir)));
                 if(CommonUtils.getProcessPID(String.valueOf(installDir)) == null) super.setState(GameServerState.OFFLINE);
             }
         }
