@@ -2,10 +2,12 @@ package de.swiftbyte.gmc.stomp.consumers.server;
 
 import de.swiftbyte.gmc.packet.server.ServerSettingsPacket;
 import de.swiftbyte.gmc.packet.server.ServerSettingsResponsePacket;
+import de.swiftbyte.gmc.server.AsaServer;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.stomp.StompPacketInfo;
+import de.swiftbyte.gmc.utils.ServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -26,6 +28,8 @@ public class ChangeServerSettingsPacketConsumer implements StompPacketConsumer<S
             responsePacket.setSettings(server.getSettings());
 
             StompHandler.send("/app/server/settings", responsePacket);
+
+            ServerUtils.writeAsaStartupBatch((AsaServer) server);
 
         } else {
             log.error("Server with id " + packet.getServerId() + " not found!");

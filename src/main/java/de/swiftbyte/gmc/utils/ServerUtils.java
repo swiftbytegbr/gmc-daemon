@@ -87,7 +87,7 @@ public class ServerUtils {
                 + (realStartPreArguments.isEmpty() ? "" : " " + realStartPreArguments)
                 + " \"" + CommonUtils.convertPathSeparator(server.getInstallDir() + "/ShooterGame/Binaries/Win64/" + serverExeName) + "\""
                 + " " + realStartPostArguments;
-        log.debug("Starting server with command " + startCommand);
+        log.debug("Writing startup batch with command " + startCommand);
 
         try {
             FileWriter fileWriter = new FileWriter(server.getInstallDir() + "/start.bat");
