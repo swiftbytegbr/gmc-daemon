@@ -1,10 +1,12 @@
 package de.swiftbyte.gmc;
 
+import ch.qos.logback.classic.LoggerContext;
 import de.swiftbyte.gmc.utils.ConfigUtils;
 import de.swiftbyte.gmc.utils.ConnectionState;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jline.terminal.Terminal;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,7 +14,11 @@ import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.shell.command.annotation.CommandScan;
 import org.springframework.shell.component.flow.ComponentFlow;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -38,9 +44,6 @@ public class Application {
     @Getter
     private static ComponentFlow.Builder componentFlowBuilder;
 
-    @Getter
-    private static final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-
     private static final Thread shutdownHook = new Thread(() -> {
         if (node == null) return;
         log.debug("Shutting down...");
@@ -56,6 +59,12 @@ public class Application {
     public static void main(String[] args) {
         Runtime.getRuntime().addShutdownHook(shutdownHook);
 
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger("de.swiftbyte");
+
+        if(List.of(args).contains("-debug")) rootLogger.setLevel(Level.DEBUG);
+        else rootLogger.setLevel(Level.INFO);
+
         SpringApplication.run(Application.class);
     }
 
@@ -66,6 +75,12 @@ public class Application {
 
         ConfigUtils.initialiseConfigSystem();
 
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger("de.swiftbyte");
+
+        if(Boolean.parseBoolean(ConfigUtils.get("debug", "false"))) rootLogger.setLevel(Level.DEBUG);
+        else rootLogger.setLevel(Level.INFO);
+
         node = new Node();
         node.start();
 
@@ -75,6 +90,10 @@ public class Application {
             log.error("Illegal ConnectionState set... Start is aborted!");
             System.exit(1);
         }
+    }
+
+    public static ScheduledExecutorService getExecutor() {
+        return Executors.newScheduledThreadPool(1);
     }
 
     @Value("${spring.application.version}")
