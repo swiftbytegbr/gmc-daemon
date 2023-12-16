@@ -225,6 +225,8 @@ public class AsaServer extends GameServer {
         };
     }
 
+    private int restartCounter = 0;
+
     @Override
     public void update() {
         if (PID == null) PID = CommonUtils.getProcessPID(String.valueOf(installDir));
@@ -239,7 +241,7 @@ public class AsaServer extends GameServer {
                 }
             }
             case ONLINE -> {
-
+                restartCounter = 0;
                 String listPlayersResponse = sendRconCommand("listplayers");
 
                 if (listPlayersResponse == null) {
@@ -250,7 +252,7 @@ public class AsaServer extends GameServer {
 
                     if (settings.isRestartOnCrash()) {
                         log.debug("Restarting server '" + friendlyName + "'...");
-                        start().queue();
+                        super.setState(GameServerState.RESTARTING);
                     } else {
                         super.setState(GameServerState.OFFLINE);
                     }
@@ -260,14 +262,23 @@ public class AsaServer extends GameServer {
                 }
             }
             case RESTARTING -> {
+                if(restartCounter >= 3) {
+                    log.error("Server '" + friendlyName + "' crashed 3 times in a row. Restarting is aborted!");
+                    super.setState(GameServerState.OFFLINE);
+                    return;
+                }
+                restartCounter++;
                 log.debug("Server '" + friendlyName + "' is restarting...");
                 new Thread(() -> {
-                    stop(false).complete();
+                    ServerUtils.killServerProcess(PID);
                     start().complete();
                 }).start();
             }
             case STOPPING -> {
                 if(CommonUtils.getProcessPID(String.valueOf(installDir)) == null) super.setState(GameServerState.OFFLINE);
+            }
+            case OFFLINE -> {
+                restartCounter = 0;
             }
         }
     }
