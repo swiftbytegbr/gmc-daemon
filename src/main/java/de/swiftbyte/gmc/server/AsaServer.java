@@ -180,11 +180,13 @@ public class AsaServer extends GameServer {
             if (state == GameServerState.OFFLINE) return true;
             super.setState(GameServerState.STOPPING);
 
-            if (!isRestart && !CommonUtils.isNullOrEmpty(Node.INSTANCE.getServerStopMessage())) {
-                sendRconCommand("serverchat " + Node.INSTANCE.getServerStopMessage());
-            } else {
-                sendRconCommand("serverchat server ist stopping...");
-                log.debug("Sending stop message to server '" + friendlyName + "'...");
+            if(!isRestart) {
+                if (!CommonUtils.isNullOrEmpty(Node.INSTANCE.getServerStopMessage())) {
+                    sendRconCommand("serverchat " + Node.INSTANCE.getServerStopMessage());
+                } else {
+                    sendRconCommand("serverchat server ist stopping...");
+                    log.debug("Sending stop message to server '" + friendlyName + "'...");
+                }
             }
 
             try {
