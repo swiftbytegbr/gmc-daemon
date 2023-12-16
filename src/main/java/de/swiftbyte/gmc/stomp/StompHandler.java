@@ -54,7 +54,7 @@ public class StompHandler {
         return true;
     }
 
-    public static void send(String destination, Object payload) {
+    public synchronized static void send(String destination, Object payload) {
         if (session == null) {
             if(Node.INSTANCE.getConnectionState() != ConnectionState.CONNECTION_FAILED) log.error("Failed to send packet to " + destination + " because the session is null.");
             return;

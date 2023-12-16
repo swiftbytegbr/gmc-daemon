@@ -89,7 +89,7 @@ public class ServerUtils {
                 + (realStartPreArguments.isEmpty() ? "" : " " + realStartPreArguments)
                 + " \"" + CommonUtils.convertPathSeparator(server.getInstallDir() + "/ShooterGame/Binaries/Win64/" + serverExeName) + "\""
                 + " " + realStartPostArguments;
-        log.debug("Writing startup batch with command " + startCommand);
+        log.debug("Writing startup batch for server " + server.getFriendlyName() + " with command '" + startCommand + "'");
 
         try {
             FileWriter fileWriter = new FileWriter(server.getInstallDir() + "/start.bat");
@@ -151,7 +151,7 @@ public class ServerUtils {
 
         Optional<ProcessHandle> handle = ProcessHandle.of(Long.parseLong(PID));
         if (handle.isPresent()) {
-            log.debug("Server process still running... Killing process...");
+            log.debug("Server process running... Killing process...");
             handle.get().destroy();
         }
     }

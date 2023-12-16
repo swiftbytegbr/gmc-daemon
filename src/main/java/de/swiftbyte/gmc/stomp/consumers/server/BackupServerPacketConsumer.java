@@ -13,7 +13,7 @@ public class BackupServerPacketConsumer implements StompPacketConsumer<ServerBac
 
     @Override
     public void onReceive(ServerBackupPacket packet) {
-        log.debug("Creating backup for server with id " + packet.getServerId() + ".");
+        log.info("Creating backup for server with id " + packet.getServerId() + ".");
         GameServer server = GameServer.getServerById(packet.getServerId());
 
         if (server != null) {

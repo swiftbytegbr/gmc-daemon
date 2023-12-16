@@ -58,16 +58,12 @@ public class ConfigUtils {
             return false;
         }
 
-        log.debug("Storing key '" + key + "' with value '" + value + "'...");
-
         properties.setProperty(key, value);
         try {
             properties.store(new FileWriter(CONFIG_FILE), "Do not make any changes! If the file gets, edited it can lead to malfunctions, unexpected behavior and data loss.");
         } catch (IOException e) {
             log.error("An unknown error occurred while saving the value.", e);
         }
-
-        log.debug("Value successfully stored.");
         return true;
     }
 
@@ -86,8 +82,6 @@ public class ConfigUtils {
             return null;
         }
 
-        log.debug("Getting key '" + key + "'...");
-
         return properties.getProperty(key, defaultValue);
     }
 
@@ -101,8 +95,6 @@ public class ConfigUtils {
             log.error("Tried to check null key.");
             return false;
         }
-
-        log.debug("Checking key '" + key + "'...");
 
         return properties.containsKey(key);
 

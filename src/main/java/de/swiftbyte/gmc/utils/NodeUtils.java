@@ -74,7 +74,7 @@ public class NodeUtils {
         if (Files.exists(Paths.get(STEAM_CMD_PATH))) {
             log.debug("SteamCMD installation found.");
         } else {
-            log.error("SteamCMD installation not found. Try to install...");
+            log.info("SteamCMD installation not found. Try to install...");
             installSteamCmd();
         }
     }

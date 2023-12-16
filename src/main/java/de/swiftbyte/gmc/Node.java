@@ -105,7 +105,7 @@ public class Node extends Thread {
     public void shutdown() {
         NodeLogoutPacket logoutPacket = new NodeLogoutPacket();
         logoutPacket.setReason("Terminated by user");
-        log.info("Sending shutdown packet...");
+        log.debug("Sending shutdown packet...");
         StompHandler.send("/app/node/logout", logoutPacket);
         log.info("Disconnecting from backend...");
         log.debug("Deleting temporary files...");
@@ -206,7 +206,7 @@ public class Node extends Thread {
     }
 
     public void connect() {
-        log.debug("Start connection to backend...");
+        log.info("Start connection to backend...");
         setConnectionState(ConnectionState.CONNECTING);
         if (!StompHandler.initialiseStomp()) {
             setConnectionState(ConnectionState.CONNECTION_FAILED);

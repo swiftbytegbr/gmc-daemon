@@ -79,8 +79,6 @@ public class Application {
     @EventListener(ApplicationStartedEvent.class)
     public void onReady() {
 
-        log.debug("Daemon ready... Version: " + version);
-
         ConfigUtils.initialiseConfigSystem();
 
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -88,6 +86,8 @@ public class Application {
 
         if(Boolean.parseBoolean(ConfigUtils.get("debug", "false"))) rootLogger.setLevel(Level.DEBUG);
         else rootLogger.setLevel(Level.INFO);
+
+        log.debug("Daemon ready... Version: " + version);
 
         node = new Node();
         node.start();
