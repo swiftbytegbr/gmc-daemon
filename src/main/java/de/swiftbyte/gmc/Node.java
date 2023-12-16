@@ -174,7 +174,7 @@ public class Node extends Thread {
                 .build();
 
         Request request = new Request.Builder()
-                .url(Application.BACKEND_URL + "/node/register")
+                .url(Application.getBackendUrl() + "/node/register")
                 .post(body)
                 .build();
 

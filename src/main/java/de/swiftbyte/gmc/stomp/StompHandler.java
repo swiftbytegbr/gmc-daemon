@@ -43,7 +43,8 @@ public class StompHandler {
 
         stompClient.setMessageConverter(converter);
         try {
-            session = stompClient.connectAsync(Application.BACKEND_WS_URL, headers, new StompSessionHandler()).get();
+            log.debug("Connecting WebSocket to " + Application.getWebsocketUrl());
+            session = stompClient.connectAsync(Application.getWebsocketUrl(), headers, new StompSessionHandler()).get();
             scanForPacketListeners();
         } catch (InterruptedException | ExecutionException e) {
             log.error("Failed to establish connection to backend. Is the backend running?");

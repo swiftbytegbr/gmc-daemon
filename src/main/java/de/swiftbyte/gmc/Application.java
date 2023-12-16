@@ -15,8 +15,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.shell.command.annotation.CommandScan;
 import org.springframework.shell.component.flow.ComponentFlow;
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.LoggerContext;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -27,10 +25,20 @@ import java.util.concurrent.ScheduledExecutorService;
 @Slf4j
 public class Application {
 
-    public final static String
-            BACKEND_DOMAIN = "api.gamemanager.cloud",
-            BACKEND_URL = "https://" + BACKEND_DOMAIN,
-            BACKEND_WS_URL = "wss://" + BACKEND_DOMAIN + "/websocket-nodes";
+    public static String getBackendDomain() {
+        return ConfigUtils.get("backend-domain", "api.gamemanager.cloud");
+    }
+    public static boolean isSecure() {
+        return ConfigUtils.get("backend-secure", "true").equals("true");
+    };
+    public static String getBackendUrl() {
+        if(isSecure()) return "https://" + getBackendDomain();
+        else return "http://" + getBackendDomain();
+    }
+    public static String getWebsocketUrl() {
+        if(isSecure()) return "wss://"+ getBackendDomain() + "/websocket-nodes";
+        else return "ws://" + getBackendDomain() + "/websocket-nodes";
+    }
 
     @Getter
     private static String version;
