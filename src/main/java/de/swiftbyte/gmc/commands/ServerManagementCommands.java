@@ -17,7 +17,7 @@ public class ServerManagementCommands {
 
         if (game.equalsIgnoreCase("asa")) {
 
-            AsaServer server = new AsaServer(id, name, new ServerSettings(),true);
+            AsaServer server = new AsaServer(id, name, new ServerSettings(), true);
 
             if (install) server.install().queue();
 

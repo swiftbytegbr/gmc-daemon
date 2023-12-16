@@ -65,6 +65,7 @@ public abstract class GameServer {
     public abstract AsyncAction<Boolean> install();
 
     public abstract AsyncAction<Boolean> delete();
+
     public abstract AsyncAction<Boolean> abandon();
 
     public abstract AsyncAction<Boolean> start();

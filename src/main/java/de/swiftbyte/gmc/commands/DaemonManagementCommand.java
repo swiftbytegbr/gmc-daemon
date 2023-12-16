@@ -7,8 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.LoggerFactory;
 import org.springframework.shell.command.annotation.Command;
 
-import java.util.logging.Logger;
-
 @Command
 @Slf4j
 public class DaemonManagementCommand {

@@ -38,7 +38,7 @@ public class AsaServer extends GameServer {
         rconPassword = settings.getRconPassword();
         rconPort = settings.getRconPort();
 
-        if(!overrideAutoStart) {
+        if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(String.valueOf(installDir));
             if (PID == null && settings.isStartOnBoot()) start().queue();
             else if (PID != null) super.setState(GameServerState.ONLINE);
@@ -53,7 +53,7 @@ public class AsaServer extends GameServer {
         rconPassword = settings.getRconPassword();
         rconPort = settings.getRconPort();
 
-        if(!overrideAutoStart) {
+        if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(String.valueOf(installDir));
             if (PID == null && settings.isStartOnBoot()) start().queue();
             else if (PID != null) super.setState(GameServerState.ONLINE);
@@ -180,7 +180,7 @@ public class AsaServer extends GameServer {
             if (state == GameServerState.OFFLINE) return true;
             super.setState(GameServerState.STOPPING);
 
-            if(!isRestart) {
+            if (!isRestart) {
                 if (!CommonUtils.isNullOrEmpty(Node.INSTANCE.getServerStopMessage())) {
                     sendRconCommand("serverchat " + Node.INSTANCE.getServerStopMessage());
                 } else {
@@ -264,7 +264,7 @@ public class AsaServer extends GameServer {
                 }
             }
             case RESTARTING -> {
-                if(restartCounter >= 3) {
+                if (restartCounter >= 3) {
                     log.error("Server '" + friendlyName + "' crashed 3 times in a row. Restarting is aborted!");
                     super.setState(GameServerState.OFFLINE);
                     return;
@@ -277,7 +277,8 @@ public class AsaServer extends GameServer {
                 }).start();
             }
             case STOPPING -> {
-                if(CommonUtils.getProcessPID(String.valueOf(installDir)) == null) super.setState(GameServerState.OFFLINE);
+                if (CommonUtils.getProcessPID(String.valueOf(installDir)) == null)
+                    super.setState(GameServerState.OFFLINE);
             }
             case OFFLINE -> {
                 restartCounter = 0;

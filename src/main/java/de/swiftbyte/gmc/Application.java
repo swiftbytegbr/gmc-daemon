@@ -1,5 +1,6 @@
 package de.swiftbyte.gmc;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import de.swiftbyte.gmc.utils.ConfigUtils;
 import de.swiftbyte.gmc.utils.ConnectionState;
@@ -14,7 +15,6 @@ import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.shell.command.annotation.CommandScan;
 import org.springframework.shell.component.flow.ComponentFlow;
-import ch.qos.logback.classic.Level;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -28,15 +28,20 @@ public class Application {
     public static String getBackendDomain() {
         return ConfigUtils.get("backend-domain", "api.gamemanager.cloud");
     }
+
     public static boolean isSecure() {
         return ConfigUtils.get("backend-secure", "true").equals("true");
-    };
+    }
+
+    ;
+
     public static String getBackendUrl() {
-        if(isSecure()) return "https://" + getBackendDomain();
+        if (isSecure()) return "https://" + getBackendDomain();
         else return "http://" + getBackendDomain();
     }
+
     public static String getWebsocketUrl() {
-        if(isSecure()) return "wss://"+ getBackendDomain() + "/websocket-nodes";
+        if (isSecure()) return "wss://" + getBackendDomain() + "/websocket-nodes";
         else return "ws://" + getBackendDomain() + "/websocket-nodes";
     }
 
@@ -70,7 +75,7 @@ public class Application {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger("de.swiftbyte");
 
-        if(List.of(args).contains("-debug")) rootLogger.setLevel(Level.DEBUG);
+        if (List.of(args).contains("-debug")) rootLogger.setLevel(Level.DEBUG);
         else rootLogger.setLevel(Level.INFO);
 
         SpringApplication.run(Application.class);
@@ -84,7 +89,7 @@ public class Application {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger("de.swiftbyte");
 
-        if(Boolean.parseBoolean(ConfigUtils.get("debug", "false"))) rootLogger.setLevel(Level.DEBUG);
+        if (Boolean.parseBoolean(ConfigUtils.get("debug", "false"))) rootLogger.setLevel(Level.DEBUG);
         else rootLogger.setLevel(Level.INFO);
 
         log.debug("Daemon ready... Version: " + version);
