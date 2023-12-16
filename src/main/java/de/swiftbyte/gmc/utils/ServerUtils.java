@@ -28,7 +28,7 @@ public class ServerUtils {
         argsType1.stream()
                 .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
-                    if(arg.isEmpty()) return;
+                    if(CommonUtils.isNullOrEmpty(arg)) return;
                     if (!arg.contains("?")) preArgs.append("?");
                     preArgs.append(arg);
                 });
@@ -40,6 +40,7 @@ public class ServerUtils {
         argsType2.stream()
                 .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
+                    if(CommonUtils.isNullOrEmpty(arg)) return;
                     if (!arg.contains("-")) preArgs.append(" -");
                     else preArgs.append(" ");
                     preArgs.append(arg);
@@ -112,10 +113,11 @@ public class ServerUtils {
                 "QueryPort=" + settings.getQueryPort(),
                 "RCONEnabled=True",
                 "RCONPort=" + settings.getRconPort(),
-                "SessionName=\"" + (settings.getName() == null ? server.getFriendlyName() : settings.getName()) + "\"",
                 "ClampItemStats=" + settings.isClampItemStats()
         ));
 
+        if(!CommonUtils.isNullOrEmpty(settings.getName()))
+            requiredLaunchParameters1.add("SessionName=" + settings.getName().replace(" ", "-"));
         if (!CommonUtils.isNullOrEmpty(settings.getServerIp()))
             requiredLaunchParameters1.add("MultiHome=" + settings.getServerIp());
         if (!CommonUtils.isNullOrEmpty(settings.getServerPassword()))
