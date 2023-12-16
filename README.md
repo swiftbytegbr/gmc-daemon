@@ -34,7 +34,7 @@ machines in one panel.**
 
 ### 📝 Installation
 
-- GMC for Early Access is almost ready, please be patient for a few more days!
+- https://gamemanager.cloud
 
 ***
 Copyright © 2023 SwiftByte Kaspereit Faust Steurer GbR
