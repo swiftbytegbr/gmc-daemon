@@ -12,7 +12,7 @@
 
     <groupId>de.swiftbyte.gmc</groupId>
     <artifactId>GmcDaemon</artifactId>
-    <version>0.1.2-DEV</version>
+    <version>0.1.2</version>
     <name>GmcDaemon</name>
     <description>GmcDaemon</description>
     <packaging>jar</packaging>
