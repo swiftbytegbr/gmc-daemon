@@ -9,12 +9,11 @@
         <version>3.2.1</version>
     </parent>
 
-
     <groupId>de.swiftbyte.gmc</groupId>
     <artifactId>GmcDaemon</artifactId>
     <version>0.1.2</version>
     <name>GmcDaemon</name>
-    <description>GmcDaemon</description>
+    <description>GameManagerCloud Daemon</description>
     <packaging>jar</packaging>
     <organization>
         <name>SwiftByte</name>
@@ -22,10 +21,7 @@
     </organization>
     <inceptionYear>2023</inceptionYear>
 
-
     <properties>
-        <java.version>17</java.version>
-        <spring-shell.version>3.1.6</spring-shell.version>
         <exec.mainClass>de.swiftbyte.gmc.Application</exec.mainClass>
     </properties>
 
@@ -41,6 +37,8 @@
     </repositories>
 
     <dependencies>
+
+        <!-- Spring -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
@@ -48,14 +46,22 @@
         <dependency>
             <groupId>org.springframework.shell</groupId>
             <artifactId>spring-shell-starter</artifactId>
+            <version>3.1.6</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Jline -->
         <dependency>
             <groupId>org.jline</groupId>
             <artifactId>jline-terminal-jansi</artifactId>
             <version>3.25.0</version>
         </dependency>
 
-
+        <!-- SwiftByte -->
         <dependency>
             <groupId>de.swiftbyte</groupId>
             <artifactId>GmcPackets</artifactId>
@@ -66,6 +72,29 @@
             <artifactId>rcon-core</artifactId>
             <version>1.0</version>
         </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Jackson -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.16.1</version>
+        </dependency>
+
+        <!-- Reflections -->
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>0.10.2</version>
+        </dependency>
+
+        <!-- Apache -->
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -76,58 +105,29 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.14.0</version>
         </dependency>
+
+        <!-- OKHTTP -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>4.12.0</version>
         </dependency>
+
+        <!-- Oshi -->
         <dependency>
             <groupId>com.github.oshi</groupId>
             <artifactId>oshi-core</artifactId>
             <version>6.4.10</version>
         </dependency>
-        <dependency>
-            <groupId>org.reflections</groupId>
-            <artifactId>reflections</artifactId>
-            <version>0.10.2</version>
-        </dependency>
+
+        <!-- ZeroTurnaround ZIP -->
         <dependency>
             <groupId>org.zeroturnaround</groupId>
             <artifactId>zt-zip</artifactId>
             <version>1.16</version>
             <type>jar</type>
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.16.1</version>
-        </dependency>
-
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
     </dependencies>
-
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.shell</groupId>
-                <artifactId>spring-shell-dependencies</artifactId>
-                <version>${spring-shell.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <build>
         <plugins>
