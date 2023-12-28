@@ -103,6 +103,7 @@ public class Node extends Thread {
     }
 
     public void shutdown() {
+        if(connectionState == ConnectionState.DELETING) return;
         NodeLogoutPacket logoutPacket = new NodeLogoutPacket();
         logoutPacket.setReason("Terminated by user");
         log.debug("Sending shutdown packet...");

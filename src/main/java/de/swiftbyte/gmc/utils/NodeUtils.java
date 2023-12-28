@@ -104,6 +104,8 @@ public class NodeUtils {
 
     public static void cacheInformation(Node node) {
 
+        if(node.getConnectionState() == ConnectionState.DELETING) return;
+
         HashMap<String, GameServerCacheModel> gameServers = new HashMap<>();
 
         for (GameServer gameServer : GameServer.getAllServers()) {
