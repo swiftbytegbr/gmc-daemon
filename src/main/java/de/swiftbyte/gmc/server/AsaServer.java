@@ -13,6 +13,7 @@ import de.swiftbyte.gmc.utils.ServerUtils;
 import de.swiftbyte.gmc.utils.action.AsyncAction;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import xyz.astroark.Rcon;
 import xyz.astroark.exception.AuthenticationException;
 
@@ -107,7 +108,7 @@ public class AsaServer extends GameServer {
                 if (state != GameServerState.OFFLINE && state != GameServerState.CREATING) {
                     stop(false).complete();
                 }
-                Files.delete(installDir);
+                FileUtils.deleteDirectory(installDir.toFile());
                 FirewallService.removePort(friendlyName);
                 BackupService.deleteAllBackupsByServer(this);
                 GameServer.removeServerById(serverId);
