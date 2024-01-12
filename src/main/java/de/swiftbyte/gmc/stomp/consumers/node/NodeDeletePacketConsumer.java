@@ -2,7 +2,6 @@ package de.swiftbyte.gmc.stomp.consumers.node;
 
 import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.common.packet.node.NodeDeletePacket;
-import de.swiftbyte.gmc.common.packet.node.NodeLoginAckPacket;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.stomp.StompPacketInfo;

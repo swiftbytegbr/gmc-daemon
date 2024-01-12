@@ -15,7 +15,7 @@ public class NodeUpdatePacketConsumer implements StompPacketConsumer<NodeUpdateP
 
         log.info("New daemon version available: " + packet.getVersion());
 
-        if(Node.INSTANCE.isAutoUpdateEnabled()) {
+        if (Node.INSTANCE.isAutoUpdateEnabled()) {
             log.info("Auto update enabled. Updating...");
             Node.INSTANCE.updateDaemon();
         } else {
