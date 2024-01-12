@@ -27,6 +27,7 @@ import java.util.HashMap;
 public class NodeUtils {
 
     public static final String TMP_PATH = "tmp/",
+            DAEMON_LATEST_DOWNLOAD_URL = "https://github.com/swiftbytegbr/gmc-daemon/releases/latest/download/gmc-daemon-setup.exe",
             STEAM_CMD_DIR = "steamcmd/",
             STEAM_CMD_PATH = STEAM_CMD_DIR + "steamcmd.exe",
             STEAM_CMD_DOWNLOAD_URL = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip";
@@ -102,6 +103,25 @@ public class NodeUtils {
         }
     }
 
+    public static void downloadLatestDaemonInstaller() {
+        File tmp = new File(TMP_PATH);
+
+        try {
+            FileUtils.copyURLToFile(
+                    new URL(DAEMON_LATEST_DOWNLOAD_URL),
+                    new File(TMP_PATH + "latest-installer.exe"));
+
+            log.debug("Update successfully downloaded!");
+        } catch (IOException e) {
+            log.error("An error occurred while downloading the update. Please check your internet connection!", e);
+            try {
+                FileUtils.deleteDirectory(tmp);
+            } catch (IOException ex) {
+                log.warn("An error occurred while deleting the temporary directory.", ex);
+            }
+        }
+    }
+
     public static void cacheInformation(Node node) {
 
         if(node.getConnectionState() == ConnectionState.DELETING) return;
@@ -121,6 +141,7 @@ public class NodeUtils {
                 .nodeName(node.getNodeName())
                 .teamName(node.getTeamName())
                 .serverPath(node.getServerPath())
+                .isAutoUpdateEnabled(node.isAutoUpdateEnabled())
                 .autoBackup(node.getAutoBackup())
                 .gameServerCacheModelHashMap(gameServers)
                 .manageFirewallAutomatically(node.isManageFirewallAutomatically())

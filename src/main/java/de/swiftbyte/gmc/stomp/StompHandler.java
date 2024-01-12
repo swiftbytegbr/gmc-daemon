@@ -1,5 +1,6 @@
 package de.swiftbyte.gmc.stomp;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.management.OperatingSystemMXBean;
@@ -39,7 +40,7 @@ public class StompHandler {
 
 
         MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
-        converter.setObjectMapper(new ObjectMapper().registerModule(new JavaTimeModule()));
+        converter.setObjectMapper(new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).registerModule(new JavaTimeModule()));
 
         stompClient.setMessageConverter(converter);
         try {
@@ -95,17 +96,19 @@ public class StompHandler {
                     return;
                 }
 
-                session.subscribe(annotation.path(), new StompFrameHandler() {
-                    @Override
-                    public Type getPayloadType(StompHeaders headers) {
-                        return annotation.packetClass();
-                    }
+                for (String path : annotation.path()) {
+                    session.subscribe(path, new StompFrameHandler() {
+                        @Override
+                        public Type getPayloadType(StompHeaders headers) {
+                            return annotation.packetClass();
+                        }
 
-                    @Override
-                    public void handleFrame(StompHeaders headers, Object payload) {
-                        packetConsumer.onReceive(payload);
-                    }
-                });
+                        @Override
+                        public void handleFrame(StompHeaders headers, Object payload) {
+                            packetConsumer.onReceive(payload);
+                        }
+                    });
+                }
 
             } else {
                 log.error("Found class annotated with @StompPacketInfo that does not implement StompPacketConsumer: " + clazz.getName());
