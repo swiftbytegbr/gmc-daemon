@@ -210,11 +210,17 @@ public class Node extends Thread {
     }
 
     public void connect() {
-        log.info("Start connection to backend...");
-        setConnectionState(ConnectionState.CONNECTING);
-        if (!StompHandler.initialiseStomp()) {
-            setConnectionState(ConnectionState.CONNECTION_FAILED);
-            ServerUtils.getCachedServerInformation();
+
+        if(connectionState == ConnectionState.RECONNECTING) {
+            log.info("Reconnecting to backend...");
+            StompHandler.initialiseStomp();
+        } else {
+            log.info("Connecting to backend...");
+            setConnectionState(ConnectionState.CONNECTING);
+            if (!StompHandler.initialiseStomp()) {
+                setConnectionState(ConnectionState.RECONNECTING);
+                ServerUtils.getCachedServerInformation();
+            }
         }
     }
 
@@ -272,8 +278,7 @@ public class Node extends Thread {
             StompHandler.send("/app/node/heartbeat", heartbeatPacket);
 
             BackupService.deleteAllExpiredBackups();
-        } else if (connectionState == ConnectionState.CONNECTION_FAILED) {
-            log.info("Reconnecting to backend...");
+        } else if (connectionState == ConnectionState.RECONNECTING) {
             connect();
         }
     };

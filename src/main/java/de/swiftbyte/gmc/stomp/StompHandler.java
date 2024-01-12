@@ -57,14 +57,14 @@ public class StompHandler {
 
     public synchronized static void send(String destination, Object payload) {
         if (session == null) {
-            if (Node.INSTANCE.getConnectionState() != ConnectionState.CONNECTION_FAILED)
+            if (Node.INSTANCE.getConnectionState() != ConnectionState.RECONNECTING)
                 log.error("Failed to send packet to " + destination + " because the session is null.");
             return;
         }
 
         if (!session.isConnected()) {
             log.error("Failed to send packet to " + destination + " because the session is not connected. Is the backend running?");
-            Node.INSTANCE.setConnectionState(ConnectionState.CONNECTION_FAILED);
+            Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
             return;
         }
 
