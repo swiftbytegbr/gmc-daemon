@@ -211,7 +211,7 @@ public class Node extends Thread {
 
     public void connect() {
 
-        if(connectionState == ConnectionState.RECONNECTING) {
+        if (connectionState == ConnectionState.RECONNECTING) {
             log.info("Reconnecting to backend...");
             StompHandler.initialiseStomp();
         } else {
