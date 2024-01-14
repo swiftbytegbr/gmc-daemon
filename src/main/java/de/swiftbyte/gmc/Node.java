@@ -54,6 +54,8 @@ public class Node extends Thread {
     private String secret;
     private String nodeId;
 
+    private boolean isUpdating;
+
     public Node() {
 
         INSTANCE = this;
@@ -225,19 +227,30 @@ public class Node extends Thread {
     }
 
     public void updateDaemon() {
-        log.debug("Start updating daemon to latest version! Downloading...");
-
-        NodeUtils.downloadLatestDaemonInstaller();
-
-        log.debug("Starting installer and restarting daemon...");
-
         try {
-            String installCommand = "\"" + CommonUtils.convertPathSeparator(Path.of(NodeUtils.TMP_PATH + "latest-installer.exe").toAbsolutePath()) + "\" /SILENT /SUPPRESSMSGBOXES /LOG=\"" + CommonUtils.convertPathSeparator(Path.of("log/latest-installation.log").toAbsolutePath()) + "\"";
-            log.debug("Starting installer with command: '" + installCommand + "'");
-            Runtime.getRuntime().exec(installCommand);
-            System.exit(0);
-        } catch (IOException e) {
-            log.error("An error occurred while starting the installer.", e);
+            if (isUpdating) {
+                log.error("The daemon is already updating!");
+                return;
+            }
+            isUpdating = true;
+            log.debug("Start updating daemon to latest version! Downloading...");
+
+            NodeUtils.downloadLatestDaemonInstaller();
+
+            log.debug("Starting installer and restarting daemon...");
+
+            try {
+                String installCommand = "\"" + CommonUtils.convertPathSeparator(Path.of(NodeUtils.TMP_PATH + "latest-installer.exe").toAbsolutePath()) + "\" /SILENT /SUPPRESSMSGBOXES /LOG=\"" + CommonUtils.convertPathSeparator(Path.of("log/latest-installation.log").toAbsolutePath()) + "\"";
+                log.debug("Starting installer with command: '" + installCommand + "'");
+                Runtime.getRuntime().exec(installCommand);
+                System.exit(0);
+            } catch (IOException e) {
+                log.error("An error occurred while starting the installer.", e);
+                isUpdating = false;
+            }
+        } catch (Exception e) {
+            log.error("An unknown error occurred while updating the daemon.", e);
+            isUpdating = false;
         }
 
     }
