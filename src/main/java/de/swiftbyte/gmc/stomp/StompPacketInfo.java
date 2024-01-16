@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface StompPacketInfo {
 
-    String path();
+    String[] path();
 
     Class<?> packetClass();
 

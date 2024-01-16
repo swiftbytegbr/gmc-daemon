@@ -1,9 +1,9 @@
 package de.swiftbyte.gmc.server;
 
 import de.swiftbyte.gmc.Node;
-import de.swiftbyte.gmc.packet.entity.GameServerState;
-import de.swiftbyte.gmc.packet.entity.ServerSettings;
-import de.swiftbyte.gmc.packet.server.ServerDeletePacket;
+import de.swiftbyte.gmc.common.packet.entity.GameServerState;
+import de.swiftbyte.gmc.common.packet.entity.ServerSettings;
+import de.swiftbyte.gmc.common.packet.server.ServerDeletePacket;
 import de.swiftbyte.gmc.service.BackupService;
 import de.swiftbyte.gmc.service.FirewallService;
 import de.swiftbyte.gmc.stomp.StompHandler;
@@ -13,6 +13,7 @@ import de.swiftbyte.gmc.utils.ServerUtils;
 import de.swiftbyte.gmc.utils.action.AsyncAction;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import xyz.astroark.Rcon;
 import xyz.astroark.exception.AuthenticationException;
 
@@ -107,7 +108,7 @@ public class AsaServer extends GameServer {
                 if (state != GameServerState.OFFLINE && state != GameServerState.CREATING) {
                     stop(false).complete();
                 }
-                Files.delete(installDir);
+                FileUtils.deleteDirectory(installDir.toFile());
                 FirewallService.removePort(friendlyName);
                 BackupService.deleteAllBackupsByServer(this);
                 GameServer.removeServerById(serverId);

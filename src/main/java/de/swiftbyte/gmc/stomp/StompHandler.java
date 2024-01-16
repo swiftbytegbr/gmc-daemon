@@ -1,12 +1,13 @@
 package de.swiftbyte.gmc.stomp;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.management.OperatingSystemMXBean;
 import de.swiftbyte.gmc.Application;
 import de.swiftbyte.gmc.Node;
-import de.swiftbyte.gmc.packet.entity.NodeData;
-import de.swiftbyte.gmc.packet.node.NodeLoginPacket;
+import de.swiftbyte.gmc.common.packet.entity.NodeData;
+import de.swiftbyte.gmc.common.packet.node.NodeLoginPacket;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.ConnectionState;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +40,7 @@ public class StompHandler {
 
 
         MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
-        converter.setObjectMapper(new ObjectMapper().registerModule(new JavaTimeModule()));
+        converter.setObjectMapper(new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).registerModule(new JavaTimeModule()));
 
         stompClient.setMessageConverter(converter);
         try {
@@ -56,14 +57,14 @@ public class StompHandler {
 
     public synchronized static void send(String destination, Object payload) {
         if (session == null) {
-            if (Node.INSTANCE.getConnectionState() != ConnectionState.CONNECTION_FAILED)
+            if (Node.INSTANCE.getConnectionState() != ConnectionState.RECONNECTING)
                 log.error("Failed to send packet to " + destination + " because the session is null.");
             return;
         }
 
         if (!session.isConnected()) {
             log.error("Failed to send packet to " + destination + " because the session is not connected. Is the backend running?");
-            Node.INSTANCE.setConnectionState(ConnectionState.CONNECTION_FAILED);
+            Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
             return;
         }
 
@@ -95,17 +96,19 @@ public class StompHandler {
                     return;
                 }
 
-                session.subscribe(annotation.path(), new StompFrameHandler() {
-                    @Override
-                    public Type getPayloadType(StompHeaders headers) {
-                        return annotation.packetClass();
-                    }
+                for (String path : annotation.path()) {
+                    session.subscribe(path, new StompFrameHandler() {
+                        @Override
+                        public Type getPayloadType(StompHeaders headers) {
+                            return annotation.packetClass();
+                        }
 
-                    @Override
-                    public void handleFrame(StompHeaders headers, Object payload) {
-                        packetConsumer.onReceive(payload);
-                    }
-                });
+                        @Override
+                        public void handleFrame(StompHeaders headers, Object payload) {
+                            packetConsumer.onReceive(payload);
+                        }
+                    });
+                }
 
             } else {
                 log.error("Found class annotated with @StompPacketInfo that does not implement StompPacketConsumer: " + clazz.getName());

@@ -1,7 +1,7 @@
 package de.swiftbyte.gmc.stomp.consumers.server;
 
-import de.swiftbyte.gmc.packet.server.ServerRconPacket;
-import de.swiftbyte.gmc.packet.server.ServerRconResponsePacket;
+import de.swiftbyte.gmc.common.packet.server.ServerRconPacket;
+import de.swiftbyte.gmc.common.packet.server.ServerRconResponsePacket;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;

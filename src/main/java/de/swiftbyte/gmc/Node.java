@@ -3,10 +3,10 @@ package de.swiftbyte.gmc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.swiftbyte.gmc.cache.CacheModel;
-import de.swiftbyte.gmc.packet.entity.NodeSettings;
-import de.swiftbyte.gmc.packet.entity.ResourceUsage;
-import de.swiftbyte.gmc.packet.node.NodeHeartbeatPacket;
-import de.swiftbyte.gmc.packet.node.NodeLogoutPacket;
+import de.swiftbyte.gmc.common.packet.entity.NodeSettings;
+import de.swiftbyte.gmc.common.packet.entity.ResourceUsage;
+import de.swiftbyte.gmc.common.packet.node.NodeHeartbeatPacket;
+import de.swiftbyte.gmc.common.packet.node.NodeLogoutPacket;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.service.BackupService;
 import de.swiftbyte.gmc.stomp.StompHandler;
@@ -25,6 +25,7 @@ import oshi.SystemInfo;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
@@ -46,11 +47,14 @@ public class Node extends Thread {
     private boolean manageFirewallAutomatically;
 
     private NodeSettings.AutoBackup autoBackup;
+    private boolean isAutoUpdateEnabled;
     private String serverStopMessage;
     private String serverRestartMessage;
 
     private String secret;
     private String nodeId;
+
+    private boolean isUpdating;
 
     public Node() {
 
@@ -87,6 +91,7 @@ public class Node extends Thread {
             nodeName = cacheModel.getNodeName();
             teamName = cacheModel.getTeamName();
             serverPath = cacheModel.getServerPath();
+            isAutoUpdateEnabled = cacheModel.isAutoUpdateEnabled();
             manageFirewallAutomatically = cacheModel.isManageFirewallAutomatically();
 
             serverStopMessage = cacheModel.getServerStopMessage();
@@ -103,6 +108,7 @@ public class Node extends Thread {
     }
 
     public void shutdown() {
+        if (connectionState == ConnectionState.DELETING) return;
         NodeLogoutPacket logoutPacket = new NodeLogoutPacket();
         logoutPacket.setReason("Terminated by user");
         log.debug("Sending shutdown packet...");
@@ -206,12 +212,47 @@ public class Node extends Thread {
     }
 
     public void connect() {
-        log.info("Start connection to backend...");
-        setConnectionState(ConnectionState.CONNECTING);
-        if (!StompHandler.initialiseStomp()) {
-            setConnectionState(ConnectionState.CONNECTION_FAILED);
-            ServerUtils.getCachedServerInformation();
+
+        if (connectionState == ConnectionState.RECONNECTING) {
+            log.info("Reconnecting to backend...");
+            StompHandler.initialiseStomp();
+        } else {
+            log.info("Connecting to backend...");
+            setConnectionState(ConnectionState.CONNECTING);
+            if (!StompHandler.initialiseStomp()) {
+                setConnectionState(ConnectionState.RECONNECTING);
+                ServerUtils.getCachedServerInformation();
+            }
         }
+    }
+
+    public void updateDaemon() {
+        try {
+            if (isUpdating) {
+                log.error("The daemon is already updating!");
+                return;
+            }
+            isUpdating = true;
+            log.debug("Start updating daemon to latest version! Downloading...");
+
+            NodeUtils.downloadLatestDaemonInstaller();
+
+            log.debug("Starting installer and restarting daemon...");
+
+            try {
+                String installCommand = "\"" + CommonUtils.convertPathSeparator(Path.of(NodeUtils.TMP_PATH + "latest-installer.exe").toAbsolutePath()) + "\" /SILENT /SUPPRESSMSGBOXES /LOG=\"" + CommonUtils.convertPathSeparator(Path.of("log/latest-installation.log").toAbsolutePath()) + "\"";
+                log.debug("Starting installer with command: '" + installCommand + "'");
+                Runtime.getRuntime().exec(installCommand);
+                System.exit(0);
+            } catch (IOException e) {
+                log.error("An error occurred while starting the installer.", e);
+                isUpdating = false;
+            }
+        } catch (Exception e) {
+            log.error("An unknown error occurred while updating the daemon.", e);
+            isUpdating = false;
+        }
+
     }
 
     public void updateSettings(NodeSettings nodeSettings) {
@@ -224,6 +265,7 @@ public class Node extends Thread {
         if (nodeSettings.getAutoBackup() != null) autoBackup = nodeSettings.getAutoBackup();
         else autoBackup = new NodeSettings.AutoBackup();
 
+        isAutoUpdateEnabled = nodeSettings.isEnableAutoUpdate();
         serverStopMessage = nodeSettings.getStopMessage();
         serverRestartMessage = nodeSettings.getRestartMessage();
         manageFirewallAutomatically = nodeSettings.isManageFirewallAutomatically();
@@ -249,8 +291,7 @@ public class Node extends Thread {
             StompHandler.send("/app/node/heartbeat", heartbeatPacket);
 
             BackupService.deleteAllExpiredBackups();
-        } else if (connectionState == ConnectionState.CONNECTION_FAILED) {
-            log.info("Reconnecting to backend...");
+        } else if (connectionState == ConnectionState.RECONNECTING) {
             connect();
         }
     };

@@ -1,5 +1,5 @@
 #define MyAppName "GameManagerCloud Daemon"
-#define MyAppVersion "0.1.2"
+#define MyAppVersion "0.1.3"
 #define MyAppPublisher "SwiftByte Kaspereit Faust Steurer GbR"
 #define MyAppURL "https://gamemanager.cloud"
 #define MyAppExeName "GmcDaemon.exe"
@@ -25,6 +25,7 @@ DisableWelcomePage=False
 UsePreviousPrivileges=False
 AppCopyright={#myAppPublisher}
 LicenseFile={#SourcePath}\eula.txt
+UninstallDisplayIcon={app}\GmcDaemon.exe
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -38,4 +39,4 @@ Source: "{#SourcePath}\target\GmcDaemon\libs\*"; DestDir: "{app}\libs"; Flags: i
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent runascurrentuser
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall runascurrentuser

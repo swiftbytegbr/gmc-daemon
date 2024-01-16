@@ -1,7 +1,7 @@
 package de.swiftbyte.gmc.stomp.consumers.server;
 
-import de.swiftbyte.gmc.packet.server.ServerSettingsPacket;
-import de.swiftbyte.gmc.packet.server.ServerSettingsResponsePacket;
+import de.swiftbyte.gmc.common.packet.server.ServerSettingsPacket;
+import de.swiftbyte.gmc.common.packet.server.ServerSettingsResponsePacket;
 import de.swiftbyte.gmc.server.AsaServer;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompHandler;

@@ -1,6 +1,6 @@
 package de.swiftbyte.gmc.stomp.consumers.server;
 
-import de.swiftbyte.gmc.packet.server.ServerCreatePacket;
+import de.swiftbyte.gmc.common.packet.server.ServerCreatePacket;
 import de.swiftbyte.gmc.server.AsaServer;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.stomp.StompPacketInfo;
