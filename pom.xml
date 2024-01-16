@@ -11,7 +11,7 @@
 
     <groupId>de.swiftbyte.gmc</groupId>
     <artifactId>GmcDaemon</artifactId>
-    <version>0.1.3-DEV</version>
+    <version>0.1.3</version>
     <name>GmcDaemon</name>
     <description>GameManagerCloud Daemon</description>
     <packaging>jar</packaging>
