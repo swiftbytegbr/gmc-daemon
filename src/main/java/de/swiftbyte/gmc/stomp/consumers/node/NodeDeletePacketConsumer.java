@@ -5,6 +5,7 @@ import de.swiftbyte.gmc.common.packet.node.NodeDeletePacket;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.stomp.StompPacketInfo;
+import de.swiftbyte.gmc.utils.ConfigUtils;
 import de.swiftbyte.gmc.utils.ConnectionState;
 import de.swiftbyte.gmc.utils.NodeUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -34,11 +35,22 @@ public class NodeDeletePacketConsumer implements StompPacketConsumer<NodeDeleteP
             FileUtils.deleteDirectory(new File(NodeUtils.TMP_PATH));
             FileUtils.deleteDirectory(new File(NodeUtils.STEAM_CMD_DIR));
             FileUtils.deleteDirectory(new File("logs"));
-            FileUtils.delete(new File("cache.json"));
-            FileUtils.delete(new File("backups.json"));
-            FileUtils.delete(new File("gmc.properties"));
+
+            try {
+                FileUtils.delete(new File("cache.json"));
+            } catch (Exception e) {
+                log.debug("Could not delete cache.json directory.", e);
+            }
+
+            try {
+                FileUtils.delete(new File("backups.json"));
+            } catch (Exception e) {
+                log.debug("Could not delete backups.json directory.", e);
+            }
+            ConfigUtils.remove("node.id");
+            ConfigUtils.remove("node.secret");
         } catch (IOException e) {
-            log.warn("An error occurred while cleaning up.");
+            log.warn("An error occurred while cleaning up.", e);
         }
 
         log.info("Node deletion complete. Please note that the daemon must be uninstalled manually. Exiting...");
