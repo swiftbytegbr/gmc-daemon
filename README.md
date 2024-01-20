@@ -1,4 +1,5 @@
-# GMC Early Access - Daemon
+# Game Manager Cloud - Daemon
+## ARK Server Manager for ARK Ascended
 
 **"Game Manager Cloud" is a web application to manage game servers — especially ARK: Ascended servers. You can host
 servers on your own dedicated machines, while allowing you to manage and organize all ark servers across different
@@ -7,7 +8,7 @@ machines in one panel.**
 ### 👾 GMC Info
 
 - **The Website**: Here, you can create your account and manage Ark servers with ease — no Windows server connection
-  needed!
+  needed! [GMC WebPanel](https://gamemanager.cloud)
 - **The GMC-Daemon**: This nifty program lets you manage Ark: SA servers via the website, even on dedicated servers.
 - **Install with Ease**: It's just like installing any other program.
 - **Web Integration**: Easily add daemons to your account and manage Ark: SA servers.
@@ -35,6 +36,7 @@ machines in one panel.**
 ### 📝 Installation
 
 - https://gamemanager.cloud
+- https://discord.gg/3PWMZnXMzR
 
 ***
 Copyright © 2023 SwiftByte Kaspereit Faust Steurer GbR
