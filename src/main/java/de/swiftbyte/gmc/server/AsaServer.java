@@ -104,6 +104,7 @@ public class AsaServer extends GameServer {
     @Override
     public AsyncAction<Boolean> delete() {
         return () -> {
+            super.setState(GameServerState.DELETING);
             try {
                 if (state != GameServerState.OFFLINE && state != GameServerState.CREATING) {
                     stop(false).complete();

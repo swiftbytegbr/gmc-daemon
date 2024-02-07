@@ -11,11 +11,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class FirewallService {
 
-    public static void allowPort(String ruleName, Path executablePath, int[] ports) {
+    public static void allowPort(String serverName, Path executablePath, int[] ports) {
 
         String portsString = Arrays.stream(ports)
                 .mapToObj(Integer::toString)
                 .collect(Collectors.joining(","));
+
+        String ruleName = String.format("ARK GMC: %s", serverName);
 
         log.debug("Adding firewall rule for ports " + portsString + ".");
 
@@ -39,11 +41,16 @@ public class FirewallService {
 
     }
 
-    public static void removePort(String ruleName) {
+    public static void removePort(String serverName) {
+
+        String ruleName = String.format("ARK GMC: %s", serverName);
 
         log.debug("Removing firewall rule " + ruleName + ".");
 
         String command = String.format("powershell Remove-NetFirewallRule -DisplayName \\\"%s\\\"", ruleName);
+
+        //TODO remove in later version
+        String command2 = String.format("powershell Remove-NetFirewallRule -DisplayName \\\"%s\\\"", serverName);
 
         try {
             Process process = Runtime.getRuntime().exec(command);
@@ -52,6 +59,9 @@ public class FirewallService {
             if (process.exitValue() != 0) {
                 log.warn("Removing firewall rule returned non-zero exit value.");
             }
+
+            Process process2 = Runtime.getRuntime().exec(command);
+            process2.waitFor();
 
         } catch (IOException | InterruptedException e) {
             log.error("Error while removing firewall rule.", e);
