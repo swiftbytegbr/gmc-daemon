@@ -104,11 +104,12 @@ public class AsaServer extends GameServer {
     @Override
     public AsyncAction<Boolean> delete() {
         return () -> {
-            super.setState(GameServerState.DELETING);
             try {
                 if (state != GameServerState.OFFLINE && state != GameServerState.CREATING) {
                     stop(false).complete();
                 }
+                super.setState(GameServerState.DELETING);
+                Thread.sleep(5000);
                 FileUtils.deleteDirectory(installDir.toFile());
                 FirewallService.removePort(friendlyName);
                 BackupService.deleteAllBackupsByServer(this);
@@ -123,6 +124,8 @@ public class AsaServer extends GameServer {
             } catch (IOException e) {
                 log.error("An unknown exception occurred while deleting the server '" + friendlyName + "'.", e);
                 return false;
+            } catch (InterruptedException e) {
+                log.error("An unknown exception occurred while deleting the server '" + friendlyName + "'.", e);
             }
             return true;
         };
