@@ -10,6 +10,8 @@ import de.swiftbyte.gmc.common.packet.entity.NodeData;
 import de.swiftbyte.gmc.common.packet.node.NodeLoginPacket;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.ConnectionState;
+import jakarta.websocket.ContainerProvider;
+import jakarta.websocket.WebSocketContainer;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
@@ -29,11 +31,16 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 public class StompHandler {
 
+    // 1MB
+    private static final int MAX_MESSAGE_BUFFER_SIZE_BYTES = 1024 * 1024;
+
     private static StompSession session;
 
     public static boolean initialiseStomp() {
 
-        WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
+        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+        container.setDefaultMaxTextMessageBufferSize(MAX_MESSAGE_BUFFER_SIZE_BYTES);
+        WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient(container));
         WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
         headers.add("Node-Id", Node.INSTANCE.getNodeId());
         headers.add("Node-Secret", Node.INSTANCE.getSecret());
@@ -145,6 +152,11 @@ public class StompHandler {
             log.debug("Sending login packet: " + loginPacket + " to /node/login");
 
             session.send("/app/node/login", loginPacket);
+        }
+
+        @Override
+        public void handleTransportError(StompSession session, Throwable e) {
+            log.error("An error occurred while communicating with the backend.", e);
         }
 
         @Override

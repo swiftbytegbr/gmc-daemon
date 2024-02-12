@@ -13,7 +13,7 @@ public class NodeUpdatePacketConsumer implements StompPacketConsumer<NodeUpdateP
     @Override
     public void onReceive(NodeUpdatePacket packet) {
 
-        if(packet.isAutoUpdate()) {
+        if (packet.isAutoUpdate()) {
 
             log.info("New daemon version available: " + packet.getVersion());
             if (Node.INSTANCE.isAutoUpdateEnabled()) {

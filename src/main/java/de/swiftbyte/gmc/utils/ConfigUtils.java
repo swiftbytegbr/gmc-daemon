@@ -91,17 +91,17 @@ public class ConfigUtils {
 
     public static void remove(String key) {
 
-            if (key == null) {
-                log.error("Tried to remove null key.");
-                return;
-            }
+        if (key == null) {
+            log.error("Tried to remove null key.");
+            return;
+        }
 
-            properties.remove(key);
-            try {
-                properties.store(new FileWriter(CONFIG_FILE), "Do not make any changes! If the file gets, edited it can lead to malfunctions, unexpected behavior and data loss.");
-            } catch (IOException e) {
-                log.error("An unknown error occurred while saving the value.", e);
-            }
+        properties.remove(key);
+        try {
+            properties.store(new FileWriter(CONFIG_FILE), "Do not make any changes! If the file gets, edited it can lead to malfunctions, unexpected behavior and data loss.");
+        } catch (IOException e) {
+            log.error("An unknown error occurred while saving the value.", e);
+        }
     }
 
     public static boolean hasKey(String key) {
