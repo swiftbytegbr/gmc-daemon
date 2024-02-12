@@ -89,7 +89,7 @@ public abstract class GameServer {
 
     public void setState(GameServerState state) {
 
-        if(this.state == GameServerState.DELETING) return;
+        if (this.state == GameServerState.DELETING) return;
 
         log.debug("Changing state of server '" + friendlyName + "' from '" + this.state + "' to '" + state + "'.");
 
