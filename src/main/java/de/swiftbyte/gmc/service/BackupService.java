@@ -71,6 +71,11 @@ public class BackupService {
             backupScheduler.cancel(false);
         }
 
+        if(Node.INSTANCE.getAutoBackup() == null) {
+            log.error("AutoBackup settings are null. Skipping...");
+            return;
+        }
+
         if (Node.INSTANCE.getAutoBackup().isEnabled() && Node.INSTANCE.getAutoBackup().getIntervallMinutes() > 0) {
             log.debug("Starting backup scheduler...");
 
