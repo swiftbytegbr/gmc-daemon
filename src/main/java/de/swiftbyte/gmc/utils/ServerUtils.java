@@ -142,6 +142,8 @@ public class ServerUtils {
         if (!settings.isEnableBattlEye()) requiredLaunchParameters1.add("NoBattlEye");
         if (!CommonUtils.isNullOrEmpty(settings.getCulture()))
             requiredLaunchParameters1.add("culture=" + settings.getCulture());
+        if (!CommonUtils.isNullOrEmpty(settings.getClusterId()))
+            requiredLaunchParameters1.add("clusterID=" + settings.getClusterId());
         return requiredLaunchParameters1;
     }
 
