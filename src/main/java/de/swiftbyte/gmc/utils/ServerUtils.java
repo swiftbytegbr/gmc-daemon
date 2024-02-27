@@ -41,7 +41,7 @@ public class ServerUtils {
                 .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
                     if (CommonUtils.isNullOrEmpty(arg)) return;
-                    if (!arg.contains("-")) preArgs.append(" -");
+                    if (!arg.replace(" ", "").startsWith("-")) preArgs.append(" -");
                     else preArgs.append(" ");
                     preArgs.append(arg);
                 });
