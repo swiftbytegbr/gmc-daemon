@@ -144,6 +144,9 @@ public class ServerUtils {
             requiredLaunchParameters1.add("culture=" + settings.getCulture());
         if (!CommonUtils.isNullOrEmpty(settings.getClusterId()))
             requiredLaunchParameters1.add("clusterID=" + settings.getClusterId());
+        if (!CommonUtils.isNullOrEmpty(settings.getClusterDirOverride()))
+            requiredLaunchParameters1.add("ClusterDirOverride=\"" + settings.getClusterDirOverride()+"\"");
+        if (settings.isNoTransferFromFiltering()) requiredLaunchParameters1.add("notransferfromfiltering");
         return requiredLaunchParameters1;
     }
 
