@@ -81,11 +81,7 @@ public class AsaServer extends GameServer {
                 if (process.exitValue() == 7 || process.exitValue() == 0) {
                     log.debug("Server was installed successfully!");
 
-                    if (Node.INSTANCE.isManageFirewallAutomatically()) {
-                        log.debug("Adding firewall rules for server '" + friendlyName + "'...");
-
-                        allowFirewallPorts();
-                    }
+                    allowFirewallPorts();
 
                     super.setState(GameServerState.OFFLINE);
                 } else {
@@ -285,9 +281,7 @@ public class AsaServer extends GameServer {
                 if (CommonUtils.getProcessPID(String.valueOf(installDir)) == null)
                     super.setState(GameServerState.OFFLINE);
             }
-            case OFFLINE -> {
-                restartCounter = 0;
-            }
+            case OFFLINE -> restartCounter = 0;
         }
 
         if(state != GameServerState.ONLINE) {

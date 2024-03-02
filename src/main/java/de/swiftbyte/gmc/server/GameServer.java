@@ -83,8 +83,11 @@ public abstract class GameServer {
     public abstract String sendRconCommand(String command);
 
     public void allowFirewallPorts() {
-        Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ArkAscendedServer.exe");
-        FirewallService.allowPort(friendlyName, executablePath, new int[]{settings.getGamePort(), settings.getGamePort() + 1, settings.getQueryPort(), settings.getRconPort()});
+        if (Node.INSTANCE.isManageFirewallAutomatically()) {
+            log.debug("Adding firewall rules for server '" + friendlyName + "'...");
+            Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ArkAscendedServer.exe");
+            FirewallService.allowPort(friendlyName, executablePath, new int[]{settings.getGamePort(), settings.getGamePort() + 1, settings.getQueryPort(), settings.getRconPort()});
+        }
     }
 
     public void setState(GameServerState state) {
@@ -106,7 +109,7 @@ public abstract class GameServer {
     }
 
     public void setSettings(ServerSettings settings) {
-        FirewallService.removePort(friendlyName);
+        if(Node.INSTANCE.isManageFirewallAutomatically()) FirewallService.removePort(friendlyName);
         this.settings = settings;
         allowFirewallPorts();
     }
