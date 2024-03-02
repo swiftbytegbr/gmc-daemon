@@ -289,6 +289,10 @@ public class AsaServer extends GameServer {
                 restartCounter = 0;
             }
         }
+
+        if(state != GameServerState.ONLINE) {
+            currentOnlinePlayers = 0;
+        }
     }
 
     @Override
