@@ -26,7 +26,7 @@ public class ServerUtils {
         preArgs.delete(preArgs.length() - 1, preArgs.length());
 
         argsType1.stream()
-                .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]))))
+                .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.split("=")[0].equalsIgnoreCase(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
                     if (CommonUtils.isNullOrEmpty(arg)) return;
                     if (!arg.contains("?")) preArgs.append("?");
@@ -38,10 +38,7 @@ public class ServerUtils {
         requiredArgs2.forEach(arg -> preArgs.append(" -").append(arg));
 
         argsType2.stream()
-                .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> {
-                    log.info("Checking if " + arg + " contains " + requiredArg.split("=")[0]);
-                    return (arg.contains(requiredArg.split("=")[0]));
-                }))
+                .filter(arg -> requiredArgs2.stream().noneMatch(requiredArg -> (arg.split("=")[0].equalsIgnoreCase(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
                     if (CommonUtils.isNullOrEmpty(arg)) return;
                     if (!arg.replace(" ", "").startsWith("-")) preArgs.append(" -");
