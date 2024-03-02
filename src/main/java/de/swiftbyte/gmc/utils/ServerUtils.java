@@ -38,7 +38,10 @@ public class ServerUtils {
         requiredArgs2.forEach(arg -> preArgs.append(" -").append(arg));
 
         argsType2.stream()
-                .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]))))
+                .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> {
+                    log.info("Checking if " + arg + " contains " + requiredArg.split("=")[0]);
+                    return (arg.contains(requiredArg.split("=")[0]));
+                }))
                 .forEach(arg -> {
                     if (CommonUtils.isNullOrEmpty(arg)) return;
                     if (!arg.replace(" ", "").startsWith("-")) preArgs.append(" -");
@@ -142,10 +145,11 @@ public class ServerUtils {
         if (!settings.isEnableBattlEye()) requiredLaunchParameters1.add("NoBattlEye");
         if (!CommonUtils.isNullOrEmpty(settings.getCulture()))
             requiredLaunchParameters1.add("culture=" + settings.getCulture());
-        if (!CommonUtils.isNullOrEmpty(settings.getClusterId()))
+        if (!CommonUtils.isNullOrEmpty(settings.getClusterId())) {
             requiredLaunchParameters1.add("clusterID=" + settings.getClusterId());
-        if (!CommonUtils.isNullOrEmpty(settings.getClusterDirOverride()))
-            requiredLaunchParameters1.add("ClusterDirOverride=\"" + settings.getClusterDirOverride()+"\"");
+            if (!CommonUtils.isNullOrEmpty(settings.getClusterDirOverride()))
+                requiredLaunchParameters1.add("ClusterDirOverride=\"" + settings.getClusterDirOverride()+"\"");
+        }
         if (settings.isNoTransferFromFiltering()) requiredLaunchParameters1.add("notransferfromfiltering");
         return requiredLaunchParameters1;
     }
