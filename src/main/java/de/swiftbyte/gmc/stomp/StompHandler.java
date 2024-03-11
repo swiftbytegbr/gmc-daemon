@@ -113,7 +113,7 @@ public class StompHandler {
 
                         @Override
                         public void handleFrame(StompHeaders headers, Object payload) {
-                            packetConsumer.onReceive(payload);
+                            new Thread(() -> packetConsumer.onReceive(payload)).start();
                         }
                     });
                 }
