@@ -31,8 +31,8 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 public class StompHandler {
 
-    // 1MB
-    private static final int MAX_MESSAGE_BUFFER_SIZE_BYTES = 1024 * 1024;
+    // 2MB
+    private static final int MAX_MESSAGE_BUFFER_SIZE_BYTES = 1024 * 1024 * 2;
 
     private static StompSession session;
 
@@ -41,6 +41,7 @@ public class StompHandler {
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
         container.setDefaultMaxTextMessageBufferSize(MAX_MESSAGE_BUFFER_SIZE_BYTES);
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient(container));
+        stompClient.setInboundMessageSizeLimit(MAX_MESSAGE_BUFFER_SIZE_BYTES);
         WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
         headers.add("Node-Id", Node.INSTANCE.getNodeId());
         headers.add("Node-Secret", Node.INSTANCE.getSecret());
@@ -112,7 +113,7 @@ public class StompHandler {
 
                         @Override
                         public void handleFrame(StompHeaders headers, Object payload) {
-                            packetConsumer.onReceive(payload);
+                            new Thread(() -> packetConsumer.onReceive(payload)).start();
                         }
                     });
                 }

@@ -26,7 +26,7 @@ public class ServerUtils {
         preArgs.delete(preArgs.length() - 1, preArgs.length());
 
         argsType1.stream()
-                .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]))))
+                .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.split("=")[0].equalsIgnoreCase(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
                     if (CommonUtils.isNullOrEmpty(arg)) return;
                     if (!arg.contains("?")) preArgs.append("?");
@@ -38,10 +38,10 @@ public class ServerUtils {
         requiredArgs2.forEach(arg -> preArgs.append(" -").append(arg));
 
         argsType2.stream()
-                .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.contains(requiredArg.split("=")[0]))))
+                .filter(arg -> requiredArgs2.stream().noneMatch(requiredArg -> (arg.split("=")[0].equalsIgnoreCase(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
                     if (CommonUtils.isNullOrEmpty(arg)) return;
-                    if (!arg.contains("-")) preArgs.append(" -");
+                    if (!arg.replace(" ", "").startsWith("-")) preArgs.append(" -");
                     else preArgs.append(" ");
                     preArgs.append(arg);
                 });
@@ -142,8 +142,12 @@ public class ServerUtils {
         if (!settings.isEnableBattlEye()) requiredLaunchParameters1.add("NoBattlEye");
         if (!CommonUtils.isNullOrEmpty(settings.getCulture()))
             requiredLaunchParameters1.add("culture=" + settings.getCulture());
-        if (!CommonUtils.isNullOrEmpty(settings.getClusterId()))
+        if (!CommonUtils.isNullOrEmpty(settings.getClusterId())) {
             requiredLaunchParameters1.add("clusterID=" + settings.getClusterId());
+            if (!CommonUtils.isNullOrEmpty(settings.getClusterDirOverride()))
+                requiredLaunchParameters1.add("ClusterDirOverride=\"" + settings.getClusterDirOverride()+"\"");
+        }
+        if (settings.isNoTransferFromFiltering()) requiredLaunchParameters1.add("notransferfromfiltering");
         return requiredLaunchParameters1;
     }
 
