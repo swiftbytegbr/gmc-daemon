@@ -3,7 +3,7 @@ package de.swiftbyte.gmc.utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import de.swiftbyte.gmc.common.packet.entity.NodeData;
+import de.swiftbyte.gmc.common.entity.NodeData;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
 import oshi.SystemInfo;

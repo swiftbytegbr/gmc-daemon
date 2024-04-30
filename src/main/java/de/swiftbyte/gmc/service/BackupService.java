@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.swiftbyte.gmc.Application;
 import de.swiftbyte.gmc.Node;
-import de.swiftbyte.gmc.common.packet.entity.Backup;
+import de.swiftbyte.gmc.common.entity.Backup;
 import de.swiftbyte.gmc.common.packet.server.ServerBackupResponsePacket;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompHandler;

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.management.OperatingSystemMXBean;
 import de.swiftbyte.gmc.Application;
 import de.swiftbyte.gmc.Node;
-import de.swiftbyte.gmc.common.packet.entity.NodeData;
+import de.swiftbyte.gmc.common.entity.NodeData;
 import de.swiftbyte.gmc.common.packet.node.NodeLoginPacket;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.ConnectionState;
