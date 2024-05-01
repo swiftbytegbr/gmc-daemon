@@ -40,8 +40,6 @@ public class Application {
         return ConfigUtils.get("backend-secure", "true").equals("true");
     }
 
-    ;
-
     public static String getBackendUrl() {
         if (isSecure()) return "https://" + getBackendDomain();
         else return "http://" + getBackendDomain();
@@ -99,7 +97,7 @@ public class Application {
         if (Boolean.parseBoolean(ConfigUtils.get("debug", "false"))) rootLogger.setLevel(Level.DEBUG);
         else rootLogger.setLevel(Level.INFO);
 
-        log.debug("Daemon ready... Version: " + version);
+        log.debug("Daemon ready... Version: {}", version);
 
         node = new Node();
         node.start();

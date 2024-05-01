@@ -12,14 +12,14 @@ public class StartServerPacketConsumer implements StompPacketConsumer<ServerStar
 
     @Override
     public void onReceive(ServerStartPacket packet) {
-        log.info("Starting server with id " + packet.getServerId() + ".");
+        log.info("Starting server with id {}.", packet.getServerId());
         GameServer server = GameServer.getServerById(packet.getServerId());
 
         if (server != null) {
             server.start().complete();
-            log.info("Started server with id " + packet.getServerId() + " successfully.");
+            log.info("Started server with id {} successfully.", packet.getServerId());
         } else {
-            log.error("Server with id " + packet.getServerId() + " not found!");
+            log.error("Server with id {} not found!", packet.getServerId());
         }
     }
 }

@@ -14,7 +14,7 @@ public class BackendShutdownPacketConsumer implements StompPacketConsumer<Backen
 
     @Override
     public void onReceive(BackendShutdownPacket packet) {
-        log.info("Backend is shutting down... Reason: '" + packet.getReason() + "'.");
+        log.info("Backend is shutting down... Reason: '{}'.", packet.getReason());
         Node.INSTANCE.setConnectionState(ConnectionState.NOT_CONNECTED);
         StompHandler.disconnect();
     }

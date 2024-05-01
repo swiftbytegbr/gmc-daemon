@@ -12,14 +12,14 @@ public class RestartServerPacketConsumer implements StompPacketConsumer<ServerRe
 
     @Override
     public void onReceive(ServerRestartPacket packet) {
-        log.info("Restarting server with id " + packet.getServerId() + ".");
+        log.info("Restarting server with id {}.", packet.getServerId());
         GameServer server = GameServer.getServerById(packet.getServerId());
 
         if (server != null) {
             server.restart().complete();
-            log.info("Restarted server with id " + packet.getServerId() + " successfully.");
+            log.info("Restarted server with id {} successfully.", packet.getServerId());
         } else {
-            log.error("Server with id " + packet.getServerId() + " not found!");
+            log.error("Server with id {} not found!", packet.getServerId());
         }
     }
 }

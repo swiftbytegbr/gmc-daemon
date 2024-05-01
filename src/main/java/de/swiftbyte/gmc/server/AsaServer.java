@@ -68,7 +68,7 @@ public class AsaServer extends GameServer {
             String installCommand = "cmd /c start \"steamcmd\" \"" + CommonUtils.convertPathSeparator(NodeUtils.getSteamCmdPath().toAbsolutePath()) + "\""
                     + " +force_install_dir \"" + CommonUtils.convertPathSeparator(installDir.toAbsolutePath()) + "\""
                     + " +login anonymous +app_update " + STEAM_CMD_ID + " validate +quit";
-            log.debug("Starting server installation with command " + installCommand);
+            log.debug("Starting server installation with command {}", installCommand);
             try {
                 Process process = Runtime.getRuntime().exec(installCommand);
 
@@ -85,12 +85,12 @@ public class AsaServer extends GameServer {
 
                     super.setState(GameServerState.OFFLINE);
                 } else {
-                    log.error("Server installation returned error code " + process.exitValue() + ".");
+                    log.error("Server installation returned error code {}.", process.exitValue());
                     return false;
                 }
 
             } catch (IOException e) {
-                log.error("An unknown exception occurred while installing the server '" + friendlyName + "'.", e);
+                log.error("An unknown exception occurred while installing the server '{}'.", friendlyName, e);
                 return false;
             }
             return true;
@@ -118,10 +118,10 @@ public class AsaServer extends GameServer {
                 StompHandler.send("/app/server/delete", packet);
 
             } catch (IOException e) {
-                log.error("An unknown exception occurred while deleting the server '" + friendlyName + "'.", e);
+                log.error("An unknown exception occurred while deleting the server '{}'.", friendlyName, e);
                 return false;
             } catch (InterruptedException e) {
-                log.error("An unknown exception occurred while deleting the server '" + friendlyName + "'.", e);
+                log.error("An unknown exception occurred while deleting the server '{}'.", friendlyName, e);
             }
             return true;
         };
@@ -154,7 +154,7 @@ public class AsaServer extends GameServer {
             new Thread(() -> {
                 ServerUtils.writeAsaStartupBatch(this);
                 try {
-                    log.debug("cmd /c start \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
+                    log.debug("cmd /c start \"{}", CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
                     serverProcess = Runtime.getRuntime().exec("cmd /c start /min \"" + "\" \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
                     Scanner scanner = new Scanner(serverProcess.getInputStream());
                     while (scanner.hasNextLine()) {
@@ -167,7 +167,7 @@ public class AsaServer extends GameServer {
                     }
 
                 } catch (IOException e) {
-                    log.error("An unknown exception occurred while starting the server '" + friendlyName + "'.", e);
+                    log.error("An unknown exception occurred while starting the server '{}'.", friendlyName, e);
                 }
             }).start();
 
@@ -186,7 +186,7 @@ public class AsaServer extends GameServer {
                     sendRconCommand("serverchat " + Node.INSTANCE.getServerStopMessage());
                 } else {
                     sendRconCommand("serverchat server ist stopping...");
-                    log.debug("Sending stop message to server '" + friendlyName + "'...");
+                    log.debug("Sending stop message to server '{}'...", friendlyName);
                 }
             }
 
@@ -200,10 +200,10 @@ public class AsaServer extends GameServer {
                 Thread.sleep(1000);
                 sendRconCommand("serverchat STOP");
             } catch (InterruptedException e) {
-                log.warn("Failed to send stop message to server '" + friendlyName + "'.");
+                log.warn("Failed to send stop message to server '{}'.", friendlyName);
             }
             if (sendRconCommand("saveworld") == null) {
-                log.debug("No connection to server '" + friendlyName + "'. Killing process...");
+                log.debug("No connection to server '{}'. Killing process...", friendlyName);
                 ServerUtils.killServerProcess(PID);
             } else {
                 try {
@@ -219,10 +219,10 @@ public class AsaServer extends GameServer {
                     try {
                         this.wait(1000);
                     } catch (InterruptedException e) {
-                        log.error("An unknown exception occurred while stopping the server '" + friendlyName + "'.", e);
+                        log.error("An unknown exception occurred while stopping the server '{}'.", friendlyName, e);
                     }
                 }
-                log.debug("Server '" + friendlyName + "' is offline.");
+                log.debug("Server '{}' is offline.", friendlyName);
                 return true;
             }
         };
@@ -237,9 +237,9 @@ public class AsaServer extends GameServer {
         switch (state) {
             case INITIALIZING -> {
                 if (sendRconCommand("ping") == null) {
-                    log.debug("Server '" + friendlyName + "' is still initializing...");
+                    log.debug("Server '{}' is still initializing...", friendlyName);
                 } else {
-                    log.debug("Server '" + friendlyName + "' is ready!");
+                    log.debug("Server '{}' is ready!", friendlyName);
                     super.setState(GameServerState.ONLINE);
                 }
             }
@@ -254,7 +254,7 @@ public class AsaServer extends GameServer {
                     ServerUtils.killServerProcess(PID);
 
                     if (settings.isRestartOnCrash()) {
-                        log.debug("Restarting server '" + friendlyName + "'...");
+                        log.debug("Restarting server '{}'...", friendlyName);
                         super.setState(GameServerState.RESTARTING);
                     } else {
                         super.setState(GameServerState.OFFLINE);
@@ -266,12 +266,12 @@ public class AsaServer extends GameServer {
             }
             case RESTARTING -> {
                 if (restartCounter >= 3) {
-                    log.error("Server '" + friendlyName + "' crashed 3 times in a row. Restarting is aborted!");
+                    log.error("Server '{}' crashed 3 times in a row. Restarting is aborted!", friendlyName);
                     super.setState(GameServerState.OFFLINE);
                     return;
                 }
                 restartCounter++;
-                log.debug("Server '" + friendlyName + "' is restarting...");
+                log.debug("Server '{}' is restarting...", friendlyName);
                 new Thread(() -> {
                     ServerUtils.killServerProcess(PID);
                     start().complete();
@@ -296,10 +296,10 @@ public class AsaServer extends GameServer {
             Rcon rcon = new Rcon("127.0.0.1", rconPort, rconPassword.getBytes());
             return rcon.command(command);
         } catch (IOException e) {
-            log.debug("Server '" + friendlyName + "' is offline.");
+            log.debug("Can not send rcon command because server '{}' is offline.", friendlyName);
             return null;
         } catch (AuthenticationException e) {
-            log.error("Rcon authentication failed for server '" + friendlyName + "'.");
+            log.error("Rcon authentication failed for server '{}'.", friendlyName);
             return null;
         }
     }

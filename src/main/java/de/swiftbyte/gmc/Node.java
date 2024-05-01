@@ -156,7 +156,7 @@ public class Node extends Thread {
 
     public void joinTeam(String token) {
         setConnectionState(ConnectionState.JOINING);
-        log.debug("Start joining a team with Invite Token '" + token + "'...");
+        log.debug("Start joining a team with Invite Token '{}'...", token);
 
         Integer realToken = NodeUtils.getValidatedToken(token);
 
@@ -171,7 +171,7 @@ public class Node extends Thread {
 
     private void joinTeamWithValidatedToken(int token) {
 
-        log.debug("Start joining with Invite Token '" + token + "'...");
+        log.debug("Start joining with Invite Token '{}'...", token);
 
         OkHttpClient client = new OkHttpClient();
 
@@ -184,10 +184,10 @@ public class Node extends Thread {
                 .post(body)
                 .build();
 
-        try (Response response = client.newCall(request).execute();) {
+        try (Response response = client.newCall(request).execute()) {
 
             if (!response.isSuccessful()) {
-                log.debug("Received error code " + response.code() + " with message '" + response.body().string() + "'");
+                log.debug("Received error code {} with message '{}'", response.code(), response.body().string());
                 log.error("The specified Invite Token is incorrect. Please check your input.");
                 joinTeam();
                 return;
@@ -241,7 +241,7 @@ public class Node extends Thread {
 
             try {
                 String installCommand = "\"" + CommonUtils.convertPathSeparator(Path.of(NodeUtils.TMP_PATH + "latest-installer.exe").toAbsolutePath()) + "\" /SILENT /SUPPRESSMSGBOXES /LOG=\"" + CommonUtils.convertPathSeparator(Path.of("log/latest-installation.log").toAbsolutePath()) + "\"";
-                log.debug("Starting installer with command: '" + installCommand + "'");
+                log.debug("Starting installer with command: '{}'", installCommand);
                 Runtime.getRuntime().exec(installCommand);
                 System.exit(0);
             } catch (IOException e) {
@@ -321,7 +321,7 @@ public class Node extends Thread {
     }
 
     public void setConnectionState(ConnectionState connectionState) {
-        log.debug("Connection state changed from " + this.connectionState + " to " + connectionState.name());
+        log.debug("Connection state changed from {} to {}", this.connectionState, connectionState.name());
         this.connectionState = connectionState;
     }
 }

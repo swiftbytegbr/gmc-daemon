@@ -19,7 +19,7 @@ public class FirewallService {
 
         String ruleName = String.format("ARK GMC: %s", serverName);
 
-        log.debug("Adding firewall rule for ports " + portsString + ".");
+        log.debug("Adding firewall rule for ports {}.", portsString);
 
         String commandTcp = String.format("powershell New-NetFirewallRule -DisplayName \\\"%s\\\" -Direction Inbound -LocalPort %s -Protocol TCP -Action Allow -Program \\\"%s\\\" -Group \\\"GameManagerCloud Server Port\\\"", ruleName, portsString, CommonUtils.convertPathSeparator(executablePath.toAbsolutePath()));
         String commandUdp = String.format("powershell New-NetFirewallRule -DisplayName \\\"%s\\\" -Direction Inbound -LocalPort %s -Protocol UDP -Action Allow -Program \\\"%s\\\" -Group \\\"GameManagerCloud Server Port\\\"", ruleName, portsString, CommonUtils.convertPathSeparator(executablePath.toAbsolutePath()));
@@ -45,7 +45,7 @@ public class FirewallService {
 
         String ruleName = String.format("ARK GMC: %s", serverName);
 
-        log.debug("Removing firewall rule " + ruleName + ".");
+        log.debug("Removing firewall rule {}.", ruleName);
 
         String command = String.format("powershell Remove-NetFirewallRule -DisplayName \\\"%s\\\"", ruleName);
 

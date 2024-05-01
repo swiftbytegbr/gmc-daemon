@@ -10,8 +10,6 @@ public interface AsyncAction<T> {
         queue(null);
     }
 
-    ;
-
     default void queue(Consumer<? super T> success) {
         queue(success, null);
     }

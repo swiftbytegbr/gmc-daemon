@@ -38,11 +38,11 @@ public class NodeUtils {
 
     public static Integer getValidatedToken(String token) {
 
-        log.debug("Validating token '" + token + "'...");
+        log.debug("Validating token '{}'...", token);
 
         String normalizedToken = token.replace("-", "");
 
-        log.debug("Token was normalized to '" + normalizedToken + "'. Checking length...");
+        log.debug("Token was normalized to '{}'. Checking length...", normalizedToken);
 
         if (normalizedToken.length() != 6) {
             log.debug("Token was not expected size.");

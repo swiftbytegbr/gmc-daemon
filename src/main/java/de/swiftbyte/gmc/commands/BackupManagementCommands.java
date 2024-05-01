@@ -14,7 +14,7 @@ import java.util.List;
 public class BackupManagementCommands {
 
     @Command(command = "backup create", description = "Create a backup.", group = "Backup Management")
-    public String createBackupCommand(@Option(description = "The server", required = true) String serverId, @Option(description = "The backup name", required = false) String backupName) {
+    public String createBackupCommand(@Option(description = "The server", required = true) String serverId, @Option(description = "The backup name") String backupName) {
 
         GameServer server = GameServer.getServerById(serverId);
 
@@ -46,7 +46,7 @@ public class BackupManagementCommands {
     }
 
     @Command(command = "backup list", description = "List all backups.", group = "Backup Management")
-    public String listBackupCommand(@Option(description = "Filter for a server id", required = false) String serverId) {
+    public String listBackupCommand(@Option(description = "Filter for a server id") String serverId) {
 
         List<Backup> backupList;
 

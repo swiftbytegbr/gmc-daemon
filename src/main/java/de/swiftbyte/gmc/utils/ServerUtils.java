@@ -54,7 +54,7 @@ public class ServerUtils {
         ServerSettings settings = server.getSettings();
 
         if (CommonUtils.isNullOrEmpty(settings.getMap())) {
-            log.error("Map is not set for server '" + server.getFriendlyName() + "'. Falling back to default map.");
+            log.error("Map is not set for server '{}'. Falling back to default map.", server.getFriendlyName());
             settings.setMap("TheIsland_WP");
         }
 
@@ -89,7 +89,7 @@ public class ServerUtils {
                 + (realStartPreArguments.isEmpty() ? "" : " " + realStartPreArguments)
                 + " \"" + CommonUtils.convertPathSeparator(server.getInstallDir() + "/ShooterGame/Binaries/Win64/" + serverExeName) + "\""
                 + " " + realStartPostArguments;
-        log.debug("Writing startup batch for server " + server.getFriendlyName() + " with command '" + startCommand + "'");
+        log.debug("Writing startup batch for server {} with command '{}'", server.getFriendlyName(), startCommand);
 
         try {
             FileWriter fileWriter = new FileWriter(server.getInstallDir() + "/start.bat");
@@ -101,7 +101,7 @@ public class ServerUtils {
             printWriter.close();
 
         } catch (IOException e) {
-            log.error("An unknown exception occurred while writing the startup batch for server '" + server.getFriendlyName() + "'.", e);
+            log.error("An unknown exception occurred while writing the startup batch for server '{}'.", server.getFriendlyName(), e);
         }
     }
 

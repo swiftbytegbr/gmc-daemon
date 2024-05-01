@@ -84,7 +84,7 @@ public abstract class GameServer {
 
     public void allowFirewallPorts() {
         if (Node.INSTANCE.isManageFirewallAutomatically()) {
-            log.debug("Adding firewall rules for server '" + friendlyName + "'...");
+            log.debug("Adding firewall rules for server '{}'...", friendlyName);
             Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ArkAscendedServer.exe");
             FirewallService.allowPort(friendlyName, executablePath, new int[]{settings.getGamePort(), settings.getGamePort() + 1, settings.getQueryPort(), settings.getRconPort()});
         }
@@ -94,7 +94,7 @@ public abstract class GameServer {
 
         if (this.state == GameServerState.DELETING) return;
 
-        log.debug("Changing state of server '" + friendlyName + "' from '" + this.state + "' to '" + state + "'.");
+        log.debug("Changing state of server '{}' from '{}' to '{}'.", friendlyName, this.state, state);
 
         synchronized (this) {
             this.state = state;

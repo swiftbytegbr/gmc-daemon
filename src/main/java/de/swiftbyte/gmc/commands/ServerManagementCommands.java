@@ -7,12 +7,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 
+@SuppressWarnings("ALL")
 @Command
 @Slf4j
 public class ServerManagementCommands {
 
     @Command(command = "server create", description = "Create a new Server.", group = "Daemon Management", hidden = true)
-    public String createServerCommand(@Option(description = "The type of game which server is to be created", required = true) String game, @Option(description = "The server id", required = true) String id, @Option(description = "The FriendlyName of the server", required = true) String name, @Option(description = "Should the server be installed?", required = false) boolean install) {
+    public String createServerCommand(@Option(description = "The type of game which server is to be created", required = true) String game, @Option(description = "The server id", required = true) String id, @Option(description = "The FriendlyName of the server", required = true) String name, @Option(description = "Should the server be installed?") boolean install) {
 
 
         if (game.equalsIgnoreCase("asa")) {

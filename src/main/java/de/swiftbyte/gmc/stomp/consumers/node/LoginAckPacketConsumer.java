@@ -21,13 +21,13 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
 
         Node.INSTANCE.setTeamName(packet.getTeamName());
 
-        log.info("Backend running in profile '" + packet.getBackendProfile() + "' with version '" + packet.getBackendVersion() + "'.");
-        log.info("I am '" + packet.getNodeSettings().getName() + "' in team " + packet.getTeamName() + "!");
+        log.info("Backend running in profile '{}' with version '{}'.", packet.getBackendProfile(), packet.getBackendVersion());
+        log.info("I am '{}' in team {}!", packet.getNodeSettings().getName(), packet.getTeamName());
 
-        log.info("Loading '" + packet.getGameServers().size() + "' game servers...");
+        log.info("Loading '{}' game servers...", packet.getGameServers().size());
         GameServer.abandonAll();
         packet.getGameServers().forEach(gameServer -> {
-            log.debug("Loading game server '" + gameServer.getSettings().getName() + "'...");
+            log.debug("Loading game server '{}'...", gameServer.getSettings().getName());
 
             String serverInstallDir = ServerUtils.getCachedServerInstallDir(gameServer.getId());
 

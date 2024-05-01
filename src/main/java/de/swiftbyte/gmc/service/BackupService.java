@@ -81,7 +81,7 @@ public class BackupService {
 
             long delay = Node.INSTANCE.getAutoBackup().getIntervallMinutes() - (System.currentTimeMillis() / 60000) % Node.INSTANCE.getAutoBackup().getIntervallMinutes();
 
-            log.debug("Starting auto backup in " + delay + " minutes.");
+            log.debug("Starting auto backup in {} minutes.", delay);
 
             backupScheduler = Application.getExecutor().scheduleAtFixedRate(() -> {
                 log.debug("Starting auto backup...");
@@ -119,7 +119,7 @@ public class BackupService {
             return;
         }
 
-        log.debug("Backing up server '" + server.getFriendlyName() + "'...");
+        log.debug("Backing up server '{}'...", server.getFriendlyName());
 
         if (!CommonUtils.isNullOrEmpty(Node.INSTANCE.getAutoBackup().getMessage()))
             server.sendRconCommand("serverchat " + Node.INSTANCE.getAutoBackup().getMessage());
@@ -181,7 +181,7 @@ public class BackupService {
 
             saveBackupCache();
         } catch (IOException e) {
-            log.error("An unknown error occurred while backing up server '" + server.getFriendlyName() + "'.", e);
+            log.error("An unknown error occurred while backing up server '{}'.", server.getFriendlyName(), e);
         }
     }
 
@@ -201,7 +201,7 @@ public class BackupService {
             return;
         }
 
-        log.debug("Deleting backup '" + backup.getName() + "'...");
+        log.debug("Deleting backup '{}'...", backup.getName());
         File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + GameServer.getServerById(backup.getServerId()).getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
         if (!backupLocation.exists()) {
             log.error("Could not delete backup because backup location does not exist!");
@@ -213,7 +213,7 @@ public class BackupService {
             backups.remove(backupId);
             saveBackupCache();
         } catch (IOException e) {
-            log.error("An unknown error occurred while deleting backup '" + backup.getName() + "'.", e);
+            log.error("An unknown error occurred while deleting backup '{}'.", backup.getName(), e);
         }
     }
 
@@ -221,18 +221,18 @@ public class BackupService {
         List<Backup> expiredBackups = backups.values().stream().filter(backup -> backup.getExpiresAt().isBefore(Instant.now())).toList();
 
         expiredBackups.forEach(backup -> {
-            log.debug("Deleting expired backup '" + backup.getName() + "'...");
+            log.debug("Deleting expired backup '{}'...", backup.getName());
             deleteBackup(backup.getBackupId());
         });
     }
 
     public static void rollbackBackup(String backupId, boolean playerData) {
 
-        log.debug("Rolling back backup '" + backupId + "'...");
+        log.debug("Rolling back backup '{}'...", backupId);
 
         Backup backup = backups.get(backupId);
         if (backup == null) {
-            log.error("Could not delete backup because backup id was not found!");
+            log.error("Could not find backup because backup id was not found!");
             return;
         }
 

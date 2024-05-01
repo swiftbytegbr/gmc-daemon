@@ -12,14 +12,14 @@ public class StopServerPacketConsumer implements StompPacketConsumer<ServerStopP
 
     @Override
     public void onReceive(ServerStopPacket packet) {
-        log.info("Stopping server with id " + packet.getServerId() + ".");
+        log.info("Stopping server with id {}.", packet.getServerId());
         GameServer server = GameServer.getServerById(packet.getServerId());
 
         if (server != null) {
             server.stop(false).complete();
-            log.info("Stopped server with id " + packet.getServerId() + " successfully.");
+            log.info("Stopped server with id {} successfully.", packet.getServerId());
         } else {
-            log.error("Server with id " + packet.getServerId() + " not found!");
+            log.error("Server with id {} not found!", packet.getServerId());
         }
     }
 }

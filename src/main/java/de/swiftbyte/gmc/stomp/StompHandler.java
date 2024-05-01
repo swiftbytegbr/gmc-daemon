@@ -52,7 +52,7 @@ public class StompHandler {
 
         stompClient.setMessageConverter(converter);
         try {
-            log.debug("Connecting WebSocket to " + Application.getWebsocketUrl());
+            log.debug("Connecting WebSocket to {}", Application.getWebsocketUrl());
             session = stompClient.connectAsync(Application.getWebsocketUrl(), headers, new StompSessionHandler()).get();
             scanForPacketListeners();
         } catch (InterruptedException | ExecutionException e) {
@@ -66,12 +66,12 @@ public class StompHandler {
     public synchronized static void send(String destination, Object payload) {
         if (session == null) {
             if (Node.INSTANCE.getConnectionState() != ConnectionState.RECONNECTING)
-                log.error("Failed to send packet to " + destination + " because the session is null.");
+                log.error("Failed to send packet to {} because the session is null.", destination);
             return;
         }
 
         if (!session.isConnected()) {
-            log.error("Failed to send packet to " + destination + " because the session is not connected. Is the backend running?");
+            log.error("Failed to send packet to {} because the session is not connected. Is the backend running?", destination);
             Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
             return;
         }
@@ -100,7 +100,7 @@ public class StompHandler {
                     packetConsumer = (StompPacketConsumer<Object>) constructor.newInstance();
                 } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                          InvocationTargetException e) {
-                    log.error("Failed to find default constructor for class " + clazz.getName() + ".", e);
+                    log.error("Failed to find default constructor for class {}.", clazz.getName(), e);
                     return;
                 }
 
@@ -119,7 +119,7 @@ public class StompHandler {
                 }
 
             } else {
-                log.error("Found class annotated with @StompPacketInfo that does not implement StompPacketConsumer: " + clazz.getName());
+                log.error("Found class annotated with @StompPacketInfo that does not implement StompPacketConsumer: {}", clazz.getName());
             }
         });
     }
@@ -128,7 +128,7 @@ public class StompHandler {
 
         @Override
         public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
-            log.debug("Connected to session: " + session.getSessionId());
+            log.debug("Connected to session: {}", session.getSessionId());
             super.afterConnected(session, connectedHeaders);
 
             NodeLoginPacket loginPacket = new NodeLoginPacket();
@@ -150,7 +150,7 @@ public class StompHandler {
 
             loginPacket.setNodeData(nodeData);
 
-            log.debug("Sending login packet: " + loginPacket + " to /node/login");
+            log.debug("Sending login packet: {} to /node/login", loginPacket);
 
             session.send("/app/node/login", loginPacket);
         }

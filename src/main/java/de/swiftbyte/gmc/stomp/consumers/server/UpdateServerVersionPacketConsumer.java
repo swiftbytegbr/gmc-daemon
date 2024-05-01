@@ -12,18 +12,18 @@ public class UpdateServerVersionPacketConsumer implements StompPacketConsumer<Se
 
     @Override
     public void onReceive(ServerUpdatePacket packet) {
-        log.info("Updating server with id " + packet.getServerId() + ".");
+        log.info("Updating server with id {}.", packet.getServerId());
         GameServer server = GameServer.getServerById(packet.getServerId());
 
         if (server != null) {
             if (server.stop(false).complete()) {
                 server.install().complete();
-                log.info("Updated server with id " + packet.getServerId() + " successfully.");
+                log.info("Updated server with id {} successfully.", packet.getServerId());
             } else {
-                log.error("Failed to update server with id " + packet.getServerId() + " because it could not be stopped!");
+                log.error("Failed to update server with id {} because it could not be stopped!", packet.getServerId());
             }
         } else {
-            log.error("Server with id " + packet.getServerId() + " not found!");
+            log.error("Server with id {} not found!", packet.getServerId());
         }
     }
 }
