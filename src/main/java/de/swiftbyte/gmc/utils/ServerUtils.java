@@ -1,10 +1,19 @@
 package de.swiftbyte.gmc.utils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.swiftbyte.gmc.Application;
 import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.cache.GameServerCacheModel;
-import de.swiftbyte.gmc.common.entity.ServerSettings;
+import de.swiftbyte.gmc.common.model.SettingProfile;
+import de.swiftbyte.gmc.common.parser.IniConverter;
 import de.swiftbyte.gmc.server.AsaServer;
+import de.swiftbyte.gmc.server.GameServer;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -17,7 +26,7 @@ import java.util.*;
 @Slf4j
 public class ServerUtils {
 
-    public static String generateAsaServerArgs(List<String> argsType1, List<String> argsType2, List<String> requiredArgs1, String rconPassword, List<String> requiredArgs2) {
+    public static String generateAsaServerArgs(List<String> argsType1, List<String> argsType2, List<String> requiredArgs1, List<String> requiredArgs2) {
 
         StringBuilder preArgs = new StringBuilder();
 
@@ -32,8 +41,6 @@ public class ServerUtils {
                     if (!arg.contains("?")) preArgs.append("?");
                     preArgs.append(arg);
                 });
-
-        preArgs.append("?ServerAdminPassword=\"").append(rconPassword).append("\"");
 
         requiredArgs2.forEach(arg -> preArgs.append(" -").append(arg));
 
@@ -51,32 +58,27 @@ public class ServerUtils {
 
     public static void writeAsaStartupBatch(AsaServer server) {
 
-        ServerSettings settings = server.getSettings();
+        SettingProfile settings = server.getSettings();
 
-        if (CommonUtils.isNullOrEmpty(settings.getMap())) {
+        if (CommonUtils.isNullOrEmpty(settings.getGmcSettings().getMap())) {
             log.error("Map is not set for server '{}'. Falling back to default map.", server.getFriendlyName());
-            settings.setMap("TheIsland_WP");
+            settings.getGmcSettings().setMap("TheIsland_WP");
         }
 
-        if (CommonUtils.isNullOrEmpty(settings.getRconPassword())) {
-            settings.setRconPassword("gmc-rp-" + UUID.randomUUID());
-        }
+        SettingProfileUtils spu = new SettingProfileUtils(settings.getGameUserSettings());
 
-        server.setRconPort(settings.getRconPort());
-        server.setRconPassword(settings.getRconPassword());
+        server.setRconPort(spu.getSettingAsInt("ServerSettings", "RCONPort", 27020));
+        server.setRconPassword(spu.getSetting("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID()));
 
-        List<String> requiredLaunchParameters1 = getRequiredLaunchArgs1(server, settings);
-        List<String> requiredLaunchParameters2 = getRequiredLaunchArgs2(settings);
+        List<String> requiredLaunchParameters1 = getRequiredLaunchArgs1(settings.getGmcSettings().getMap());
+        List<String> requiredLaunchParameters2 = getRequiredLaunchArgs2();
 
         String realStartPostArguments = generateAsaServerArgs(
-                settings.getLaunchParameters2() == null ? new ArrayList<>() : settings.getLaunchParameters2(),
-                settings.getLaunchParameters3() == null ? new ArrayList<>() : settings.getLaunchParameters3(),
+                settings.getQuestionMarkParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() : generateArgListFromMap(settings.getQuestionMarkParams()),
+                settings.getHyphenParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() : generateArgListFromMap(settings.getHyphenParams()),
                 requiredLaunchParameters1,
-                settings.getRconPassword(),
                 requiredLaunchParameters2
         );
-
-        String realStartPreArguments = String.join(" ", settings.getLaunchParameters1() == null ? new ArrayList<>() : settings.getLaunchParameters1());
 
         String changeDirectoryCommand = "cd /d \"" + CommonUtils.convertPathSeparator(server.getInstallDir()) + "\\ShooterGame\\Binaries\\Win64\"";
 
@@ -86,7 +88,6 @@ public class ServerUtils {
             serverExeName = "AsaApiLoader.exe";
 
         String startCommand = "start \"" + server.getFriendlyName() + "\""
-                + (realStartPreArguments.isEmpty() ? "" : " " + realStartPreArguments)
                 + " \"" + CommonUtils.convertPathSeparator(server.getInstallDir() + "/ShooterGame/Binaries/Win64/" + serverExeName) + "\""
                 + " " + realStartPostArguments;
         log.debug("Writing startup batch for server {} with command '{}'", server.getFriendlyName(), startCommand);
@@ -105,50 +106,26 @@ public class ServerUtils {
         }
     }
 
-    private static List<String> getRequiredLaunchArgs1(AsaServer server, ServerSettings settings) {
-        List<String> requiredLaunchParameters1 = new ArrayList<>(List.of(
-                settings.getMap(),
-                "listen",
-                "Port=" + settings.getGamePort(),
-                "QueryPort=" + settings.getQueryPort(),
-                "RCONEnabled=True",
-                "RCONPort=" + settings.getRconPort(),
-                "ClampItemStats=" + settings.isClampItemStats()
-        ));
-
-        if (!CommonUtils.isNullOrEmpty(settings.getName()))
-            requiredLaunchParameters1.add("SessionName=" + settings.getName().replace(" ", "-"));
-        if (!CommonUtils.isNullOrEmpty(settings.getServerIp()))
-            requiredLaunchParameters1.add("MultiHome=" + settings.getServerIp());
-        if (!CommonUtils.isNullOrEmpty(settings.getServerPassword()))
-            requiredLaunchParameters1.add("ServerPassword=\"" + settings.getServerPassword() + "\"");
-        if (!CommonUtils.isNullOrEmpty(settings.getSpecPassword()))
-            requiredLaunchParameters1.add("SpectatorPassword=\"" + settings.getSpecPassword() + "\"");
-        return requiredLaunchParameters1;
+    private static List<String> generateArgListFromMap(Map<String, Object> args) {
+        ArrayList<String> argList = new ArrayList<>();
+        args.forEach((key, value) -> {
+            if(value == null) argList.add(key);
+            else argList.add(key + "=" + value);
+        });
+        return argList;
     }
 
-    private static List<String> getRequiredLaunchArgs2(ServerSettings settings) {
-        List<String> requiredLaunchParameters1 = new ArrayList<>(List.of(
-                "game",
-                "server",
-                "log",
+    private static List<String> getRequiredLaunchArgs1(String map) {
+        return new ArrayList<>(List.of(
+                map,
+                "RCONEnabled=True"
+        ));
+    }
+
+    private static List<String> getRequiredLaunchArgs2() {
+        return new ArrayList<>(List.of(
                 "oldconsole"
         ));
-
-        if (settings.getMaxPlayers() != 0)
-            requiredLaunchParameters1.add("WinLiveMaxPlayers=" + settings.getMaxPlayers());
-        if (!CommonUtils.isNullOrEmpty(settings.getModIds()))
-            requiredLaunchParameters1.add("mods=" + settings.getModIds());
-        if (!settings.isEnableBattlEye()) requiredLaunchParameters1.add("NoBattlEye");
-        if (!CommonUtils.isNullOrEmpty(settings.getCulture()))
-            requiredLaunchParameters1.add("culture=" + settings.getCulture());
-        if (!CommonUtils.isNullOrEmpty(settings.getClusterId())) {
-            requiredLaunchParameters1.add("clusterID=" + settings.getClusterId());
-            if (!CommonUtils.isNullOrEmpty(settings.getClusterDirOverride()))
-                requiredLaunchParameters1.add("ClusterDirOverride=\"" + settings.getClusterDirOverride()+"\"");
-        }
-        if (settings.isNoTransferFromFiltering()) requiredLaunchParameters1.add("notransferfromfiltering");
-        return requiredLaunchParameters1;
     }
 
     public static void killServerProcess(String PID) {
@@ -205,6 +182,55 @@ public class ServerUtils {
             log.error("An unknown error occurred while getting cached information.", e);
         }
         return null;
+    }
+
+    public static void writeIniFiles(GameServer server, Path installDir) {
+        IniConverter iniConverter = new IniConverter();
+
+        log.debug("Writing ini files for server {}...", server.getFriendlyName());
+
+        String gameUserSettings = iniConverter.convertFromMap(server.getSettings().getGameUserSettings());
+        String gameSettings = iniConverter.convertFromMap(server.getSettings().getGameSettings());
+        try {
+
+            Path gusPath = installDir.resolve("ShooterGame/Saved/Config/WindowsServer/GameUserSettings2.ini");
+            if(!Files.exists(gusPath) && !CommonUtils.isNullOrEmpty(gameUserSettings)) {
+                Files.createFile(gusPath);
+                Files.write(gusPath, gameUserSettings.getBytes());
+            }
+
+            Path gameSettingsPath = installDir.resolve("ShooterGame/Saved/Config/WindowsServer/Game.ini");
+            if(!Files.exists(gameSettingsPath) && !CommonUtils.isNullOrEmpty(gameSettings)) {
+                Files.createFile(gameSettingsPath);
+                Files.write(gameSettingsPath, gameSettings.getBytes());
+            }
+        } catch (IOException e) {
+            log.error("An unknown error occurred while writing the ini files.", e);
+        }
+
+    }
+
+    public static SettingProfile getSettingProfile(String settingProfileId) {
+
+        OkHttpClient client = new OkHttpClient();
+
+        Request request = new Request.Builder()
+                .url(Application.getBackendUrl() + "/setting-profile/" + settingProfileId)
+                .get()
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+
+            if (!response.isSuccessful()) {
+                log.debug("Received error code {} with message '{}' while getting setting profile with id '{}'", response.code(), response.body().string(), settingProfileId);
+                return null;
+            }
+
+            return CommonUtils.getObjectReader().readValue(response.body().string(), SettingProfile.class);
+        } catch (IOException e) {
+            log.error("An unknown error occurred.", e);
+            return null;
+        }
     }
 
 }

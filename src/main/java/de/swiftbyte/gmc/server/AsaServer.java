@@ -2,7 +2,7 @@ package de.swiftbyte.gmc.server;
 
 import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.common.entity.GameServerState;
-import de.swiftbyte.gmc.common.entity.ServerSettings;
+import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.server.ServerDeletePacket;
 import de.swiftbyte.gmc.service.BackupService;
 import de.swiftbyte.gmc.service.FirewallService;
@@ -10,6 +10,7 @@ import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.NodeUtils;
 import de.swiftbyte.gmc.utils.ServerUtils;
+import de.swiftbyte.gmc.utils.SettingProfileUtils;
 import de.swiftbyte.gmc.utils.action.AsyncAction;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Scanner;
+import java.util.UUID;
 
 @Slf4j
 public class AsaServer extends GameServer {
@@ -29,34 +31,39 @@ public class AsaServer extends GameServer {
 
     @Setter
     private int rconPort;
+
     @Setter
     private String rconPassword;
 
-    public AsaServer(String id, String friendlyName, ServerSettings settings, boolean overrideAutoStart) {
+    public AsaServer(String id, String friendlyName, SettingProfile settings, boolean overrideAutoStart) {
 
         super(id, friendlyName, settings);
 
-        rconPassword = settings.getRconPassword();
-        rconPort = settings.getRconPort();
+        SettingProfileUtils settingProfileUtils = new SettingProfileUtils(settings.getGameUserSettings());
+
+        rconPassword = settingProfileUtils.hasSettingAndNotEmpty("ServerSettings", "ServerAdminPassword") ? settingProfileUtils.getSetting("ServerSettings", "ServerAdminPassword") : "gmc-rp-" + UUID.randomUUID();
+        rconPort = settingProfileUtils.hasSettingAndNotEmpty("ServerSettings", "RconPort") ? settingProfileUtils.getSettingAsInt("ServerSettings", "RconPort") : 27020;
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(String.valueOf(installDir));
-            if (PID == null && settings.isStartOnBoot()) start().queue();
+            if (PID == null && settings.getGmcSettings().isStartOnBoot()) start().queue();
             else if (PID != null) super.setState(GameServerState.ONLINE);
         }
     }
 
-    public AsaServer(String id, String friendlyName, Path installDir, ServerSettings settings, boolean overrideAutoStart) {
+    public AsaServer(String id, String friendlyName, Path installDir, SettingProfile settings, boolean overrideAutoStart) {
 
         super(id, friendlyName, settings);
         this.installDir = installDir;
 
-        rconPassword = settings.getRconPassword();
-        rconPort = settings.getRconPort();
+        SettingProfileUtils settingProfileUtils = new SettingProfileUtils(settings.getGameUserSettings());
+
+        rconPassword = settingProfileUtils.hasSettingAndNotEmpty("ServerSettings", "ServerAdminPassword") ? settingProfileUtils.getSetting("ServerSettings", "ServerAdminPassword") : "gmc-rp-" + UUID.randomUUID();
+        rconPort = settingProfileUtils.hasSettingAndNotEmpty("ServerSettings", "RconPort") ? settingProfileUtils.getSettingAsInt("ServerSettings", "RconPort") : 27020;
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(String.valueOf(installDir));
-            if (PID == null && settings.isStartOnBoot()) start().queue();
+            if (PID == null && settings.getGmcSettings().isStartOnBoot()) start().queue();
             else if (PID != null) super.setState(GameServerState.ONLINE);
         }
     }
@@ -153,6 +160,7 @@ public class AsaServer extends GameServer {
 
             new Thread(() -> {
                 ServerUtils.writeAsaStartupBatch(this);
+                ServerUtils.writeIniFiles(this, installDir);
                 try {
                     log.debug("cmd /c start \"{}", CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
                     serverProcess = Runtime.getRuntime().exec("cmd /c start /min \"" + "\" \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
@@ -160,7 +168,7 @@ public class AsaServer extends GameServer {
                     while (scanner.hasNextLine()) {
                     }
 
-                    if (settings.isRestartOnCrash() && (state != GameServerState.OFFLINE && state != GameServerState.STOPPING)) {
+                    if (settings.getGmcSettings().isRestartOnCrash() && (state != GameServerState.OFFLINE && state != GameServerState.STOPPING)) {
                         super.setState(GameServerState.RESTARTING);
                     } else {
                         super.setState(GameServerState.OFFLINE);
@@ -253,7 +261,7 @@ public class AsaServer extends GameServer {
 
                     ServerUtils.killServerProcess(PID);
 
-                    if (settings.isRestartOnCrash()) {
+                    if (settings.getGmcSettings().isRestartOnCrash()) {
                         log.debug("Restarting server '{}'...", friendlyName);
                         super.setState(GameServerState.RESTARTING);
                     } else {

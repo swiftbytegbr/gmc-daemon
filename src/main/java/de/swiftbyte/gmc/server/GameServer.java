@@ -3,11 +3,12 @@ package de.swiftbyte.gmc.server;
 import de.swiftbyte.gmc.Application;
 import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.common.entity.GameServerState;
-import de.swiftbyte.gmc.common.entity.ServerSettings;
+import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.server.ServerStatePacket;
 import de.swiftbyte.gmc.service.FirewallService;
 import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.CommonUtils;
+import de.swiftbyte.gmc.utils.SettingProfileUtils;
 import de.swiftbyte.gmc.utils.action.AsyncAction;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -44,12 +45,12 @@ public abstract class GameServer {
     protected Path installDir;
 
     @Getter
-    protected ServerSettings settings;
+    protected SettingProfile settings;
 
     @Getter
     protected int currentOnlinePlayers = 0;
 
-    public GameServer(String id, String friendlyName, ServerSettings settings) {
+    public GameServer(String id, String friendlyName, SettingProfile settings) {
 
         this.serverId = id;
         this.friendlyName = friendlyName;
@@ -86,7 +87,14 @@ public abstract class GameServer {
         if (Node.INSTANCE.isManageFirewallAutomatically()) {
             log.debug("Adding firewall rules for server '{}'...", friendlyName);
             Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ArkAscendedServer.exe");
-            FirewallService.allowPort(friendlyName, executablePath, new int[]{settings.getGamePort(), settings.getGamePort() + 1, settings.getQueryPort(), settings.getRconPort()});
+
+            SettingProfileUtils spu = new SettingProfileUtils(settings.getGameUserSettings());
+
+            int gamePort = spu.hasSettingAndNotEmpty("SessionSettings", "Port") ? spu.getSettingAsInt("SessionSettings", "Port") : 7777;
+            int rconPort =  spu.hasSettingAndNotEmpty("ServerSettings", "RCONPort") ? spu.getSettingAsInt("SessionSettings", "Port") : 7777;
+
+
+            FirewallService.allowPort(friendlyName, executablePath, new int[]{gamePort, gamePort + 1, rconPort});
         }
     }
 
@@ -108,7 +116,7 @@ public abstract class GameServer {
         StompHandler.send("/app/server/state", packet);
     }
 
-    public void setSettings(ServerSettings settings) {
+    public void setSettings(SettingProfile settings) {
         if(Node.INSTANCE.isManageFirewallAutomatically()) FirewallService.removePort(friendlyName);
         this.settings = settings;
         allowFirewallPorts();

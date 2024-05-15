@@ -1,6 +1,6 @@
 package de.swiftbyte.gmc.commands;
 
-import de.swiftbyte.gmc.common.entity.ServerSettings;
+import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.server.AsaServer;
 import de.swiftbyte.gmc.server.GameServer;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,7 @@ public class ServerManagementCommands {
 
         if (game.equalsIgnoreCase("asa")) {
 
-            AsaServer server = new AsaServer(id, name, new ServerSettings(), true);
+            AsaServer server = new AsaServer(id, name, new SettingProfile(), true);
 
             if (install) server.install().queue();
 

@@ -1,5 +1,6 @@
 package de.swiftbyte.gmc.stomp.consumers.server;
 
+import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.server.ServerSettingsPacket;
 import de.swiftbyte.gmc.common.packet.server.ServerSettingsResponsePacket;
 import de.swiftbyte.gmc.server.AsaServer;
@@ -8,6 +9,7 @@ import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.utils.ServerUtils;
+import de.swiftbyte.gmc.utils.SettingProfileUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -21,11 +23,16 @@ public class ChangeServerSettingsPacketConsumer implements StompPacketConsumer<S
 
         if (server != null) {
 
-            server.setSettings(packet.getSettings());
+            SettingProfile settings = ServerUtils.getSettingProfile(packet.getSettingProfileId());
+            if(settings == null) {
+                log.error("Setting profile '{}' not found for game server '{}'. Using default setting profile.", packet.getSettingProfileId(), server.getFriendlyName());
+                settings = new SettingProfile();
+            }
+
+            server.setSettings(settings);
 
             ServerSettingsResponsePacket responsePacket = new ServerSettingsResponsePacket();
             responsePacket.setServerId(server.getServerId());
-            responsePacket.setSettings(server.getSettings());
 
             StompHandler.send("/app/server/settings", responsePacket);
 

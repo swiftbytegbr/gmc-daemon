@@ -1,10 +1,12 @@
 package de.swiftbyte.gmc.cache;
 
-import de.swiftbyte.gmc.common.entity.ServerSettings;
+import de.swiftbyte.gmc.common.model.SettingProfile;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.HashMap;
 
 @Data
 @Builder
@@ -16,5 +18,5 @@ public class GameServerCacheModel {
     private String friendlyName;
     private String installDir;
 
-    private ServerSettings settings;
+    private SettingProfile settings;
 }

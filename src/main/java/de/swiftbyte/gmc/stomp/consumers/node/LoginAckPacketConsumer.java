@@ -1,6 +1,7 @@
 package de.swiftbyte.gmc.stomp.consumers.node;
 
 import de.swiftbyte.gmc.Node;
+import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.node.NodeLoginAckPacket;
 import de.swiftbyte.gmc.server.AsaServer;
 import de.swiftbyte.gmc.server.GameServer;
@@ -27,14 +28,22 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
         log.info("Loading '{}' game servers...", packet.getGameServers().size());
         GameServer.abandonAll();
         packet.getGameServers().forEach(gameServer -> {
-            log.debug("Loading game server '{}'...", gameServer.getSettings().getName());
+            log.debug("Loading game server '{}'...", gameServer.getDisplayName());
 
             String serverInstallDir = ServerUtils.getCachedServerInstallDir(gameServer.getId());
 
+            SettingProfile settings = ServerUtils.getSettingProfile(gameServer.getSettingProfileId());
+            if(settings == null) {
+                log.error("Setting profile '{}' not found for game server '{}'. Using default setting profile.", gameServer.getSettingProfileId(), gameServer.getDisplayName());
+                settings = new SettingProfile();
+                //TODO handle
+                return;
+            }
+
             if (serverInstallDir == null) {
-                new AsaServer(gameServer.getId(), gameServer.getDisplayName(), gameServer.getSettings(), false);
+                new AsaServer(gameServer.getId(), gameServer.getDisplayName(), settings, false);
             } else {
-                new AsaServer(gameServer.getId(), gameServer.getDisplayName(), Path.of(serverInstallDir), gameServer.getSettings(), false);
+                new AsaServer(gameServer.getId(), gameServer.getDisplayName(), Path.of(serverInstallDir), settings, false);
             }
         });
 
