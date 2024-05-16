@@ -205,6 +205,7 @@ public class BackupService {
         File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + GameServer.getServerById(backup.getServerId()).getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
         if (!backupLocation.exists()) {
             log.error("Could not delete backup because backup location does not exist!");
+            backups.remove(backupId);
             return;
         }
 
