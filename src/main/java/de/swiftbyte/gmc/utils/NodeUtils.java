@@ -144,6 +144,7 @@ public class NodeUtils {
                 log.error("Install directory is null for game server '{}'. Skipping...", gameServer.getFriendlyName());
                 continue;
             }
+            gameServerCacheModel.setInstallDir(gameServer.getInstallDir().toString());
             gameServers.put(gameServer.getServerId(), gameServerCacheModel);
         }
 
