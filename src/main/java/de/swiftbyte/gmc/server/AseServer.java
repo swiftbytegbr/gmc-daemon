@@ -19,16 +19,16 @@ import java.util.List;
 import java.util.UUID;
 
 @Slf4j
-public class AsaServer extends ArkServer {
+public class AseServer extends ArkServer {
 
-    private static final String STEAM_CMD_ID = "2430930";
+    private static final String STEAM_CMD_ID = "376030";
 
     @Override
     public String getGameId() {
         return STEAM_CMD_ID;
     }
 
-    public AsaServer(String id, String friendlyName, SettingProfile settings, boolean overrideAutoStart) {
+    public AseServer(String id, String friendlyName, SettingProfile settings, boolean overrideAutoStart) {
 
         super(id, friendlyName, settings);
 
@@ -38,7 +38,7 @@ public class AsaServer extends ArkServer {
         rconPort = settingProfileUtils.getSettingAsInt("ServerSettings", "RconPort", 27020);
 
         if (!overrideAutoStart) {
-            PID = CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
+            PID = CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/ArkAscendedServer.exe"));
             if (PID == null && settings.getGmcSettings().isStartOnBoot()) start().queue();
             else if (PID != null) {
                 log.debug("Server '{}' with PID {} is already running. Setting state to ONLINE.", PID, friendlyName);
@@ -47,10 +47,9 @@ public class AsaServer extends ArkServer {
         }
     }
 
-    public AsaServer(String id, String friendlyName, Path installDir, SettingProfile settings, boolean overrideAutoStart) {
+    public AseServer(String id, String friendlyName, Path installDir, SettingProfile settings, boolean overrideAutoStart) {
 
         super(id, friendlyName, settings);
-
         if(installDir != null) this.installDir = installDir;
 
         SettingProfileUtils settingProfileUtils = new SettingProfileUtils(settings.getGameUserSettings());
@@ -75,28 +74,28 @@ public class AsaServer extends ArkServer {
 
         int gamePort = spu.getSettingAsInt("SessionSettings", "Port", 7777);
         int rconPort = spu.getSettingAsInt("ServerSettings", "RCONPort", 27020);
+        int queryPort = spu.getSettingAsInt("SessionSettings", "QueryPort", 27015);
 
-        return List.of(gamePort, gamePort+1, rconPort);
+        return List.of(gamePort, gamePort+1, rconPort, queryPort);
     }
 
     @Override
     public void allowFirewallPorts() {
         if (Node.INSTANCE.isManageFirewallAutomatically()) {
             log.debug("Adding firewall rules for server '{}'...", friendlyName);
-            Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ArkAscendedServer.exe");
+            Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/");
             FirewallService.allowPort(friendlyName, executablePath, getNeededPorts());
         }
     }
 
     @SuppressWarnings("DuplicatedCode")
-    @Override
     public void writeStartupBatch() {
 
         SettingProfile settings = getSettings();
 
         if (CommonUtils.isNullOrEmpty(settings.getGmcSettings().getMap())) {
             log.error("Map is not set for server '{}'. Falling back to default map.", getFriendlyName());
-            settings.getGmcSettings().setMap("TheIsland_WP");
+            settings.getGmcSettings().setMap("TheIsland");
         }
 
         SettingProfileUtils spu = new SettingProfileUtils(settings.getGameUserSettings());
@@ -116,10 +115,10 @@ public class AsaServer extends ArkServer {
 
         String changeDirectoryCommand = "cd /d \"" + CommonUtils.convertPathSeparator(getInstallDir()) + "\\ShooterGame\\Binaries\\Win64\"";
 
-        String serverExeName = "ArkAscendedServer.exe";
+        String serverExeName = "ShooterGameServer.exe";
 
-        if (Files.exists(Path.of(getInstallDir() + "/ShooterGame/Binaries/Win64/AsaApiLoader.exe")))
-            serverExeName = "AsaApiLoader.exe";
+        if (Files.exists(Path.of(getInstallDir() + "/ShooterGame/Binaries/Win64/AseApiLoader.exe")))
+            serverExeName = "AseApiLoader.exe";
 
         String startCommand = "start \"" + getFriendlyName() + "\""
                 + " \"" + CommonUtils.convertPathSeparator(getInstallDir() + "/ShooterGame/Binaries/Win64/" + serverExeName) + "\""

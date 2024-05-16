@@ -7,8 +7,6 @@ import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.server.ServerStatePacket;
 import de.swiftbyte.gmc.service.FirewallService;
 import de.swiftbyte.gmc.stomp.StompHandler;
-import de.swiftbyte.gmc.utils.CommonUtils;
-import de.swiftbyte.gmc.utils.SettingProfileUtils;
 import de.swiftbyte.gmc.utils.action.AsyncAction;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +48,8 @@ public abstract class GameServer {
     @Getter
     protected int currentOnlinePlayers = 0;
 
+    public abstract String getGameId();
+
     public GameServer(String id, String friendlyName, SettingProfile settings) {
 
         this.serverId = id;
@@ -73,30 +73,15 @@ public abstract class GameServer {
 
     public abstract AsyncAction<Boolean> stop(boolean isRestart);
 
-    public AsyncAction<Boolean> restart() {
-        if (!CommonUtils.isNullOrEmpty(Node.INSTANCE.getServerStopMessage()))
-            sendRconCommand("serverchat " + Node.INSTANCE.getServerRestartMessage());
-        return () -> (stop(true).complete() && start().complete());
-    }
+    public abstract AsyncAction<Boolean> restart();
 
     public abstract void update();
 
     public abstract String sendRconCommand(String command);
 
-    public void allowFirewallPorts() {
-        if (Node.INSTANCE.isManageFirewallAutomatically()) {
-            log.debug("Adding firewall rules for server '{}'...", friendlyName);
-            Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ArkAscendedServer.exe");
+    public abstract List<Integer> getNeededPorts();
 
-            SettingProfileUtils spu = new SettingProfileUtils(settings.getGameUserSettings());
-
-            int gamePort = spu.hasSettingAndNotEmpty("SessionSettings", "Port") ? spu.getSettingAsInt("SessionSettings", "Port") : 7777;
-            int rconPort =  spu.hasSettingAndNotEmpty("ServerSettings", "RCONPort") ? spu.getSettingAsInt("SessionSettings", "Port") : 7777;
-
-
-            FirewallService.allowPort(friendlyName, executablePath, new int[]{gamePort, gamePort + 1, rconPort});
-        }
-    }
+    public abstract void allowFirewallPorts();
 
     public void setState(GameServerState state) {
 

@@ -8,6 +8,8 @@ import de.swiftbyte.gmc.Application;
 import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.cache.GameServerCacheModel;
+import de.swiftbyte.gmc.common.entity.GameType;
+import de.swiftbyte.gmc.server.AseServer;
 import de.swiftbyte.gmc.server.GameServer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -129,11 +131,19 @@ public class NodeUtils {
         HashMap<String, GameServerCacheModel> gameServers = new HashMap<>();
 
         for (GameServer gameServer : GameServer.getAllServers()) {
+
+            GameType gameType = GameType.ARK_ASCENDED;
+            if(gameServer instanceof AseServer) gameType = GameType.ARK_EVOLVED;
+
             GameServerCacheModel gameServerCacheModel = GameServerCacheModel.builder()
                     .friendlyName(gameServer.getFriendlyName())
-                    .installDir(gameServer.getInstallDir().toString())
+                    .gameType(gameType)
                     .settings(gameServer.getSettings())
                     .build();
+            if(gameServer.getInstallDir() == null) {
+                log.error("Install directory is null for game server '{}'. Skipping...", gameServer.getFriendlyName());
+                continue;
+            }
             gameServers.put(gameServer.getServerId(), gameServerCacheModel);
         }
 

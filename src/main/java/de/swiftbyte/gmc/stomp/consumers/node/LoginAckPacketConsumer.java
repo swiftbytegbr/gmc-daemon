@@ -1,9 +1,12 @@
 package de.swiftbyte.gmc.stomp.consumers.node;
 
 import de.swiftbyte.gmc.Node;
+import de.swiftbyte.gmc.common.entity.GameServerDto;
+import de.swiftbyte.gmc.common.entity.GameType;
 import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.node.NodeLoginAckPacket;
 import de.swiftbyte.gmc.server.AsaServer;
+import de.swiftbyte.gmc.server.AseServer;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.stomp.StompPacketInfo;
@@ -28,7 +31,7 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
         log.info("Loading '{}' game servers...", packet.getGameServers().size());
         GameServer.abandonAll();
         packet.getGameServers().forEach(gameServer -> {
-            log.debug("Loading game server '{}'...", gameServer.getDisplayName());
+            log.debug("Loading game server '{}' as type {}...", gameServer.getDisplayName(), gameServer.getType());
 
             String serverInstallDir = ServerUtils.getCachedServerInstallDir(gameServer.getId());
 
@@ -40,15 +43,26 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
                 return;
             }
 
-            if (serverInstallDir == null) {
-                new AsaServer(gameServer.getId(), gameServer.getDisplayName(), settings, false);
-            } else {
-                new AsaServer(gameServer.getId(), gameServer.getDisplayName(), Path.of(serverInstallDir), settings, false);
-            }
+            createGameServer(gameServer, settings, serverInstallDir);
         });
 
         Node.INSTANCE.updateSettings(packet.getNodeSettings());
 
         Node.INSTANCE.setConnectionState(ConnectionState.CONNECTED);
+    }
+
+    private void createGameServer(GameServerDto gameServer, SettingProfile settings, String serverInstallDir) {
+        Path installDir = serverInstallDir != null ? Path.of(serverInstallDir) : null;
+
+        if(gameServer.getType() == null) {
+            log.error("Game server type is null for game server '{}'. Using ARK_ASCENDED to continue!", gameServer.getDisplayName());
+            gameServer.setType(GameType.ARK_ASCENDED);
+        }
+
+        switch (gameServer.getType()) {
+            case ARK_ASCENDED -> new AsaServer(gameServer.getId(), gameServer.getDisplayName(), installDir, settings, false);
+            case ARK_EVOLVED -> new AseServer(gameServer.getId(), gameServer.getDisplayName(), installDir, settings, false);
+            default -> log.error("Unknown game server type '{}'.", gameServer.getType());
+        }
     }
 }

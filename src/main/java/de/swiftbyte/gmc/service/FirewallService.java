@@ -6,15 +6,16 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class FirewallService {
 
-    public static void allowPort(String serverName, Path executablePath, int[] ports) {
+    public static void allowPort(String serverName, Path executablePath, List<Integer> ports) {
 
-        String portsString = Arrays.stream(ports)
-                .mapToObj(Integer::toString)
+        String portsString = ports.stream()
+                .map(String::valueOf)
                 .collect(Collectors.joining(","));
 
         String ruleName = String.format("ARK GMC: %s", serverName);
@@ -48,9 +49,6 @@ public class FirewallService {
         log.debug("Removing firewall rule {}.", ruleName);
 
         String command = String.format("powershell Remove-NetFirewallRule -DisplayName \\\"%s\\\"", ruleName);
-
-        //TODO remove in later version
-        String command2 = String.format("powershell Remove-NetFirewallRule -DisplayName \\\"%s\\\"", serverName);
 
         try {
             Process process = Runtime.getRuntime().exec(command);

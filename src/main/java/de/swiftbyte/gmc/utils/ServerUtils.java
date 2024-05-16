@@ -1,16 +1,15 @@
 package de.swiftbyte.gmc.utils;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.swiftbyte.gmc.Application;
 import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.cache.GameServerCacheModel;
 import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.parser.IniConverter;
+import de.swiftbyte.gmc.server.ArkServer;
 import de.swiftbyte.gmc.server.AsaServer;
+import de.swiftbyte.gmc.server.AseServer;
 import de.swiftbyte.gmc.server.GameServer;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -26,7 +25,7 @@ import java.util.*;
 @Slf4j
 public class ServerUtils {
 
-    public static String generateAsaServerArgs(List<String> argsType1, List<String> argsType2, List<String> requiredArgs1, List<String> requiredArgs2) {
+    public static String generateServerArgs(List<String> argsType1, List<String> argsType2, List<String> requiredArgs1, List<String> requiredArgs2) {
 
         StringBuilder preArgs = new StringBuilder();
 
@@ -56,76 +55,13 @@ public class ServerUtils {
         return preArgs.toString();
     }
 
-    public static void writeAsaStartupBatch(AsaServer server) {
-
-        SettingProfile settings = server.getSettings();
-
-        if (CommonUtils.isNullOrEmpty(settings.getGmcSettings().getMap())) {
-            log.error("Map is not set for server '{}'. Falling back to default map.", server.getFriendlyName());
-            settings.getGmcSettings().setMap("TheIsland_WP");
-        }
-
-        SettingProfileUtils spu = new SettingProfileUtils(settings.getGameUserSettings());
-
-        server.setRconPort(spu.getSettingAsInt("ServerSettings", "RCONPort", 27020));
-        server.setRconPassword(spu.getSetting("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID()));
-
-        List<String> requiredLaunchParameters1 = getRequiredLaunchArgs1(settings.getGmcSettings().getMap());
-        List<String> requiredLaunchParameters2 = getRequiredLaunchArgs2();
-
-        String realStartPostArguments = generateAsaServerArgs(
-                settings.getQuestionMarkParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() : generateArgListFromMap(settings.getQuestionMarkParams()),
-                settings.getHyphenParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() : generateArgListFromMap(settings.getHyphenParams()),
-                requiredLaunchParameters1,
-                requiredLaunchParameters2
-        );
-
-        String changeDirectoryCommand = "cd /d \"" + CommonUtils.convertPathSeparator(server.getInstallDir()) + "\\ShooterGame\\Binaries\\Win64\"";
-
-        String serverExeName = "ArkAscendedServer.exe";
-
-        if (Files.exists(Path.of(server.getInstallDir() + "/ShooterGame/Binaries/Win64/AsaApiLoader.exe")))
-            serverExeName = "AsaApiLoader.exe";
-
-        String startCommand = "start \"" + server.getFriendlyName() + "\""
-                + " \"" + CommonUtils.convertPathSeparator(server.getInstallDir() + "/ShooterGame/Binaries/Win64/" + serverExeName) + "\""
-                + " " + realStartPostArguments;
-        log.debug("Writing startup batch for server {} with command '{}'", server.getFriendlyName(), startCommand);
-
-        try {
-            FileWriter fileWriter = new FileWriter(server.getInstallDir() + "/start.bat");
-            PrintWriter printWriter = new PrintWriter(fileWriter);
-
-            printWriter.println(changeDirectoryCommand);
-            printWriter.println(startCommand);
-            printWriter.println("exit");
-            printWriter.close();
-
-        } catch (IOException e) {
-            log.error("An unknown exception occurred while writing the startup batch for server '{}'.", server.getFriendlyName(), e);
-        }
-    }
-
-    private static List<String> generateArgListFromMap(Map<String, Object> args) {
+    public static List<String> generateArgListFromMap(Map<String, Object> args) {
         ArrayList<String> argList = new ArrayList<>();
         args.forEach((key, value) -> {
             if(value == null) argList.add(key);
             else argList.add(key + "=" + value);
         });
         return argList;
-    }
-
-    private static List<String> getRequiredLaunchArgs1(String map) {
-        return new ArrayList<>(List.of(
-                map,
-                "RCONEnabled=True"
-        ));
-    }
-
-    private static List<String> getRequiredLaunchArgs2() {
-        return new ArrayList<>(List.of(
-                "oldconsole"
-        ));
     }
 
     public static void killServerProcess(String PID) {
@@ -154,7 +90,12 @@ public class ServerUtils {
             CacheModel cacheModel = CommonUtils.getObjectReader().readValue(cacheFile, CacheModel.class);
             HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
 
-            gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> new AsaServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings(), false));
+            gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> {
+                switch (gameServerCacheModel.getGameType()) {
+                    case ARK_ASCENDED -> new AsaServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings(), false);
+                    case ARK_EVOLVED -> new AseServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings(), false);
+                }
+            });
 
         } catch (IOException e) {
             log.error("An unknown error occurred while getting cached information.", e);
@@ -193,15 +134,19 @@ public class ServerUtils {
         String gameSettings = iniConverter.convertFromMap(server.getSettings().getGameSettings());
         try {
 
-            Path gusPath = installDir.resolve("ShooterGame/Saved/Config/WindowsServer/GameUserSettings2.ini");
-            if(!Files.exists(gusPath) && !CommonUtils.isNullOrEmpty(gameUserSettings)) {
-                Files.createFile(gusPath);
+            Path gusPath = installDir.resolve("ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini");
+            if(!Files.exists(gusPath.getParent())) {
+                Files.createDirectories(gusPath.getParent());
+            }
+            if(!CommonUtils.isNullOrEmpty(gameUserSettings)) {
                 Files.write(gusPath, gameUserSettings.getBytes());
             }
 
             Path gameSettingsPath = installDir.resolve("ShooterGame/Saved/Config/WindowsServer/Game.ini");
-            if(!Files.exists(gameSettingsPath) && !CommonUtils.isNullOrEmpty(gameSettings)) {
-                Files.createFile(gameSettingsPath);
+            if(!Files.exists(gameSettingsPath.getParent())) {
+                Files.createDirectories(gameSettingsPath.getParent());
+            }
+            if(!CommonUtils.isNullOrEmpty(gameSettings)) {
                 Files.write(gameSettingsPath, gameSettings.getBytes());
             }
         } catch (IOException e) {
