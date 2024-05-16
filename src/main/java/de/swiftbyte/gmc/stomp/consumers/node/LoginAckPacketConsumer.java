@@ -36,7 +36,7 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
             String serverInstallDir = ServerUtils.getCachedServerInstallDir(gameServer.getId());
 
             SettingProfile settings = ServerUtils.getSettingProfile(gameServer.getSettingProfileId());
-            if(settings == null) {
+            if (settings == null) {
                 log.error("Setting profile '{}' not found for game server '{}'. Using default setting profile.", gameServer.getSettingProfileId(), gameServer.getDisplayName());
                 settings = new SettingProfile();
                 //TODO handle
@@ -54,14 +54,16 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
     private void createGameServer(GameServerDto gameServer, SettingProfile settings, String serverInstallDir) {
         Path installDir = serverInstallDir != null ? Path.of(serverInstallDir) : null;
 
-        if(gameServer.getType() == null) {
+        if (gameServer.getType() == null) {
             log.error("Game server type is null for game server '{}'. Using ARK_ASCENDED to continue!", gameServer.getDisplayName());
             gameServer.setType(GameType.ARK_ASCENDED);
         }
 
         switch (gameServer.getType()) {
-            case ARK_ASCENDED -> new AsaServer(gameServer.getId(), gameServer.getDisplayName(), installDir, settings, false);
-            case ARK_EVOLVED -> new AseServer(gameServer.getId(), gameServer.getDisplayName(), installDir, settings, false);
+            case ARK_ASCENDED ->
+                    new AsaServer(gameServer.getId(), gameServer.getDisplayName(), installDir, settings, false);
+            case ARK_EVOLVED ->
+                    new AseServer(gameServer.getId(), gameServer.getDisplayName(), installDir, settings, false);
             default -> log.error("Unknown game server type '{}'.", gameServer.getType());
         }
     }

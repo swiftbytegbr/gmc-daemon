@@ -50,7 +50,7 @@ public class AseServer extends ArkServer {
     public AseServer(String id, String friendlyName, Path installDir, SettingProfile settings, boolean overrideAutoStart) {
 
         super(id, friendlyName, settings);
-        if(installDir != null) this.installDir = installDir;
+        if (installDir != null) this.installDir = installDir;
 
         SettingProfileUtils settingProfileUtils = new SettingProfileUtils(settings.getGameUserSettings());
 
@@ -76,7 +76,7 @@ public class AseServer extends ArkServer {
         int rconPort = spu.getSettingAsInt("ServerSettings", "RCONPort", 27020);
         int queryPort = spu.getSettingAsInt("SessionSettings", "QueryPort", 27015);
 
-        return List.of(gamePort, gamePort+1, rconPort, queryPort);
+        return List.of(gamePort, gamePort + 1, rconPort, queryPort);
     }
 
     @Override
@@ -107,8 +107,8 @@ public class AseServer extends ArkServer {
         List<String> requiredLaunchParameters2 = getRequiredLaunchArgs2();
 
         String realStartPostArguments = ServerUtils.generateServerArgs(
-                settings.getQuestionMarkParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() :  ServerUtils.generateArgListFromMap(settings.getQuestionMarkParams()),
-                settings.getHyphenParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() :  ServerUtils.generateArgListFromMap(settings.getHyphenParams()),
+                settings.getQuestionMarkParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() : ServerUtils.generateArgListFromMap(settings.getQuestionMarkParams()),
+                settings.getHyphenParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() : ServerUtils.generateArgListFromMap(settings.getHyphenParams()),
                 requiredLaunchParameters1,
                 requiredLaunchParameters2
         );

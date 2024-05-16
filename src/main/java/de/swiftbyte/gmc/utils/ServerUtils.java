@@ -5,7 +5,6 @@ import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.cache.GameServerCacheModel;
 import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.parser.IniConverter;
-import de.swiftbyte.gmc.server.ArkServer;
 import de.swiftbyte.gmc.server.AsaServer;
 import de.swiftbyte.gmc.server.AseServer;
 import de.swiftbyte.gmc.server.GameServer;
@@ -15,9 +14,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -58,7 +55,7 @@ public class ServerUtils {
     public static List<String> generateArgListFromMap(Map<String, Object> args) {
         ArrayList<String> argList = new ArrayList<>();
         args.forEach((key, value) -> {
-            if(value == null) argList.add(key);
+            if (value == null) argList.add(key);
             else argList.add(key + "=" + value);
         });
         return argList;
@@ -92,8 +89,10 @@ public class ServerUtils {
 
             gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> {
                 switch (gameServerCacheModel.getGameType()) {
-                    case ARK_ASCENDED -> new AsaServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings(), false);
-                    case ARK_EVOLVED -> new AseServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings(), false);
+                    case ARK_ASCENDED ->
+                            new AsaServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings(), false);
+                    case ARK_EVOLVED ->
+                            new AseServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings(), false);
                 }
             });
 
@@ -135,18 +134,18 @@ public class ServerUtils {
         try {
 
             Path gusPath = installDir.resolve("ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini");
-            if(!Files.exists(gusPath.getParent())) {
+            if (!Files.exists(gusPath.getParent())) {
                 Files.createDirectories(gusPath.getParent());
             }
-            if(!CommonUtils.isNullOrEmpty(gameUserSettings)) {
+            if (!CommonUtils.isNullOrEmpty(gameUserSettings)) {
                 Files.write(gusPath, gameUserSettings.getBytes());
             }
 
             Path gameSettingsPath = installDir.resolve("ShooterGame/Saved/Config/WindowsServer/Game.ini");
-            if(!Files.exists(gameSettingsPath.getParent())) {
+            if (!Files.exists(gameSettingsPath.getParent())) {
                 Files.createDirectories(gameSettingsPath.getParent());
             }
-            if(!CommonUtils.isNullOrEmpty(gameSettings)) {
+            if (!CommonUtils.isNullOrEmpty(gameSettings)) {
                 Files.write(gameSettingsPath, gameSettings.getBytes());
             }
         } catch (IOException e) {

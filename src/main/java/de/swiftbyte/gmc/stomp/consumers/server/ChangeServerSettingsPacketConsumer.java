@@ -4,7 +4,6 @@ import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.server.ServerSettingsPacket;
 import de.swiftbyte.gmc.common.packet.server.ServerSettingsResponsePacket;
 import de.swiftbyte.gmc.server.ArkServer;
-import de.swiftbyte.gmc.server.AsaServer;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
@@ -24,7 +23,7 @@ public class ChangeServerSettingsPacketConsumer implements StompPacketConsumer<S
         if (server != null) {
 
             SettingProfile settings = ServerUtils.getSettingProfile(packet.getSettingProfileId());
-            if(settings == null) {
+            if (settings == null) {
                 log.error("Setting profile '{}' not found for game server '{}'. Using default setting profile.", packet.getSettingProfileId(), server.getFriendlyName());
                 settings = new SettingProfile();
             }
@@ -36,7 +35,7 @@ public class ChangeServerSettingsPacketConsumer implements StompPacketConsumer<S
 
             StompHandler.send("/app/server/settings", responsePacket);
 
-            if(server instanceof ArkServer) ((ArkServer) server).writeStartupBatch();
+            if (server instanceof ArkServer) ((ArkServer) server).writeStartupBatch();
 
         } else {
             log.error("Server with id {} not found!", packet.getServerId());

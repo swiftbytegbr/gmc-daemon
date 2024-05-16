@@ -6,7 +6,6 @@ import de.swiftbyte.gmc.common.packet.server.ServerCreatePacket;
 import de.swiftbyte.gmc.server.ArkServer;
 import de.swiftbyte.gmc.server.AsaServer;
 import de.swiftbyte.gmc.server.AseServer;
-import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.utils.ServerUtils;
@@ -19,10 +18,10 @@ public class CreateServerPacketConsumer implements StompPacketConsumer<ServerCre
     @Override
     public void onReceive(ServerCreatePacket packet) {
         log.info("Created server with id {} and name {}.", packet.getServerId(), packet.getServerName());
-        if (packet.getGameType() == GameType.ARK_ASCENDED || packet.getGameType() == GameType.ARK_EVOLVED){
+        if (packet.getGameType() == GameType.ARK_ASCENDED || packet.getGameType() == GameType.ARK_EVOLVED) {
 
             SettingProfile settings = ServerUtils.getSettingProfile(packet.getSettingProfileId());
-            if(settings == null) {
+            if (settings == null) {
                 log.error("Setting profile '{}' not found for game server '{}'. Using default setting profile.", packet.getSettingProfileId(), packet.getServerName());
                 settings = new SettingProfile();
                 //TODO handle default profile
@@ -31,7 +30,7 @@ public class CreateServerPacketConsumer implements StompPacketConsumer<ServerCre
 
             ArkServer server = null;
 
-            if(packet.getGameType() == GameType.ARK_ASCENDED) {
+            if (packet.getGameType() == GameType.ARK_ASCENDED) {
                 server = new AsaServer(packet.getServerId(), packet.getServerName(), settings, true);
             } else {
                 server = new AseServer(packet.getServerId(), packet.getServerName(), settings, true);

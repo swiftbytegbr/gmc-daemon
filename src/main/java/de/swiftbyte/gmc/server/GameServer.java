@@ -102,7 +102,7 @@ public abstract class GameServer {
     }
 
     public void setSettings(SettingProfile settings) {
-        if(Node.INSTANCE.isManageFirewallAutomatically()) FirewallService.removePort(friendlyName);
+        if (Node.INSTANCE.isManageFirewallAutomatically()) FirewallService.removePort(friendlyName);
         this.settings = settings;
         allowFirewallPorts();
     }

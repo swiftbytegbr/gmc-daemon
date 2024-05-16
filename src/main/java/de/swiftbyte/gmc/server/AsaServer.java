@@ -51,7 +51,7 @@ public class AsaServer extends ArkServer {
 
         super(id, friendlyName, settings);
 
-        if(installDir != null) this.installDir = installDir;
+        if (installDir != null) this.installDir = installDir;
 
         SettingProfileUtils settingProfileUtils = new SettingProfileUtils(settings.getGameUserSettings());
 
@@ -76,7 +76,7 @@ public class AsaServer extends ArkServer {
         int gamePort = spu.getSettingAsInt("SessionSettings", "Port", 7777);
         int rconPort = spu.getSettingAsInt("ServerSettings", "RCONPort", 27020);
 
-        return List.of(gamePort, gamePort+1, rconPort);
+        return List.of(gamePort, gamePort + 1, rconPort);
     }
 
     @Override
@@ -108,8 +108,8 @@ public class AsaServer extends ArkServer {
         List<String> requiredLaunchParameters2 = getRequiredLaunchArgs2();
 
         String realStartPostArguments = ServerUtils.generateServerArgs(
-                settings.getQuestionMarkParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() :  ServerUtils.generateArgListFromMap(settings.getQuestionMarkParams()),
-                settings.getHyphenParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() :  ServerUtils.generateArgListFromMap(settings.getHyphenParams()),
+                settings.getQuestionMarkParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() : ServerUtils.generateArgListFromMap(settings.getQuestionMarkParams()),
+                settings.getHyphenParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() : ServerUtils.generateArgListFromMap(settings.getHyphenParams()),
                 requiredLaunchParameters1,
                 requiredLaunchParameters2
         );

@@ -133,14 +133,14 @@ public class NodeUtils {
         for (GameServer gameServer : GameServer.getAllServers()) {
 
             GameType gameType = GameType.ARK_ASCENDED;
-            if(gameServer instanceof AseServer) gameType = GameType.ARK_EVOLVED;
+            if (gameServer instanceof AseServer) gameType = GameType.ARK_EVOLVED;
 
             GameServerCacheModel gameServerCacheModel = GameServerCacheModel.builder()
                     .friendlyName(gameServer.getFriendlyName())
                     .gameType(gameType)
                     .settings(gameServer.getSettings())
                     .build();
-            if(gameServer.getInstallDir() == null) {
+            if (gameServer.getInstallDir() == null) {
                 log.error("Install directory is null for game server '{}'. Skipping...", gameServer.getFriendlyName());
                 continue;
             }

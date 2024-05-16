@@ -211,7 +211,8 @@ public abstract class ArkServer extends GameServer {
 
     @Override
     public void update() {
-        if (PID == null && installDir != null) PID = CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
+        if (PID == null && installDir != null)
+            PID = CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
 
         switch (state) {
             case INITIALIZING -> {
@@ -263,7 +264,7 @@ public abstract class ArkServer extends GameServer {
             case OFFLINE -> restartCounter = 0;
         }
 
-        if(state != GameServerState.ONLINE) {
+        if (state != GameServerState.ONLINE) {
             currentOnlinePlayers = 0;
         }
     }
