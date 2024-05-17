@@ -34,3 +34,4 @@ logging:
     path: ./log/
   level:
     org.reflections: error
+    org.springframework.data.repository.config: error
