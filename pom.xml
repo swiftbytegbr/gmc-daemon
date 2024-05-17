@@ -23,6 +23,7 @@
 
     <properties>
         <exec.mainClass>de.swiftbyte.gmc.Application</exec.mainClass>
+        <java.version>22</java.version>
     </properties>
 
     <repositories>
@@ -55,6 +56,11 @@
         </dependency>
 
         <!-- Jline -->
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-terminal-ffm</artifactId>
+            <version>3.26.1</version>
+        </dependency>
         <dependency>
             <groupId>org.jline</groupId>
             <artifactId>jline-terminal-jansi</artifactId>
@@ -169,6 +175,8 @@
                             <generateInstaller>false</generateInstaller>
                             <administratorRequired>true</administratorRequired>
                             <platform>windows</platform>
+                            <jreMinVersion>21</jreMinVersion>
+                            <vmArgs>--enable-native-access=ALL-UNNAMED</vmArgs>
                             <winConfig>
                                 <headerType>console</headerType>
                                 <icoFile>icon.ico</icoFile>
