@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.5</version>
+        <version>3.4.1</version>
     </parent>
 
     <groupId>de.swiftbyte.gmc</groupId>
@@ -19,7 +19,7 @@
         <name>SwiftByte</name>
         <url>https://swiftbyte.de</url>
     </organization>
-    <inceptionYear>2023</inceptionYear>
+    <inceptionYear>2024</inceptionYear>
 
     <properties>
         <exec.mainClass>de.swiftbyte.gmc.Application</exec.mainClass>
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.springframework.shell</groupId>
             <artifactId>spring-shell-starter</artifactId>
-            <version>3.2.4</version>
+            <version>3.4.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -59,19 +59,19 @@
         <dependency>
             <groupId>org.jline</groupId>
             <artifactId>jline-terminal-ffm</artifactId>
-            <version>3.26.1</version>
+            <version>3.28.0</version>
         </dependency>
         <dependency>
             <groupId>org.jline</groupId>
             <artifactId>jline-terminal-jansi</artifactId>
-            <version>3.26.1</version>
+            <version>3.28.0</version>
         </dependency>
 
         <!-- SwiftByte -->
         <dependency>
             <groupId>de.swiftbyte.gmc</groupId>
             <artifactId>gmc-common</artifactId>
-            <version>2.1.8</version>
+            <version>2.1.9</version>
         </dependency>
         <dependency>
             <groupId>xyz.astroark</groupId>
@@ -161,7 +161,7 @@
             <plugin>
                 <groupId>io.github.fvarrui</groupId>
                 <artifactId>javapackager</artifactId>
-                <version>1.7.5</version>
+                <version>1.7.6</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
