@@ -1,6 +1,7 @@
 package de.swiftbyte.gmc.utils;
 
 import de.swiftbyte.gmc.Application;
+import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.cache.CacheModel;
 import de.swiftbyte.gmc.cache.GameServerCacheModel;
 import de.swiftbyte.gmc.common.model.SettingProfile;
@@ -157,9 +158,10 @@ public class ServerUtils {
     public static SettingProfile getSettingProfile(String settingProfileId) {
 
         OkHttpClient client = new OkHttpClient();
-
         Request request = new Request.Builder()
-                .url(Application.getBackendUrl() + "/setting-profile/" + settingProfileId)
+                .url(Application.getBackendUrl() + "/setting/profile/" + settingProfileId)
+                .addHeader("Node-Id", Node.INSTANCE.getNodeId())
+                .addHeader("Node-Secret", Node.INSTANCE.getSecret())
                 .get()
                 .build();
 
