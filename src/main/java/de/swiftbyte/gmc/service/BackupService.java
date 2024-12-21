@@ -131,13 +131,13 @@ public class BackupService {
         backup.setExpiresAt(backup.getCreatedAt().plus((int) (Node.INSTANCE.getAutoBackup().getDeleteBackupsAfterDays() * 24 * 60), ChronoUnit.MINUTES));
         backup.setServerId(server.getServerId());
         if (CommonUtils.isNullOrEmpty(name))
-            backup.setName(DateTimeFormatter.ofPattern("yyyy.MM.dd_HH-mm-ss").withZone(ZoneId.systemDefault()).format(LocalDateTime.now()) + "_" + server.getSettings().getGmcSettings().getMap());
+            backup.setName(DateTimeFormatter.ofPattern("yyyy.MM.dd_HH-mm-ss").withZone(ZoneId.systemDefault()).format(LocalDateTime.now()) + "_" + server.getSettings().getMap());
         else backup.setName(name);
         backup.setAutoBackup(autoBackup);
 
         File tempBackupLocation = new File(NodeUtils.TMP_PATH + server.getServerId() + "/" + backup.getBackupId());
         File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
-        File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks/" + server.getSettings().getGmcSettings().getMap());
+        File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks/" + server.getSettings().getMap());
 
         log.debug("Creating backup directories...");
 
@@ -162,7 +162,7 @@ public class BackupService {
             //Remove ark backup files
             FileFilter mapSaveFilter = WildcardFileFilter.builder().setWildcards("*.ark").get();
             File[] mapSaveFiles = tempBackupLocation.listFiles(mapSaveFilter);
-            Arrays.stream(mapSaveFiles).filter(file -> !file.getName().equalsIgnoreCase(server.getSettings().getGmcSettings().getMap() + ".ark")).forEach(File::delete);
+            Arrays.stream(mapSaveFiles).filter(file -> !file.getName().equalsIgnoreCase(server.getSettings().getMap() + ".ark")).forEach(File::delete);
 
             log.debug("Compressing backup...");
             ZipUtil.pack(tempBackupLocation, backupLocation);
@@ -246,7 +246,7 @@ public class BackupService {
         server.stop(false).complete();
 
         File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
-        File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks/" + server.getSettings().getGmcSettings().getMap());
+        File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks/" + server.getSettings().getMap());
 
         if (!backupLocation.exists()) {
             log.error("Could not rollback backup because backup location does not exist!");
@@ -265,7 +265,7 @@ public class BackupService {
 
             ZipUtil.unpack(backupLocation, saveLocation);
         } else {
-            ZipUtil.unpackEntry(backupLocation, server.getSettings().getGmcSettings().getMap() + ".ark", new File(saveLocation + "/" + server.getSettings().getGmcSettings().getMap() + ".ark"));
+            ZipUtil.unpackEntry(backupLocation, server.getSettings().getMap() + ".ark", new File(saveLocation + "/" + server.getSettings().getMap() + ".ark"));
         }
 
     }

@@ -39,7 +39,7 @@ public class AseServer extends ArkServer {
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/ArkAscendedServer.exe"));
-            if (PID == null && settings.getGmcSettings().isStartOnBoot()) start().queue();
+            if (PID == null && SettingProfileUtils.isStartOnBoot(settings.getGmcSettings())) start().queue();
             else if (PID != null) {
                 log.debug("Server '{}' with PID {} is already running. Setting state to ONLINE.", PID, friendlyName);
                 super.setState(GameServerState.ONLINE);
@@ -59,7 +59,7 @@ public class AseServer extends ArkServer {
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(this.installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
-            if (PID == null && settings.getGmcSettings().isStartOnBoot()) start().queue();
+            if (PID == null && SettingProfileUtils.isStartOnBoot(settings.getGmcSettings())) start().queue();
             else if (PID != null) {
                 log.debug("Server '{}' with PID {} is already running. Setting state to ONLINE.", PID, friendlyName);
                 super.setState(GameServerState.ONLINE);
@@ -93,9 +93,9 @@ public class AseServer extends ArkServer {
 
         SettingProfile settings = getSettings();
 
-        if (CommonUtils.isNullOrEmpty(settings.getGmcSettings().getMap())) {
+        if (CommonUtils.isNullOrEmpty(settings.getMap())) {
             log.error("Map is not set for server '{}'. Falling back to default map.", getFriendlyName());
-            settings.getGmcSettings().setMap("TheIsland");
+            settings.setMap("TheIsland");
         }
 
         SettingProfileUtils spu = new SettingProfileUtils(settings.getGameUserSettings());
@@ -103,7 +103,7 @@ public class AseServer extends ArkServer {
         setRconPort(spu.getSettingAsInt("ServerSettings", "RCONPort", 27020));
         setRconPassword(spu.getSetting("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID()));
 
-        List<String> requiredLaunchParameters1 = getRequiredLaunchArgs1(settings.getGmcSettings().getMap());
+        List<String> requiredLaunchParameters1 = getRequiredLaunchArgs1(settings.getMap());
         List<String> requiredLaunchParameters2 = getRequiredLaunchArgs2();
 
         String realStartPostArguments = ServerUtils.generateServerArgs(

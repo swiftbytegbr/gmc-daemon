@@ -240,9 +240,14 @@ public class Node extends Thread {
             log.debug("Starting installer and restarting daemon...");
 
             try {
-                String installCommand = "\"" + CommonUtils.convertPathSeparator(Path.of(NodeUtils.TMP_PATH + "latest-installer.exe").toAbsolutePath()) + "\" /SILENT /SUPPRESSMSGBOXES /LOG=\"" + CommonUtils.convertPathSeparator(Path.of("log/latest-installation.log").toAbsolutePath()) + "\"";
-                log.debug("Starting installer with command: '{}'", installCommand);
-                Runtime.getRuntime().exec(installCommand);
+                String[] commands = {
+                        CommonUtils.convertPathSeparator(Path.of(NodeUtils.TMP_PATH + "latest-installer.exe").toAbsolutePath().toString()),
+                        "/SILENT",
+                        "/SUPPRESSMSGBOXES",
+                        "/LOG=" + CommonUtils.convertPathSeparator(Path.of("log/latest-installation.log").toAbsolutePath().toString())
+                };
+                log.debug("Starting installer with command: {}", String.join(" ", commands));
+                new ProcessBuilder(commands).start();
                 System.exit(0);
             } catch (IOException e) {
                 log.error("An error occurred while starting the installer.", e);

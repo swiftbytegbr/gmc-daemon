@@ -10,6 +10,7 @@ import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.NodeUtils;
 import de.swiftbyte.gmc.utils.ServerUtils;
+import de.swiftbyte.gmc.utils.SettingProfileUtils;
 import de.swiftbyte.gmc.utils.action.AsyncAction;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -133,7 +134,7 @@ public abstract class ArkServer extends GameServer {
                     while (scanner.hasNextLine()) {
                     }
 
-                    if (settings.getGmcSettings().isRestartOnCrash() && (state != GameServerState.OFFLINE && state != GameServerState.STOPPING)) {
+                    if (SettingProfileUtils.isRestartOnCrash(settings.getGmcSettings()) && (state != GameServerState.OFFLINE && state != GameServerState.STOPPING)) {
                         super.setState(GameServerState.RESTARTING);
                     } else {
                         super.setState(GameServerState.OFFLINE);
@@ -233,7 +234,7 @@ public abstract class ArkServer extends GameServer {
 
                     ServerUtils.killServerProcess(PID);
 
-                    if (settings.getGmcSettings().isRestartOnCrash()) {
+                    if (SettingProfileUtils.isRestartOnCrash(settings.getGmcSettings())) {
                         log.debug("Restarting server '{}'...", friendlyName);
                         super.setState(GameServerState.RESTARTING);
                     } else {
