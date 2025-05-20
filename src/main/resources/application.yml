@@ -11,6 +11,8 @@ spring:
   banner:
     location: banner.text
   shell:
+    interactive:
+      enabled: true
     history:
       enabled: false
     command:

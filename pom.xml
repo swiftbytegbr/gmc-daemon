@@ -23,7 +23,7 @@
 
     <properties>
         <exec.mainClass>de.swiftbyte.gmc.Application</exec.mainClass>
-        <java.version>22</java.version>
+        <java.version>21</java.version>
     </properties>
 
     <repositories>
