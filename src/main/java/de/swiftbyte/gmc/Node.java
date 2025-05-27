@@ -14,10 +14,7 @@ import de.swiftbyte.gmc.utils.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.FormBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import okhttp3.*;
 import org.apache.commons.io.FileUtils;
 import org.jline.terminal.impl.DumbTerminal;
 import org.springframework.shell.component.context.ComponentContext;
@@ -175,9 +172,8 @@ public class Node extends Thread {
 
         OkHttpClient client = new OkHttpClient();
 
-        FormBody body = new FormBody.Builder()
-                .add("inviteToken", String.valueOf(token))
-                .build();
+        String json = "{\"inviteToken\": \"" + token + "\"}";
+        RequestBody body = RequestBody.create(json, MediaType.get("application/json; charset=utf-8"));
 
         Request request = new Request.Builder()
                 .url(Application.getBackendUrl() + "/node/register")
