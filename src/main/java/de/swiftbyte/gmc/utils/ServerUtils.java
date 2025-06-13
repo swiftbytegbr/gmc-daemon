@@ -144,7 +144,6 @@ public class ServerUtils {
                 Files.createDirectories(gusPath.getParent());
             }
             if (!CommonUtils.isNullOrEmpty(gameUserSettings)) {
-                log.debug(gameUserSettings);
                 Files.write(gusPath, gameUserSettings.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
             }
 
