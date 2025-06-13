@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 @Slf4j
@@ -130,6 +131,10 @@ public class ServerUtils {
 
         log.debug("Writing ini files for server {}...", server.getFriendlyName());
 
+        LinkedHashMap<String, Object> neededCategory = new LinkedHashMap<>();
+        neededCategory.put("Version", 5);
+        server.getSettings().getGameUserSettings().put("/Script/ShooterGame.ShooterGameUserSettings", neededCategory);
+
         String gameUserSettings = iniConverter.convertFromMap(server.getSettings().getGameUserSettings());
         String gameSettings = iniConverter.convertFromMap(server.getSettings().getGameSettings());
         try {
@@ -139,7 +144,8 @@ public class ServerUtils {
                 Files.createDirectories(gusPath.getParent());
             }
             if (!CommonUtils.isNullOrEmpty(gameUserSettings)) {
-                Files.write(gusPath, gameUserSettings.getBytes());
+                log.debug(gameUserSettings);
+                Files.write(gusPath, gameUserSettings.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
             }
 
             Path gameSettingsPath = installDir.resolve("ShooterGame/Saved/Config/WindowsServer/Game.ini");
@@ -147,7 +153,7 @@ public class ServerUtils {
                 Files.createDirectories(gameSettingsPath.getParent());
             }
             if (!CommonUtils.isNullOrEmpty(gameSettings)) {
-                Files.write(gameSettingsPath, gameSettings.getBytes());
+                Files.write(gameSettingsPath, gameSettings.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
             }
         } catch (IOException e) {
             log.error("An unknown error occurred while writing the ini files.", e);
