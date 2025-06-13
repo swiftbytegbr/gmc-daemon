@@ -315,6 +315,7 @@ public class Node extends Thread {
             gameServerUpdate.setState(server.getState());
             gameServerUpdate.setId(server.getServerId());
             gameServerUpdate.setPlayerCount(server.getCurrentOnlinePlayers());
+            gameServerUpdate.setResourceUsage(new ResourceUsage());
             gameServerUpdates.add(gameServerUpdate);
         }
         heartbeatPacket.setGameServers(gameServerUpdates);
