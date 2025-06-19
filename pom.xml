@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.1</version>
+        <version>3.5.0</version>
     </parent>
 
     <groupId>de.swiftbyte.gmc</groupId>
@@ -19,7 +19,7 @@
         <name>SwiftByte</name>
         <url>https://swiftbyte.de</url>
     </organization>
-    <inceptionYear>2024</inceptionYear>
+    <inceptionYear>2025</inceptionYear>
 
     <properties>
         <exec.mainClass>de.swiftbyte.gmc.Application</exec.mainClass>
@@ -28,8 +28,12 @@
 
     <repositories>
         <repository>
-            <id>nexus</id>
-            <url>https://registry.system.astroark.xyz/repository/maven-releases/</url>
+            <id>swiftbyte</id>
+            <url>https://repo.swiftbyte.de/releases</url>
+        </repository>
+        <repository>
+            <id>vanquished</id>
+            <url>https://repo.vanquished.gg/repository/maven-public/</url>
         </repository>
         <repository>
             <id>repo.jenkins-ci.org</id>
@@ -59,19 +63,19 @@
         <dependency>
             <groupId>org.jline</groupId>
             <artifactId>jline-terminal-ffm</artifactId>
-            <version>3.28.0</version>
+            <version>3.30.4</version>
         </dependency>
         <dependency>
             <groupId>org.jline</groupId>
             <artifactId>jline-terminal-jansi</artifactId>
-            <version>3.28.0</version>
+            <version>3.30.4</version>
         </dependency>
 
         <!-- SwiftByte -->
         <dependency>
             <groupId>de.swiftbyte.gmc</groupId>
             <artifactId>gmc-common</artifactId>
-            <version>2.1.9</version>
+            <version>2.1.10</version>
         </dependency>
         <dependency>
             <groupId>xyz.astroark</groupId>
@@ -90,7 +94,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.17.1</version>
+            <version>2.19.0</version>
         </dependency>
 
         <!-- Reflections -->
@@ -104,12 +108,12 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.16.1</version>
+            <version>2.19.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.14.0</version>
+            <version>3.17.0</version>
         </dependency>
 
         <!-- OKHTTP -->
@@ -123,7 +127,7 @@
         <dependency>
             <groupId>com.github.oshi</groupId>
             <artifactId>oshi-core</artifactId>
-            <version>6.6.0</version>
+            <version>6.8.2</version>
         </dependency>
 
         <!-- ZeroTurnaround ZIP -->
