@@ -39,7 +39,7 @@ public class Node extends Thread {
     private String nodeName;
     @Setter
     private String teamName;
-    @Setter
+
     private String serverPath;
     private boolean manageFirewallAutomatically;
 
@@ -62,7 +62,7 @@ public class Node extends Thread {
         this.nodeName = "daemon";
         this.teamName = "gmc";
 
-        serverPath = "servers";
+        setServerPath("./servers");
 
         getCachedNodeInformation();
         BackupService.initialiseBackupService();
@@ -87,7 +87,7 @@ public class Node extends Thread {
             CacheModel cacheModel = CommonUtils.getObjectReader().readValue(new File("./cache.json"), CacheModel.class);
             nodeName = cacheModel.getNodeName();
             teamName = cacheModel.getTeamName();
-            serverPath = cacheModel.getServerPath();
+            setServerPath(cacheModel.getServerPath());
             isAutoUpdateEnabled = cacheModel.isAutoUpdateEnabled();
             manageFirewallAutomatically = cacheModel.isManageFirewallAutomatically();
 
@@ -260,8 +260,8 @@ public class Node extends Thread {
         log.debug("Updating settings...");
         nodeName = nodeSettings.getName();
 
-        if (!CommonUtils.isNullOrEmpty(nodeSettings.getServerPath())) serverPath = nodeSettings.getServerPath();
-        else serverPath = "servers";
+        if (!CommonUtils.isNullOrEmpty(nodeSettings.getServerPath())) setServerPath(nodeSettings.getServerPath());
+        else setServerPath("./servers");
 
         if (nodeSettings.getAutoBackup() != null) autoBackup = nodeSettings.getAutoBackup();
         else autoBackup = new NodeSettings.AutoBackup();
@@ -325,5 +325,9 @@ public class Node extends Thread {
     public void setConnectionState(ConnectionState connectionState) {
         log.debug("Connection state changed from {} to {}", this.connectionState, connectionState.name());
         this.connectionState = connectionState;
+    }
+
+    public void setServerPath(String serverPath) {
+        this.serverPath = Path.of(serverPath).normalize().toString();
     }
 }
