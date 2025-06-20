@@ -62,6 +62,8 @@ public class Application {
     @Getter
     private static ComponentFlow.Builder componentFlowBuilder;
 
+    private static ScheduledExecutorService executorService;
+
     private static final Thread shutdownHook = new Thread(() -> {
         if (node == null) return;
         log.debug("Shutting down...");
@@ -111,7 +113,8 @@ public class Application {
     }
 
     public static ScheduledExecutorService getExecutor() {
-        return Executors.newScheduledThreadPool(1);
+        if(executorService == null) executorService = Executors.newScheduledThreadPool(1);
+        return executorService;
     }
 
     @Value("${spring.application.version}")
