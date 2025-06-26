@@ -8,8 +8,10 @@ import de.swiftbyte.gmc.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.stomp.StompPacketInfo;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.Instant;
+
 @Slf4j
-@StompPacketInfo(path = "/user/queue/server/rcon", packetClass = SendRCONPacketConsumer.class)
+@StompPacketInfo(path = "/user/queue/server/rcon", packetClass = ServerRconPacket.class)
 public class SendRCONPacketConsumer implements StompPacketConsumer<ServerRconPacket> {
 
     @Override
@@ -20,12 +22,10 @@ public class SendRCONPacketConsumer implements StompPacketConsumer<ServerRconPac
         if (server != null) {
             String response = server.sendRconCommand(packet.getCommand().getCommand());
             packet.getCommand().setResponse(response);
+            packet.getCommand().setTimestamp(Instant.now());
 
-            ServerRconResponsePacket responsePacket = new ServerRconResponsePacket();
-            responsePacket.setServerId(packet.getServerId());
-            responsePacket.setCommand(responsePacket.getCommand());
-
-            StompHandler.send("/app/server/rcon", responsePacket);
+            log.debug("Sending RCON command was successful: {}.", packet);
+            StompHandler.send("/app/server/rcon", packet);
 
         } else {
             log.error("Server with id {} not found!", packet.getServerId());
