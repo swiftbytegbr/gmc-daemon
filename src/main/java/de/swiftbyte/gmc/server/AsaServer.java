@@ -72,8 +72,7 @@ public class AsaServer extends ArkServer {
     public List<Integer> getNeededPorts() {
 
         SettingProfileUtils spu = new SettingProfileUtils(settings.getGameUserSettings());
-
-        int gamePort = spu.getSettingAsInt("SessionSettings", "Port", 7777);
+        int gamePort = (int) settings.getHyphenParams().get("port");
         int rconPort = spu.getSettingAsInt("ServerSettings", "RCONPort", 27020);
 
         return List.of(gamePort, gamePort + 1, rconPort);

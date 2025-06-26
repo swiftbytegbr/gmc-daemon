@@ -72,9 +72,9 @@ public class AseServer extends ArkServer {
 
         SettingProfileUtils spu = new SettingProfileUtils(settings.getGameUserSettings());
 
-        int gamePort = spu.getSettingAsInt("SessionSettings", "Port", 7777);
+        int gamePort = settings.getQuestionMarkParams().containsKey("Port") ? (int) settings.getQuestionMarkParams().get("Port") : 7777;
         int rconPort = spu.getSettingAsInt("ServerSettings", "RCONPort", 27020);
-        int queryPort = spu.getSettingAsInt("SessionSettings", "QueryPort", 27015);
+        int queryPort = settings.getQuestionMarkParams().containsKey("QueryPort") ? (int) settings.getQuestionMarkParams().get("QueryPort") : 27025;
 
         return List.of(gamePort, gamePort + 1, rconPort, queryPort);
     }
