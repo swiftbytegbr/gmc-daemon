@@ -10,6 +10,8 @@ import de.swiftbyte.gmc.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.utils.ConnectionState;
 import lombok.extern.slf4j.Slf4j;
 
+import java.awt.event.WindowFocusListener;
+
 @Slf4j
 @StompPacketInfo(path = "/user/queue/server/delete-backup", packetClass = ServerDeleteBackupPacket.class)
 public class DeleteBackupServerPacketConsumer implements StompPacketConsumer<ServerDeleteBackupPacket> {
