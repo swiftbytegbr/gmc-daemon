@@ -9,9 +9,11 @@ import de.swiftbyte.gmc.Application;
 import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.common.entity.Backup;
 import de.swiftbyte.gmc.common.packet.server.ServerBackupResponsePacket;
+import de.swiftbyte.gmc.common.packet.server.ServerDeleteBackupResponsePacket;
 import de.swiftbyte.gmc.server.GameServer;
 import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.CommonUtils;
+import de.swiftbyte.gmc.utils.ConnectionState;
 import de.swiftbyte.gmc.utils.NodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -185,12 +187,12 @@ public class BackupService {
         }
     }
 
-    public static void deleteBackup(String backupId) {
+    public static boolean deleteBackup(String backupId) {
         Backup backup = backups.get(backupId);
 
         if (backup == null) {
             log.error("Could not delete backup because backup id was not found!");
-            return;
+            return true;
         }
 
         GameServer server = GameServer.getServerById(backup.getServerId());
@@ -198,7 +200,7 @@ public class BackupService {
             log.error("Could not delete backup on file system because server id was not found!");
             backups.remove(backupId);
             saveBackupCache();
-            return;
+            return true;
         }
 
         log.debug("Deleting backup '{}'...", backup.getName());
@@ -206,17 +208,20 @@ public class BackupService {
         if (!backupLocation.exists()) {
             log.error("Could not delete backup because backup location does not exist!");
             backups.remove(backupId);
-            return;
+            return true;
         }
 
         try {
             FileUtils.forceDelete(backupLocation);
             backups.remove(backupId);
             saveBackupCache();
+            return true;
         } catch (IOException e) {
             log.error("An unknown error occurred while deleting backup '{}'.", backup.getName(), e);
+            return false;
         }
     }
+
 
     public static void deleteAllExpiredBackups() {
         List<Backup> expiredBackups = backups.values().stream().filter(backup -> backup.getExpiresAt().isBefore(Instant.now())).toList();
