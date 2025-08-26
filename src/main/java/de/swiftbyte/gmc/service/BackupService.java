@@ -15,6 +15,7 @@ import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.ConnectionState;
 import de.swiftbyte.gmc.utils.NodeUtils;
+import de.swiftbyte.gmc.utils.settings.MapSettingsAdapter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
@@ -39,11 +40,13 @@ import java.util.concurrent.TimeUnit;
 public class BackupService {
 
     private static HashMap<String, Backup> backups = new HashMap<>();
-    private static ScheduledFuture<?> backupScheduler;
+    private static HashMap<String, ScheduledFuture<?>> backupSchedulers;
 
     public static void initialiseBackupService() {
 
         log.debug("Initialising backup service...");
+
+        backupSchedulers = new HashMap<>();
 
         File cacheFile = new File("./backups.json");
 
@@ -64,31 +67,32 @@ public class BackupService {
         } catch (IOException e) {
             log.error("An unknown error occurred while loading backups.", e);
         }
-
-        updateAutoBackupSettings();
     }
 
-    public static void updateAutoBackupSettings() {
+    public static void updateAutoBackupSettings(String serverId) {
+
+        ScheduledFuture<?> backupScheduler = backupSchedulers.get(serverId);
+
         if (backupScheduler != null) {
             backupScheduler.cancel(false);
         }
 
-        if (Node.INSTANCE.getAutoBackup() == null) {
-            log.error("AutoBackup settings are null. Skipping...");
-            return;
-        }
+        GameServer server = GameServer.getServerById(serverId);
+        MapSettingsAdapter settings = new MapSettingsAdapter(server.getSettings().getGmcSettings());
 
-        if (Node.INSTANCE.getAutoBackup().isEnabled() && Node.INSTANCE.getAutoBackup().getIntervalMinutes() > 0) {
+        int autoBackupInterval = settings.getInt("AutoBackupInterval", 30);
+
+        if (settings.getBoolean("AutoBackupEnabled", false) && autoBackupInterval > 0) {
             log.debug("Starting backup scheduler...");
 
-            long delay = Node.INSTANCE.getAutoBackup().getIntervalMinutes() - (System.currentTimeMillis() / 60000) % Node.INSTANCE.getAutoBackup().getIntervalMinutes();
+            long delay = autoBackupInterval - (System.currentTimeMillis() / 60000) % autoBackupInterval;
 
             log.debug("Starting auto backup in {} minutes.", delay);
 
-            backupScheduler = Application.getExecutor().scheduleAtFixedRate(() -> {
+            backupSchedulers.put(serverId, Application.getExecutor().scheduleAtFixedRate(() -> {
                 log.debug("Starting auto backup...");
-                BackupService.backupAllServers(true);
-            }, delay, Node.INSTANCE.getAutoBackup().getIntervalMinutes(), TimeUnit.MINUTES);
+                BackupService.backupServer(serverId, true);
+            }, delay, autoBackupInterval, TimeUnit.MINUTES));
 
         }
     }
@@ -121,16 +125,18 @@ public class BackupService {
             return;
         }
 
+        MapSettingsAdapter settings = new MapSettingsAdapter(server.getSettings().getGmcSettings());
+
         log.debug("Backing up server '{}'...", server.getFriendlyName());
 
-        if (!CommonUtils.isNullOrEmpty(Node.INSTANCE.getAutoBackup().getMessage()))
-            server.sendRconCommand("serverchat " + Node.INSTANCE.getAutoBackup().getMessage());
+        if (settings.hasAndNotEmpty("AutoBackupMessage"))
+            server.sendRconCommand("serverchat " + settings.get("AutoBackupMessage", "Server backup in progress..."));
 
         Backup backup = new Backup();
 
         backup.setBackupId("gmc-back-" + UUID.randomUUID());
         backup.setCreatedAt(Instant.now());
-        backup.setExpiresAt(backup.getCreatedAt().plus((int) (Node.INSTANCE.getAutoBackup().getDeleteBackupsAfterDays() * 24 * 60), ChronoUnit.MINUTES));
+        backup.setExpiresAt(backup.getCreatedAt().plus(settings.getInt("AutoBackupRetention") * 24 * 60, ChronoUnit.MINUTES));
         backup.setServerId(server.getServerId());
         if (CommonUtils.isNullOrEmpty(name))
             backup.setName(DateTimeFormatter.ofPattern("yyyy.MM.dd_HH-mm-ss").withZone(ZoneId.systemDefault()).format(LocalDateTime.now()) + "_" + server.getSettings().getMap());

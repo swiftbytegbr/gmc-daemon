@@ -6,7 +6,8 @@ import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.service.FirewallService;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.ServerUtils;
-import de.swiftbyte.gmc.utils.SettingProfileUtils;
+import de.swiftbyte.gmc.utils.settings.INISettingsAdapter;
+import de.swiftbyte.gmc.utils.settings.MapSettingsAdapter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.FileWriter;
@@ -32,14 +33,15 @@ public class AsaServer extends ArkServer {
 
         super(id, friendlyName, settings);
 
-        SettingProfileUtils settingProfileUtils = new SettingProfileUtils(settings.getGameUserSettings());
+        INISettingsAdapter iniSettingsAdapter = new INISettingsAdapter(settings.getGameUserSettings());
+        MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
 
-        rconPassword = settingProfileUtils.getSetting("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID());
-        rconPort = settingProfileUtils.getSettingAsInt("ServerSettings", "RconPort", 27020);
+        rconPassword = iniSettingsAdapter.get("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID());
+        rconPort = iniSettingsAdapter.getInt("ServerSettings", "RconPort", 27020);
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
-            if (PID == null && SettingProfileUtils.isStartOnBoot(settings.getGmcSettings())) start().queue();
+            if (PID == null && gmcSettings.getBoolean("StartOnBoot", false)) start().queue();
             else if (PID != null) {
                 log.debug("Server '{}' with PID {} is already running. Setting state to ONLINE.", PID, friendlyName);
                 super.setState(GameServerState.ONLINE);
@@ -53,14 +55,15 @@ public class AsaServer extends ArkServer {
 
         if (installDir != null) this.installDir = installDir;
 
-        SettingProfileUtils settingProfileUtils = new SettingProfileUtils(settings.getGameUserSettings());
+        INISettingsAdapter iniSettingsAdapter = new INISettingsAdapter(settings.getGameUserSettings());
+        MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
 
-        rconPassword = settingProfileUtils.getSetting("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID());
-        rconPort = settingProfileUtils.getSettingAsInt("ServerSettings", "RconPort", 27020);
+        rconPassword = iniSettingsAdapter.get("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID());
+        rconPort = iniSettingsAdapter.getInt("ServerSettings", "RconPort", 27020);
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(this.installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
-            if (PID == null && SettingProfileUtils.isStartOnBoot(settings.getGmcSettings())) start().queue();
+            if (PID == null && gmcSettings.getBoolean("StartOnBoot", false)) start().queue();
             else if (PID != null) {
                 log.debug("Server '{}' with PID {} is already running. Setting state to ONLINE.", PID, friendlyName);
                 super.setState(GameServerState.ONLINE);
@@ -71,9 +74,9 @@ public class AsaServer extends ArkServer {
     @Override
     public List<Integer> getNeededPorts() {
 
-        SettingProfileUtils spu = new SettingProfileUtils(settings.getGameUserSettings());
+        INISettingsAdapter spu = new INISettingsAdapter(settings.getGameUserSettings());
         int gamePort = (int) settings.getHyphenParams().get("port");
-        int rconPort = spu.getSettingAsInt("ServerSettings", "RCONPort", 27020);
+        int rconPort = spu.getInt("ServerSettings", "RCONPort", 27020);
 
         return List.of(gamePort, gamePort + 1, rconPort);
     }
@@ -98,10 +101,10 @@ public class AsaServer extends ArkServer {
             settings.setMap("TheIsland_WP");
         }
 
-        SettingProfileUtils spu = new SettingProfileUtils(settings.getGameUserSettings());
+        INISettingsAdapter spu = new INISettingsAdapter(settings.getGameUserSettings());
 
-        setRconPort(spu.getSettingAsInt("ServerSettings", "RCONPort", 27020));
-        setRconPassword(spu.getSetting("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID()));
+        setRconPort(spu.getInt("ServerSettings", "RCONPort", 27020));
+        setRconPassword(spu.get("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID()));
 
         List<String> requiredLaunchParameters1 = getRequiredLaunchArgs1(settings.getMap());
         List<String> requiredLaunchParameters2 = getRequiredLaunchArgs2();

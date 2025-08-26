@@ -10,8 +10,8 @@ import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.CommonUtils;
 import de.swiftbyte.gmc.utils.NodeUtils;
 import de.swiftbyte.gmc.utils.ServerUtils;
-import de.swiftbyte.gmc.utils.SettingProfileUtils;
 import de.swiftbyte.gmc.utils.action.AsyncAction;
+import de.swiftbyte.gmc.utils.settings.MapSettingsAdapter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -134,7 +134,9 @@ public abstract class ArkServer extends GameServer {
                     while (scanner.hasNextLine()) {
                     }
 
-                    if (SettingProfileUtils.isRestartOnCrash(settings.getGmcSettings()) && (state != GameServerState.OFFLINE && state != GameServerState.STOPPING)) {
+                    MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
+
+                    if (gmcSettings.getBoolean("StartOnBoot", false) && (state != GameServerState.OFFLINE && state != GameServerState.STOPPING)) {
                         super.setState(GameServerState.RESTARTING);
                     } else {
                         super.setState(GameServerState.OFFLINE);
@@ -234,7 +236,9 @@ public abstract class ArkServer extends GameServer {
 
                     ServerUtils.killServerProcess(PID);
 
-                    if (SettingProfileUtils.isRestartOnCrash(settings.getGmcSettings())) {
+                    MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
+
+                    if (gmcSettings.getBoolean("RestartOnCrash", false)) {
                         log.debug("Restarting server '{}'...", friendlyName);
                         super.setState(GameServerState.RESTARTING);
                     } else {

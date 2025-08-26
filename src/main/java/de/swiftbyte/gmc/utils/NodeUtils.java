@@ -153,7 +153,6 @@ public class NodeUtils {
                 .teamName(node.getTeamName())
                 .serverPath(node.getServerPath())
                 .isAutoUpdateEnabled(node.isAutoUpdateEnabled())
-                .autoBackup(node.getAutoBackup())
                 .gameServerCacheModelHashMap(gameServers)
                 .manageFirewallAutomatically(node.isManageFirewallAutomatically())
                 .serverRestartMessage(node.getServerRestartMessage())

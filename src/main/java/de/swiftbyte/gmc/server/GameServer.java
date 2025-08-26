@@ -5,6 +5,7 @@ import de.swiftbyte.gmc.Node;
 import de.swiftbyte.gmc.common.entity.GameServerState;
 import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.server.ServerStatePacket;
+import de.swiftbyte.gmc.service.BackupService;
 import de.swiftbyte.gmc.service.FirewallService;
 import de.swiftbyte.gmc.stomp.StompHandler;
 import de.swiftbyte.gmc.utils.action.AsyncAction;
@@ -61,6 +62,7 @@ public abstract class GameServer {
         updateScheduler = Application.getExecutor().scheduleAtFixedRate(this::update, 0, 10, TimeUnit.SECONDS);
 
         setState(GameServerState.OFFLINE);
+        BackupService.updateAutoBackupSettings(serverId);
     }
 
     public abstract AsyncAction<Boolean> install();
@@ -105,6 +107,7 @@ public abstract class GameServer {
         if (Node.INSTANCE.isManageFirewallAutomatically()) FirewallService.removePort(friendlyName);
         this.settings = settings;
         allowFirewallPorts();
+        BackupService.updateAutoBackupSettings(serverId);
     }
 
     protected static void removeServerById(String id) {

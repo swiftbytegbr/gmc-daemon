@@ -43,7 +43,6 @@ public class Node extends Thread {
     private String serverPath;
     private boolean manageFirewallAutomatically;
 
-    private NodeSettings.AutoBackup autoBackup;
     private boolean isAutoUpdateEnabled;
     private String serverStopMessage;
     private String serverRestartMessage;
@@ -93,9 +92,6 @@ public class Node extends Thread {
 
             serverStopMessage = cacheModel.getServerStopMessage();
             serverRestartMessage = cacheModel.getServerRestartMessage();
-
-            if (cacheModel.getAutoBackup() != null) autoBackup = cacheModel.getAutoBackup();
-            else autoBackup = new NodeSettings.AutoBackup();
 
             log.debug("Got cached information.");
 
@@ -263,16 +259,12 @@ public class Node extends Thread {
         if (!CommonUtils.isNullOrEmpty(nodeSettings.getServerPath())) setServerPath(nodeSettings.getServerPath());
         else setServerPath("./servers");
 
-        if (nodeSettings.getAutoBackup() != null) autoBackup = nodeSettings.getAutoBackup();
-        else autoBackup = new NodeSettings.AutoBackup();
-
         isAutoUpdateEnabled = nodeSettings.isEnableAutoUpdate();
         serverStopMessage = nodeSettings.getStopMessage();
         serverRestartMessage = nodeSettings.getRestartMessage();
         manageFirewallAutomatically = nodeSettings.isManageFirewallAutomatically();
 
         NodeUtils.cacheInformation(this);
-        BackupService.updateAutoBackupSettings();
     }
 
     @Override

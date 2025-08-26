@@ -1,6 +1,6 @@
 package de.swiftbyte.gmc.cache;
 
-import de.swiftbyte.gmc.common.entity.NodeSettings;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +12,7 @@ import java.util.HashMap;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CacheModel {
 
     private String nodeName;
@@ -19,7 +20,6 @@ public class CacheModel {
     private String serverPath;
     private boolean manageFirewallAutomatically;
     private boolean isAutoUpdateEnabled;
-    private NodeSettings.AutoBackup autoBackup;
     private String serverStopMessage;
     private String serverRestartMessage;
 
