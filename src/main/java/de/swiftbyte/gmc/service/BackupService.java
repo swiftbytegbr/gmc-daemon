@@ -78,17 +78,17 @@ public class BackupService {
             return;
         }
 
-        if (Node.INSTANCE.getAutoBackup().isEnabled() && Node.INSTANCE.getAutoBackup().getIntervallMinutes() > 0) {
+        if (Node.INSTANCE.getAutoBackup().isEnabled() && Node.INSTANCE.getAutoBackup().getIntervalMinutes() > 0) {
             log.debug("Starting backup scheduler...");
 
-            long delay = Node.INSTANCE.getAutoBackup().getIntervallMinutes() - (System.currentTimeMillis() / 60000) % Node.INSTANCE.getAutoBackup().getIntervallMinutes();
+            long delay = Node.INSTANCE.getAutoBackup().getIntervalMinutes() - (System.currentTimeMillis() / 60000) % Node.INSTANCE.getAutoBackup().getIntervalMinutes();
 
             log.debug("Starting auto backup in {} minutes.", delay);
 
             backupScheduler = Application.getExecutor().scheduleAtFixedRate(() -> {
                 log.debug("Starting auto backup...");
                 BackupService.backupAllServers(true);
-            }, delay, Node.INSTANCE.getAutoBackup().getIntervallMinutes(), TimeUnit.MINUTES);
+            }, delay, Node.INSTANCE.getAutoBackup().getIntervalMinutes(), TimeUnit.MINUTES);
 
         }
     }
