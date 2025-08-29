@@ -10,7 +10,7 @@
     </parent>
 
     <groupId>de.swiftbyte.gmc</groupId>
-    <artifactId>GmcDaemon</artifactId>
+    <artifactId>gmc-daemon</artifactId>
     <version>2.0.0-DEV</version>
     <name>GmcDaemon</name>
     <description>GameManagerCloud Daemon</description>
@@ -22,7 +22,7 @@
     <inceptionYear>2025</inceptionYear>
 
     <properties>
-        <exec.mainClass>de.swiftbyte.gmc.Application</exec.mainClass>
+        <exec.mainClass>de.swiftbyte.gmc.daemon.Application</exec.mainClass>
         <java.version>21</java.version>
     </properties>
 
