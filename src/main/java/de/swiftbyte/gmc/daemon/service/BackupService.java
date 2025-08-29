@@ -76,6 +76,12 @@ public class BackupService {
         }
 
         GameServer server = GameServer.getServerById(serverId);
+
+        if(server.getSettings().getGmcSettings() == null) {
+            log.debug("No GMC settings found for server '{}'. Skipping auto backup setup...", server.getFriendlyName());
+            return;
+        }
+
         MapSettingsAdapter settings = new MapSettingsAdapter(server.getSettings().getGmcSettings());
 
         int autoBackupInterval = settings.getInt("AutoBackupInterval", 30);

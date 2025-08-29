@@ -44,7 +44,7 @@ public class MapSettingsAdapter {
     }
 
     public boolean has(String key) {
-        return settings.containsKey(key);
+        return settings.get(key) != null;
     }
 
     public boolean hasAndNotEmpty(String key) {

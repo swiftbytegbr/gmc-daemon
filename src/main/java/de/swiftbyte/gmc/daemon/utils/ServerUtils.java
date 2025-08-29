@@ -39,6 +39,7 @@ public class ServerUtils {
                     if (!arg.contains("?")) preArgs.append("?");
                     preArgs.append(arg);
                 });
+        if(!additionalArgsType1.isEmpty() && !additionalArgsType1.startsWith("?")) preArgs.append("?");
         preArgs.append(additionalArgsType1);
 
         requiredArgs2.forEach(arg -> preArgs.append(" -").append(arg));
@@ -51,18 +52,23 @@ public class ServerUtils {
                     else preArgs.append(" ");
                     preArgs.append(arg);
                 });
+        if(!additionalArgsType2.isEmpty()) preArgs.append(" ");
         preArgs.append(additionalArgsType2);
 
         return preArgs.toString();
     }
 
-    public static List<String> generateArgListFromMap(Map<String, Object> args) {
+    public static List<String> generateArgListFromMap(Map<String, Object> args, boolean writeOutBooleanFlags) {
         ArrayList<String> argList = new ArrayList<>();
         args.forEach((key, value) -> {
-            if (value == null) argList.add(key);
+            if (value == null || (!writeOutBooleanFlags && value instanceof Boolean)) argList.add(key);
             else argList.add(key + "=" + value);
         });
         return argList;
+    }
+
+    public static List<String> generateArgListFromMap(Map<String, Object> args) {
+        return generateArgListFromMap(args, true);
     }
 
     public static void killServerProcess(String PID) {

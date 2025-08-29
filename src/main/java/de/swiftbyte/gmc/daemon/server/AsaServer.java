@@ -112,9 +112,9 @@ public class AsaServer extends ArkServer {
 
         String realStartPostArguments = ServerUtils.generateServerArgs(
                 settings.getQuestionMarkParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() : ServerUtils.generateArgListFromMap(settings.getQuestionMarkParams()),
-                gmcSettings.get("AdditionalHyphenParameters", ""),
-                settings.getHyphenParams() == null || settings.getHyphenParams().isEmpty() ? new ArrayList<>() : ServerUtils.generateArgListFromMap(settings.getHyphenParams()),
                 gmcSettings.get("AdditionalQuestionMarkParameters", ""),
+                settings.getHyphenParams() == null || settings.getHyphenParams().isEmpty() ? new ArrayList<>() : ServerUtils.generateArgListFromMap(settings.getHyphenParams(), false),
+                gmcSettings.get("AdditionalHyphenParameters", ""),
                 requiredLaunchParameters1,
                 requiredLaunchParameters2
         );
@@ -127,8 +127,8 @@ public class AsaServer extends ArkServer {
             serverExeName = "AsaApiLoader.exe";
 
         String startCommand = "cmd.exe /c start \"" + getFriendlyName() + "\""
-                + (gmcSettings.has("WindowsProcessPriority") ? "/" + gmcSettings.get("WindowsProcessPriority") : "")
-                + (gmcSettings.has("WindowsProcessAffinity") ? "/affinity " + gmcSettings.get("WindowsProcessAffinity") : "")
+                + (gmcSettings.has("WindowsProcessPriority") ? " /" + gmcSettings.get("WindowsProcessPriority") : "")
+                + (gmcSettings.has("WindowsProcessAffinity") ? " /affinity " + gmcSettings.get("WindowsProcessAffinity") : "")
                 + " \"" + CommonUtils.convertPathSeparator(getInstallDir() + "/ShooterGame/Binaries/Win64/" + serverExeName) + "\""
                 + " " + realStartPostArguments;
         log.debug("Writing startup batch for server {} with command '{}'", getFriendlyName(), startCommand);
