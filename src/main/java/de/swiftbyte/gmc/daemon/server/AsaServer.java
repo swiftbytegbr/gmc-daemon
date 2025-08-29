@@ -102,6 +102,7 @@ public class AsaServer extends ArkServer {
         }
 
         INISettingsAdapter spu = new INISettingsAdapter(settings.getGameUserSettings());
+        MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
 
         setRconPort(spu.getInt("ServerSettings", "RCONPort", 27020));
         setRconPassword(spu.get("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID()));
@@ -111,7 +112,9 @@ public class AsaServer extends ArkServer {
 
         String realStartPostArguments = ServerUtils.generateServerArgs(
                 settings.getQuestionMarkParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() : ServerUtils.generateArgListFromMap(settings.getQuestionMarkParams()),
+                gmcSettings.get("AdditionalHyphenParameters", ""),
                 settings.getHyphenParams() == null || settings.getHyphenParams().isEmpty() ? new ArrayList<>() : ServerUtils.generateArgListFromMap(settings.getHyphenParams()),
+                gmcSettings.get("AdditionalQuestionMarkParameters", ""),
                 requiredLaunchParameters1,
                 requiredLaunchParameters2
         );
@@ -123,7 +126,9 @@ public class AsaServer extends ArkServer {
         if (Files.exists(Path.of(getInstallDir() + "/ShooterGame/Binaries/Win64/AsaApiLoader.exe")))
             serverExeName = "AsaApiLoader.exe";
 
-        String startCommand = "start \"" + getFriendlyName() + "\""
+        String startCommand = "cmd.exe /c start \"" + getFriendlyName() + "\""
+                + (gmcSettings.has("WindowsProcessPriority") ? "/" + gmcSettings.get("WindowsProcessPriority") : "")
+                + (gmcSettings.has("WindowsProcessAffinity") ? "/affinity " + gmcSettings.get("WindowsProcessAffinity") : "")
                 + " \"" + CommonUtils.convertPathSeparator(getInstallDir() + "/ShooterGame/Binaries/Win64/" + serverExeName) + "\""
                 + " " + realStartPostArguments;
         log.debug("Writing startup batch for server {} with command '{}'", getFriendlyName(), startCommand);

@@ -24,7 +24,7 @@ import java.util.*;
 @Slf4j
 public class ServerUtils {
 
-    public static String generateServerArgs(List<String> argsType1, List<String> argsType2, List<String> requiredArgs1, List<String> requiredArgs2) {
+    public static String generateServerArgs(List<String> argsType1, String additionalArgsType1, List<String> argsType2, String additionalArgsType2, List<String> requiredArgs1, List<String> requiredArgs2) {
 
         StringBuilder preArgs = new StringBuilder();
 
@@ -39,6 +39,7 @@ public class ServerUtils {
                     if (!arg.contains("?")) preArgs.append("?");
                     preArgs.append(arg);
                 });
+        preArgs.append(additionalArgsType1);
 
         requiredArgs2.forEach(arg -> preArgs.append(" -").append(arg));
 
@@ -50,6 +51,7 @@ public class ServerUtils {
                     else preArgs.append(" ");
                     preArgs.append(arg);
                 });
+        preArgs.append(additionalArgsType2);
 
         return preArgs.toString();
     }
