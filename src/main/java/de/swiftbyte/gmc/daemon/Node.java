@@ -33,7 +33,7 @@ public class Node extends Thread {
 
     public static Node INSTANCE;
 
-    private ConnectionState connectionState;
+    private volatile ConnectionState connectionState;
 
     @Setter
     private String nodeName;
@@ -101,7 +101,7 @@ public class Node extends Thread {
     }
 
     public void shutdown() {
-        if (connectionState == ConnectionState.DELETING) return;
+        if (getConnectionState() == ConnectionState.DELETING) return;
         NodeLogoutPacket logoutPacket = new NodeLogoutPacket();
         logoutPacket.setReason("Terminated by user");
         log.debug("Sending shutdown packet...");
@@ -205,7 +205,7 @@ public class Node extends Thread {
 
     public void connect() {
 
-        if (connectionState == ConnectionState.RECONNECTING) {
+        if (getConnectionState() == ConnectionState.RECONNECTING) {
             log.info("Reconnecting to backend...");
             StompHandler.initialiseStomp();
         } else {
@@ -275,7 +275,7 @@ public class Node extends Thread {
 
     private final Runnable updateRunnable = () -> {
 
-        if (connectionState == ConnectionState.CONNECTED) {
+        if (getConnectionState() == ConnectionState.CONNECTED) {
 
             NodeUtils.cacheInformation(this);
 
@@ -284,7 +284,7 @@ public class Node extends Thread {
             StompHandler.send("/app/node/heartbeat", heartbeatPacket);
 
             BackupService.deleteAllExpiredBackups();
-        } else if (connectionState == ConnectionState.RECONNECTING) {
+        } else if (getConnectionState() == ConnectionState.RECONNECTING) {
             connect();
         }
     };
@@ -314,9 +314,13 @@ public class Node extends Thread {
         return heartbeatPacket;
     }
 
-    public void setConnectionState(ConnectionState connectionState) {
+    public synchronized void setConnectionState(ConnectionState connectionState) {
         log.debug("Connection state changed from {} to {}", this.connectionState, connectionState.name());
         this.connectionState = connectionState;
+    }
+
+    public synchronized ConnectionState getConnectionState() {
+        return this.connectionState;
     }
 
     public void setServerPath(String serverPath) {
