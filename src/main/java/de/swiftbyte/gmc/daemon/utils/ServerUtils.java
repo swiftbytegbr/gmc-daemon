@@ -61,7 +61,8 @@ public class ServerUtils {
     public static List<String> generateArgListFromMap(Map<String, Object> args, boolean writeOutBooleanFlags) {
         ArrayList<String> argList = new ArrayList<>();
         args.forEach((key, value) -> {
-            if (value == null || (!writeOutBooleanFlags && value instanceof Boolean)) argList.add(key);
+            if(value == null) return;
+            if (!writeOutBooleanFlags && value instanceof Boolean) argList.add(key);
             else argList.add(key + "=" + value);
         });
         return argList;
