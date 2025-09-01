@@ -15,6 +15,6 @@ public class TeamChangeConsumer implements StompPacketConsumer<TeamChangePacket>
     @Override
     public void onReceive(TeamChangePacket packet) {
         log.debug("Received team change packet: {}", packet);
-        Node.INSTANCE.setNodeName(packet.getTeamName());
+        Node.INSTANCE.setTeamName(packet.getTeamName());
     }
 }
