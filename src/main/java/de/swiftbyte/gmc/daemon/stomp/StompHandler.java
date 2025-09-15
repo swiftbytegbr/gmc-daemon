@@ -157,7 +157,10 @@ public class StompHandler {
 
         @Override
         public void handleTransportError(StompSession session, Throwable e) {
-            log.error("An error occurred while communicating with the backend.", e);
+            if (!session.isConnected()) {
+                log.error("Failed to send packet to backend because the session is not connected. Is the backend running?");
+                Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
+            }else log.error("An error occurred while communicating with the backend.", e);
         }
 
         @Override
