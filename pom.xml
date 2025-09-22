@@ -6,12 +6,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.3</version>
+        <version>3.5.5</version>
     </parent>
 
     <groupId>de.swiftbyte.gmc</groupId>
-    <artifactId>GmcDaemon</artifactId>
-    <version>1.2.0-EA</version>
+    <artifactId>gmc-daemon</artifactId>
+    <version>2.0.0-EA</version>
     <name>GmcDaemon</name>
     <description>GameManagerCloud Daemon</description>
     <packaging>jar</packaging>
@@ -19,16 +19,21 @@
         <name>SwiftByte</name>
         <url>https://swiftbyte.de</url>
     </organization>
-    <inceptionYear>2023</inceptionYear>
+    <inceptionYear>2025</inceptionYear>
 
     <properties>
-        <exec.mainClass>de.swiftbyte.gmc.Application</exec.mainClass>
+        <exec.mainClass>de.swiftbyte.gmc.daemon.Application</exec.mainClass>
+        <java.version>21</java.version>
     </properties>
 
     <repositories>
         <repository>
-            <id>nexus</id>
-            <url>https://registry.system.astroark.xyz/repository/maven-releases/</url>
+            <id>swiftbyte</id>
+            <url>https://repo.swiftbyte.de/releases</url>
+        </repository>
+        <repository>
+            <id>vanquished</id>
+            <url>https://repo.vanquished.gg/repository/maven-public/</url>
         </repository>
         <repository>
             <id>repo.jenkins-ci.org</id>
@@ -46,7 +51,7 @@
         <dependency>
             <groupId>org.springframework.shell</groupId>
             <artifactId>spring-shell-starter</artifactId>
-            <version>3.2.1</version>
+            <version>3.4.1</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -57,15 +62,20 @@
         <!-- Jline -->
         <dependency>
             <groupId>org.jline</groupId>
+            <artifactId>jline-terminal-ffm</artifactId>
+            <version>3.30.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jline</groupId>
             <artifactId>jline-terminal-jansi</artifactId>
-            <version>3.25.1</version>
+            <version>3.30.5</version>
         </dependency>
 
         <!-- SwiftByte -->
         <dependency>
             <groupId>de.swiftbyte.gmc</groupId>
-            <artifactId>GmcCommon</artifactId>
-            <version>2.0.10</version>
+            <artifactId>gmc-common</artifactId>
+            <version>2.1.19</version>
         </dependency>
         <dependency>
             <groupId>xyz.astroark</groupId>
@@ -84,7 +94,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.16.1</version>
+            <version>2.19.2</version>
         </dependency>
 
         <!-- Reflections -->
@@ -98,7 +108,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.15.1</version>
+            <version>2.20.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -109,15 +119,15 @@
         <!-- OKHTTP -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>4.12.0</version>
+            <artifactId>okhttp-jvm</artifactId>
+            <version>5.1.0</version>
         </dependency>
 
         <!-- Oshi -->
         <dependency>
             <groupId>com.github.oshi</groupId>
             <artifactId>oshi-core</artifactId>
-            <version>6.4.13</version>
+            <version>6.8.3</version>
         </dependency>
 
         <!-- ZeroTurnaround ZIP -->
@@ -155,7 +165,7 @@
             <plugin>
                 <groupId>io.github.fvarrui</groupId>
                 <artifactId>javapackager</artifactId>
-                <version>1.7.5</version>
+                <version>1.7.6</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -169,6 +179,8 @@
                             <generateInstaller>false</generateInstaller>
                             <administratorRequired>true</administratorRequired>
                             <platform>windows</platform>
+                            <jreMinVersion>21</jreMinVersion>
+                            <vmArgs>--enable-native-access=ALL-UNNAMED</vmArgs>
                             <winConfig>
                                 <headerType>console</headerType>
                                 <icoFile>icon.ico</icoFile>

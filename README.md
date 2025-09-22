@@ -29,9 +29,10 @@ machines in one panel.**
 - [✅] Create ASA servers (ASA API aswell)
 - [✅] Start/Stop
 - [✅] Auto-Restart
-- [✅] RCON Web Console
 - [✅] Auto-Backup
-- [✅] Rollback Function
+- [✅] Full Settings (GameUserSettings, Game.ini and startup parameters)
+- [❌] RCON Web Console
+- [❌] Rollback Function
 
 ### 📝 Installation
 
@@ -39,4 +40,4 @@ machines in one panel.**
 - https://discord.gg/3PWMZnXMzR
 
 ***
-Copyright © 2023 SwiftByte Kaspereit Faust Steurer GbR
+Copyright © 2023 - 2024 SwiftByte Kaspereit Faust Steurer GbR

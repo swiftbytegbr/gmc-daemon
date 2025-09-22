@@ -11,6 +11,8 @@ spring:
   banner:
     location: banner.text
   shell:
+    interactive:
+      enabled: true
     history:
       enabled: false
     command:
@@ -34,3 +36,4 @@ logging:
     path: ./log/
   level:
     org.reflections: error
+    org.springframework.data.repository.config: error
