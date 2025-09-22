@@ -1,5 +1,5 @@
 #define MyAppName "GameManagerCloud Daemon"
-#define MyAppVersion "2.0.0-DEV"
+#define MyAppVersion "2.0.0-EA"
 #define MyAppPublisher "SwiftByte Kaspereit Faust GbR"
 #define MyAppURL "https://gamemanager.cloud"
 #define MyAppExeName "GmcDaemon.exe"
