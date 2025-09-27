@@ -136,7 +136,7 @@ public abstract class ArkServer extends GameServer {
 
                     MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
 
-                    if (gmcSettings.getBoolean("StartOnBoot", false) && (state != GameServerState.OFFLINE && state != GameServerState.STOPPING)) {
+                    if (gmcSettings.getBoolean("RestartOnCrash", false) && (state != GameServerState.OFFLINE && state != GameServerState.STOPPING)) {
                         super.setState(GameServerState.RESTARTING);
                     } else {
                         super.setState(GameServerState.OFFLINE);
