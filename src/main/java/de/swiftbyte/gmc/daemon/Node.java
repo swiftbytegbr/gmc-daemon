@@ -52,6 +52,10 @@ public class Node extends Thread {
 
     private boolean isUpdating;
 
+    @Getter
+    @Setter
+    private boolean firstStart = false;
+
     public Node() {
 
         INSTANCE = this;
@@ -199,7 +203,10 @@ public class Node extends Thread {
         ConfigUtils.store("node.id", nodeId);
         ConfigUtils.store("node.secret", secret);
 
+        firstStart = true;
+
         setConnectionState(ConnectionState.NOT_CONNECTED);
+
         connect();
     }
 

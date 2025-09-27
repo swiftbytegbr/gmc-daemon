@@ -49,6 +49,16 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
         Node.INSTANCE.updateSettings(packet.getNodeSettings());
 
         Node.INSTANCE.setConnectionState(ConnectionState.CONNECTED);
+
+        if(Node.INSTANCE.isFirstStart()) {
+            log.info("""
+                    
+                    Congratulations — you have connected the daemon to your team!
+                    
+                    You are now finished here and can switch back to app.gamemanager.cloud.""");
+            Node.INSTANCE.setFirstStart(false);
+        }
+
     }
 
     private void createGameServer(GameServerDto gameServer, SettingProfile settings, String serverInstallDir) {
