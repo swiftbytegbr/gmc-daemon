@@ -89,6 +89,14 @@ public class ConfigUtils {
         return get(key, null);
     }
 
+    public static int getInt(String key, int defaultValue) {
+        return Integer.parseInt(get(key, String.valueOf(defaultValue)));
+    }
+
+    public static int getInt(String key) {
+        return getInt(key, 0);
+    }
+
     public static void remove(String key) {
 
         if (key == null) {

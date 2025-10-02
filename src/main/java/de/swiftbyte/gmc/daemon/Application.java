@@ -2,6 +2,7 @@ package de.swiftbyte.gmc.daemon;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import de.swiftbyte.gmc.daemon.migration.MigrationScript;
 import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
 import lombok.Getter;
@@ -18,6 +19,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.shell.command.annotation.CommandScan;
 import org.springframework.shell.component.flow.ComponentFlow;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,6 +33,10 @@ import java.util.concurrent.ScheduledExecutorService;
 @CommandScan
 @Slf4j
 public class Application {
+
+
+    private static final int MIGRATION_LEVEL = 0;
+
 
     public static String getBackendDomain() {
         return ConfigUtils.get("backend-domain", "api.gamemanager.cloud");
@@ -49,6 +55,8 @@ public class Application {
         if (isSecure()) return "wss://" + getBackendDomain() + "/websocket-nodes";
         else return "ws://" + getBackendDomain() + "/websocket-nodes";
     }
+
+    private static HashMap<Integer, MigrationScript> migrationScripts = new HashMap<>();
 
     @Getter
     private static String version;
@@ -100,6 +108,26 @@ public class Application {
         else rootLogger.setLevel(Level.INFO);
 
         log.debug("Daemon ready... Version: {}", version);
+
+
+        log.debug("Checking whether migration scripts need to be executed...");
+        int oldMigrationLevel = ConfigUtils.getInt("migrationLevel", MIGRATION_LEVEL);
+        while (oldMigrationLevel < MIGRATION_LEVEL) {
+            log.debug("Version mismatch, searching for migration script for level {}", oldMigrationLevel);
+            MigrationScript migrationScript = migrationScripts.get(oldMigrationLevel);
+
+            if (migrationScript != null) {
+                log.info("Executing migration script for level {}", oldMigrationLevel);
+                migrationScript.run();
+                ConfigUtils.store("migrationLevel", ++oldMigrationLevel);
+            } else {
+                log.debug("No migration script found. Assume that no migration is necessary.");
+                oldMigrationLevel++;
+            }
+        }
+
+        ConfigUtils.store("migrationLevel", MIGRATION_LEVEL);
+
 
         node = new Node();
         node.start();
