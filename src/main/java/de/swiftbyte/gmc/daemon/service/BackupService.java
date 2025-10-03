@@ -9,6 +9,7 @@ import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.common.entity.Backup;
 import de.swiftbyte.gmc.common.packet.server.ServerBackupResponsePacket;
+import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
@@ -149,7 +150,9 @@ public class BackupService {
 
         File tempBackupLocation = new File(NodeUtils.TMP_PATH + server.getServerId() + "/" + backup.getBackupId());
         File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
-        File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks/" + server.getSettings().getMap());
+
+        //TODO find a better way to handle different save locations for different game servers then hardcoding it here
+        File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks" + (server instanceof AsaServer ? "/" + server.getSettings().getMap() : ""));
 
         log.debug("Creating backup directories...");
 
@@ -261,7 +264,9 @@ public class BackupService {
         server.stop(false).complete();
 
         File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
-        File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks/" + server.getSettings().getMap());
+
+        //TODO find a better way to handle different save locations for different game servers then hardcoding it here
+        File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks" + (server instanceof AsaServer ? "/" + server.getSettings().getMap() : ""));
 
         if (!backupLocation.exists()) {
             log.error("Could not rollback backup because backup location does not exist!");

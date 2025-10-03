@@ -49,6 +49,18 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
         Node.INSTANCE.updateSettings(packet.getNodeSettings());
 
         Node.INSTANCE.setConnectionState(ConnectionState.CONNECTED);
+
+        if(Node.INSTANCE.isFirstStart()) {
+            log.info("""
+                    
+                    Congratulations — you have connected the daemon to your team!
+                    
+                    The daemon will continue to run on your server. Every time you perform an action in the web app, commands are sent to the daemon. It then executes these commands. If GMC ever needs to perform maintenance, you can manage the server using commands via the console.
+                    
+                    You are now finished here and can switch back to app.gamemanager.cloud.""");
+            Node.INSTANCE.setFirstStart(false);
+        }
+
     }
 
     private void createGameServer(GameServerDto gameServer, SettingProfile settings, String serverInstallDir) {

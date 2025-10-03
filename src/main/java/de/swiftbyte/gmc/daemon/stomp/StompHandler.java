@@ -11,6 +11,7 @@ import de.swiftbyte.gmc.common.packet.node.NodeLoginPacket;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
 import jakarta.websocket.ContainerProvider;
+import jakarta.websocket.DeploymentException;
 import jakarta.websocket.WebSocketContainer;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
@@ -56,6 +57,12 @@ public class StompHandler {
             session = stompClient.connectAsync(Application.getWebsocketUrl(), headers, new StompSessionHandler()).get();
             scanForPacketListeners();
         } catch (InterruptedException | ExecutionException e) {
+
+            if(e.getMessage() != null && e.getMessage().contains("Failed to handle HTTP response code [401]")) {
+                log.error("Backend rejected connection. When you just deleted the node, please execute the 'delete' command in the daemon console as well.");
+                return false;
+            }
+
             log.error("Failed to establish connection to backend. Is the backend running?");
             log.debug("Error: ", e);
             return false;

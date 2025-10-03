@@ -6,12 +6,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.5</version>
+        <version>3.5.6</version>
     </parent>
 
     <groupId>de.swiftbyte.gmc</groupId>
     <artifactId>gmc-daemon</artifactId>
-    <version>2.0.0-EA</version>
+    <version>2.0.1-EA</version>
     <name>GmcDaemon</name>
     <description>GameManagerCloud Daemon</description>
     <packaging>jar</packaging>
@@ -23,7 +23,7 @@
 
     <properties>
         <exec.mainClass>de.swiftbyte.gmc.daemon.Application</exec.mainClass>
-        <java.version>21</java.version>
+        <java.version>25</java.version>
     </properties>
 
     <repositories>
@@ -51,7 +51,6 @@
         <dependency>
             <groupId>org.springframework.shell</groupId>
             <artifactId>spring-shell-starter</artifactId>
-            <version>3.4.1</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -63,12 +62,12 @@
         <dependency>
             <groupId>org.jline</groupId>
             <artifactId>jline-terminal-ffm</artifactId>
-            <version>3.30.5</version>
+            <version>3.30.6</version>
         </dependency>
         <dependency>
             <groupId>org.jline</groupId>
-            <artifactId>jline-terminal-jansi</artifactId>
-            <version>3.30.5</version>
+            <artifactId>jline-terminal-jni</artifactId>
+            <version>3.30.6</version>
         </dependency>
 
         <!-- SwiftByte -->
@@ -94,7 +93,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.19.2</version>
+            <version>2.20.0</version>
         </dependency>
 
         <!-- Reflections -->
@@ -113,7 +112,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.18.0</version>
+            <version>3.19.0</version>
         </dependency>
 
         <!-- OKHTTP -->
@@ -127,7 +126,7 @@
         <dependency>
             <groupId>com.github.oshi</groupId>
             <artifactId>oshi-core</artifactId>
-            <version>6.8.3</version>
+            <version>6.9.0</version>
         </dependency>
 
         <!-- ZeroTurnaround ZIP -->
@@ -138,6 +137,18 @@
             <type>jar</type>
         </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.shell</groupId>
+                <artifactId>spring-shell-dependencies</artifactId>
+                <version>3.4.1</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
@@ -163,6 +174,20 @@
             </plugin>
 
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
+            <plugin>
                 <groupId>io.github.fvarrui</groupId>
                 <artifactId>javapackager</artifactId>
                 <version>1.7.6</version>
@@ -179,7 +204,7 @@
                             <generateInstaller>false</generateInstaller>
                             <administratorRequired>true</administratorRequired>
                             <platform>windows</platform>
-                            <jreMinVersion>21</jreMinVersion>
+                            <jreMinVersion>25</jreMinVersion>
                             <vmArgs>--enable-native-access=ALL-UNNAMED</vmArgs>
                             <winConfig>
                                 <headerType>console</headerType>
