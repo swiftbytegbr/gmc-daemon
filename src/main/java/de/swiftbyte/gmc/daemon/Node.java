@@ -274,6 +274,49 @@ public class Node extends Thread {
         NodeUtils.cacheInformation(this);
     }
 
+    public void delete() {
+
+        Node.INSTANCE.setConnectionState(ConnectionState.DELETING);
+
+        log.info("Starting node deletion...");
+        log.debug("Stopping all servers...");
+        for (GameServer gameServer : GameServer.getAllServers()) {
+            gameServer.stop(false).complete();
+        }
+
+        log.debug("Cleaning up...");
+
+        try {
+            FileUtils.deleteDirectory(new File(NodeUtils.TMP_PATH));
+            FileUtils.deleteDirectory(new File(NodeUtils.STEAM_CMD_DIR));
+            FileUtils.deleteDirectory(new File("logs"));
+
+            try {
+                FileUtils.delete(new File("cache.json"));
+            } catch (Exception e) {
+                log.debug("Could not delete cache.json directory.", e);
+            }
+
+            try {
+                FileUtils.delete(new File("backups.json"));
+            } catch (Exception e) {
+                log.debug("Could not delete backups.json directory.", e);
+            }
+            ConfigUtils.remove("node.id");
+            ConfigUtils.remove("node.secret");
+        } catch (IOException e) {
+            log.warn("An error occurred while cleaning up.", e);
+        }
+
+        log.info("Node deletion complete. Please note that the daemon must be uninstalled manually. Exiting...");
+
+        try {
+            Thread.sleep(5 * 1000);
+        } catch (InterruptedException ignored) {}
+
+        System.exit(0);
+    }
+
     @Override
     public void run() {
         super.run();
