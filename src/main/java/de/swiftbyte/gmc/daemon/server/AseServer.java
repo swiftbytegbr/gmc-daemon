@@ -86,7 +86,7 @@ public class AseServer extends ArkServer {
     public void allowFirewallPorts() {
         if (Node.INSTANCE.isManageFirewallAutomatically()) {
             log.debug("Adding firewall rules for server '{}'...", friendlyName);
-            Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/");
+            Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ShooterGameServer.exe");
             FirewallService.allowPort(friendlyName, executablePath, getNeededPorts());
         }
     }
