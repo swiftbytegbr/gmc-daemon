@@ -62,8 +62,9 @@ public class ServerUtils {
         ArrayList<String> argList = new ArrayList<>();
         args.forEach((key, value) -> {
             if(value == null) return;
-            if (!writeOutBooleanFlags && value instanceof Boolean) argList.add(key);
-            else argList.add(key + "=" + value);
+            if (!writeOutBooleanFlags && value instanceof Boolean) {
+                if((Boolean) value) argList.add(key);
+            } else argList.add(key + "=" + value);
         });
         return argList;
     }
