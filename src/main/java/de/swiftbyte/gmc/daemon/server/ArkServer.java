@@ -285,6 +285,7 @@ public abstract class ArkServer extends GameServer {
             log.debug("Can not send rcon command because server '{}' is offline.", friendlyName);
             return null;
         } catch (AuthenticationException e) {
+            log.debug("Information: Port: {}, Password: {}", rconPort, rconPassword);
             log.error("Rcon authentication failed for server '{}'.", friendlyName);
             return null;
         }
