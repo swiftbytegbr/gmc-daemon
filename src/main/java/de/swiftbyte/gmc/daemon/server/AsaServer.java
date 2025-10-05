@@ -127,6 +127,7 @@ public class AsaServer extends ArkServer {
             serverExeName = "AsaApiLoader.exe";
 
         String startCommand = "cmd.exe /c start \"" + getFriendlyName() + "\""
+                + " /min"
                 + (gmcSettings.has("WindowsProcessPriority") ? " /" + gmcSettings.get("WindowsProcessPriority") : "")
                 + (gmcSettings.has("WindowsProcessAffinity") ? " /affinity " + gmcSettings.get("WindowsProcessAffinity") : "")
                 + " \"" + CommonUtils.convertPathSeparator(getInstallDir() + "/ShooterGame/Binaries/Win64/" + serverExeName) + "\""
