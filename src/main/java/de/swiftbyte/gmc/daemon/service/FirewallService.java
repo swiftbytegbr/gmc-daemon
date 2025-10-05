@@ -25,14 +25,17 @@ public class FirewallService {
         String commandUdp = String.format("powershell New-NetFirewallRule -DisplayName \\\"%s\\\" -Direction Inbound -LocalPort %s -Protocol UDP -Action Allow -Program \\\"%s\\\" -Group \\\"GameManagerCloud Server Port\\\"", ruleName, portsString, CommonUtils.convertPathSeparator(executablePath.toAbsolutePath()));
 
         try {
+            log.debug("Using tcp command: {}", commandTcp);
             Process tcpProcess = Runtime.getRuntime().exec(commandTcp);
+
+            log.debug("Using udp command: {}", commandUdp);
             Process udpProcess = Runtime.getRuntime().exec(commandUdp);
 
             tcpProcess.waitFor();
             udpProcess.waitFor();
 
             if (tcpProcess.exitValue() != 0 || udpProcess.exitValue() != 0) {
-                log.warn("Adding firewall rule returned non-zero exit value.");
+                log.warn("Adding firewall rule returned non-zero exit value. (tcp: {}, udp: {})", tcpProcess.exitValue(), udpProcess.exitValue());
             }
 
         } catch (IOException | InterruptedException e) {
