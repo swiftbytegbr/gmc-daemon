@@ -71,6 +71,33 @@ public class AseServer extends ArkServer {
     }
 
     @Override
+    public void setSettings(SettingProfile settings) {
+        SettingProfile oldSettings = getSettings();
+        super.setSettings(settings);
+
+        MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
+        MapSettingsAdapter oldGmcSettings = new MapSettingsAdapter(oldSettings.getGmcSettings());
+
+        if(gmcSettings.getBoolean("EnablePreaquaticaBeta", false) != oldGmcSettings.getBoolean("EnablePreaquaticaBeta", false)) {
+            log.info("Detected change in Preaquatica Beta setting. Updating server to apply changes.");
+            stop(false).queue((success) -> {
+                if(success) {
+                    if(install().complete()) {
+                        log.info("Updated server with id {} successfully.", serverId);
+                    } else {
+                        log.error("Failed to update server with id {} during installation!", serverId);
+                    }
+
+                } else {
+                    log.error("Failed to update server with id {} because it could not be stopped!", serverId);
+                }
+
+            });
+        }
+
+    }
+
+    @Override
     public List<Integer> getNeededPorts() {
 
         INISettingsAdapter spu = new INISettingsAdapter(settings.getGameUserSettings());

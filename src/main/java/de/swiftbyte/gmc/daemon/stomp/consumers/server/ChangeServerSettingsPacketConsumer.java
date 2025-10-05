@@ -35,8 +35,6 @@ public class ChangeServerSettingsPacketConsumer implements StompPacketConsumer<S
 
             StompHandler.send("/app/server/settings", responsePacket);
 
-            if (server instanceof ArkServer) ((ArkServer) server).writeStartupBatch();
-
         } else {
             log.error("Server with id {} not found!", packet.getServerId());
         }
