@@ -137,6 +137,8 @@ public class BackupService {
         if (settings.hasAndNotEmpty("AutoBackupMessage"))
             server.sendRconCommand("serverchat " + settings.get("AutoBackupMessage", "Server backup in progress..."));
 
+        server.sendRconCommand("saveworld");
+
         Backup backup = new Backup();
 
         backup.setBackupId("gmc-back-" + UUID.randomUUID());
