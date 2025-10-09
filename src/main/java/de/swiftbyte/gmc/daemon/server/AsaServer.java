@@ -37,7 +37,7 @@ public class AsaServer extends ArkServer {
         MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
 
         rconPassword = iniSettingsAdapter.get("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID());
-        rconPort = iniSettingsAdapter.getInt("ServerSettings", "RconPort", 27020);
+        rconPort = iniSettingsAdapter.getInt("ServerSettings", "RCONPort", 27020);
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
@@ -59,7 +59,7 @@ public class AsaServer extends ArkServer {
         MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
 
         rconPassword = iniSettingsAdapter.get("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID());
-        rconPort = iniSettingsAdapter.getInt("ServerSettings", "RconPort", 27020);
+        rconPort = iniSettingsAdapter.getInt("ServerSettings", "RCONPort", 27020);
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(this.installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
@@ -127,6 +127,7 @@ public class AsaServer extends ArkServer {
             serverExeName = "AsaApiLoader.exe";
 
         String startCommand = "cmd.exe /c start \"" + getFriendlyName() + "\""
+                + " /min"
                 + (gmcSettings.has("WindowsProcessPriority") ? " /" + gmcSettings.get("WindowsProcessPriority") : "")
                 + (gmcSettings.has("WindowsProcessAffinity") ? " /affinity " + gmcSettings.get("WindowsProcessAffinity") : "")
                 + " \"" + CommonUtils.convertPathSeparator(getInstallDir() + "/ShooterGame/Binaries/Win64/" + serverExeName) + "\""

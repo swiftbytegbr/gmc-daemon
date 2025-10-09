@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Getter
@@ -320,11 +321,15 @@ public class Node extends Thread {
     @Override
     public void run() {
         super.run();
-        Application.getExecutor().scheduleAtFixedRate(updateRunnable, 0, 10, TimeUnit.SECONDS);
+        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(updateRunnable, 0, 10, TimeUnit.SECONDS);
     }
 
+    long lastUpdate = System.currentTimeMillis();
     private final Runnable updateRunnable = () -> {
-
+        if((System.currentTimeMillis() - lastUpdate) / 1000 > 15) {
+            log.warn("Last heartbeat was more than 15 seconds ago. Catching up...");
+        }
+        lastUpdate = System.currentTimeMillis();
         if (getConnectionState() == ConnectionState.CONNECTED) {
 
             NodeUtils.cacheInformation(this);

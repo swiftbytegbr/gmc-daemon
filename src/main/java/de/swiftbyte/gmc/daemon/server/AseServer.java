@@ -37,7 +37,7 @@ public class AseServer extends ArkServer {
         MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
 
         rconPassword = iniSettingsAdapter.get("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID());
-        rconPort = iniSettingsAdapter.getInt("ServerSettings", "RconPort", 27020);
+        rconPort = iniSettingsAdapter.getInt("ServerSettings", "RCONPort", 27020);
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/ArkAscendedServer.exe"));
@@ -58,7 +58,7 @@ public class AseServer extends ArkServer {
         MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
 
         rconPassword = iniSettingsAdapter.get("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID());
-        rconPort = iniSettingsAdapter.getInt("ServerSettings", "RconPort", 27020);
+        rconPort = iniSettingsAdapter.getInt("ServerSettings", "RCONPort", 27020);
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(this.installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
@@ -68,6 +68,33 @@ public class AseServer extends ArkServer {
                 super.setState(GameServerState.ONLINE);
             }
         }
+    }
+
+    @Override
+    public void setSettings(SettingProfile settings) {
+        SettingProfile oldSettings = getSettings();
+        super.setSettings(settings);
+
+        MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
+        MapSettingsAdapter oldGmcSettings = new MapSettingsAdapter(oldSettings.getGmcSettings());
+
+        if(gmcSettings.getBoolean("EnablePreaquaticaBeta", false) != oldGmcSettings.getBoolean("EnablePreaquaticaBeta", false)) {
+            log.info("Detected change in Preaquatica Beta setting. Updating server to apply changes.");
+            stop(false).queue((success) -> {
+                if(success) {
+                    if(install().complete()) {
+                        log.info("Updated server with id {} successfully.", serverId);
+                    } else {
+                        log.error("Failed to update server with id {} during installation!", serverId);
+                    }
+
+                } else {
+                    log.error("Failed to update server with id {} because it could not be stopped!", serverId);
+                }
+
+            });
+        }
+
     }
 
     @Override
@@ -86,7 +113,7 @@ public class AseServer extends ArkServer {
     public void allowFirewallPorts() {
         if (Node.INSTANCE.isManageFirewallAutomatically()) {
             log.debug("Adding firewall rules for server '{}'...", friendlyName);
-            Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/");
+            Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ShooterGameServer.exe");
             FirewallService.allowPort(friendlyName, executablePath, getNeededPorts());
         }
     }
@@ -127,6 +154,7 @@ public class AseServer extends ArkServer {
             serverExeName = "AseApiLoader.exe";
 
         String startCommand = "cmd /c start \"" + getFriendlyName() + "\""
+                + " /min"
                 + (gmcSettings.has("WindowsProcessPriority") ? " /" + gmcSettings.get("WindowsProcessPriority") : "")
                 + (gmcSettings.has("WindowsProcessAffinity") ? " /affinity " + gmcSettings.get("WindowsProcessAffinity") : "")
                 + " \"" + CommonUtils.convertPathSeparator(getInstallDir() + "/ShooterGame/Binaries/Win64/" + serverExeName) + "\""

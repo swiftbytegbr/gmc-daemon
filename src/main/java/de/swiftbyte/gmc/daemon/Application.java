@@ -141,7 +141,7 @@ public class Application {
     }
 
     public static ScheduledExecutorService getExecutor() {
-        if(executorService == null) executorService = Executors.newScheduledThreadPool(1);
+        if(executorService == null) executorService = Executors.newScheduledThreadPool(ConfigUtils.getInt("override-thread-pool-size", 32));
         return executorService;
     }
 

@@ -35,12 +35,22 @@ public abstract class ArkServer extends GameServer {
         super(id, friendlyName, settings);
     }
 
+    @Override
+    public void setSettings(SettingProfile settings) {
+        super.setSettings(settings);
+        writeStartupBatch();
+    }
+
     public AsyncAction<Boolean> install() {
         return () -> {
             setState(GameServerState.CREATING);
+
+            MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
+            boolean isPreaquaticaBeta = gmcSettings.getBoolean("EnablePreaquaticaBeta", false);
+
             String installCommand = "cmd /c start \"steamcmd\" \"" + CommonUtils.convertPathSeparator(NodeUtils.getSteamCmdPath().toAbsolutePath()) + "\""
                     + " +force_install_dir \"" + CommonUtils.convertPathSeparator(installDir.toAbsolutePath()) + "\""
-                    + " +login anonymous +app_update " + getGameId() + " validate +quit";
+                    + " +login anonymous +app_update " + getGameId() + (isPreaquaticaBeta ? " -beta preaquatica" : "") + " validate +quit";
             log.debug("Starting server installation with command {}", installCommand);
             try {
                 Process process = Runtime.getRuntime().exec(installCommand);
@@ -285,6 +295,7 @@ public abstract class ArkServer extends GameServer {
             log.debug("Can not send rcon command because server '{}' is offline.", friendlyName);
             return null;
         } catch (AuthenticationException e) {
+            log.debug("Information: Port: {}, Password: {}", rconPort, rconPassword);
             log.error("Rcon authentication failed for server '{}'.", friendlyName);
             return null;
         }
