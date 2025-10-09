@@ -17,6 +17,8 @@ import de.swiftbyte.gmc.daemon.utils.NodeUtils;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.zeroturnaround.zip.ZipUtil;
 
@@ -174,7 +176,8 @@ public class BackupService {
         log.debug("Copying save files to temporary backup location...");
 
         try {
-            FileUtils.copyDirectory(saveLocation, tempBackupLocation);
+            IOFileFilter filter = FileFilterUtils.notFileFilter(FileFilterUtils.suffixFileFilter(".tmp"));
+            FileUtils.copyDirectory(saveLocation, tempBackupLocation, filter);
 
             //Remove ark backup files
             FileFilter mapSaveFilter = WildcardFileFilter.builder().setWildcards("*.ark").get();
