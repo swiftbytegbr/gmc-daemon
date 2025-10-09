@@ -59,7 +59,7 @@ public abstract class GameServer {
         this.settings = settings;
 
         GAME_SERVERS.put(id, this);
-        updateScheduler = Application.getExecutor().scheduleAtFixedRate(this::update, 0, 10, TimeUnit.SECONDS);
+        updateScheduler = Application.getExecutor().scheduleWithFixedDelay(this::update, 0, 10, TimeUnit.SECONDS);
 
         setState(GameServerState.OFFLINE);
         BackupService.updateAutoBackupSettings(serverId);
