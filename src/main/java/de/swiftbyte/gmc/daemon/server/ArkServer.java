@@ -162,8 +162,18 @@ public abstract class ArkServer extends GameServer {
     }
 
     @Override
-    public AsyncAction<Boolean> stop(boolean isRestart) {
+    public AsyncAction<Boolean> stop(boolean isRestart, boolean isKill) {
         return () -> {
+            if(isKill) {
+                log.debug("Killing server '{}'", friendlyName);
+                super.setState(GameServerState.STOPPING);
+                if(PID == null) {
+                    log.error("Killing server '{}' failed. Reason: PID not found.", friendlyName);
+                    return false;
+                }
+                ServerUtils.killServerProcess(PID);
+                return true;
+            }
             if (state == GameServerState.OFFLINE) return true;
             super.setState(GameServerState.STOPPING);
 

@@ -73,7 +73,15 @@ public abstract class GameServer {
 
     public abstract AsyncAction<Boolean> start();
 
-    public abstract AsyncAction<Boolean> stop(boolean isRestart);
+    public AsyncAction<Boolean> stop() {
+        return stop(false, false);
+    }
+
+    public AsyncAction<Boolean> stop(boolean isRestart) {
+        return stop(isRestart, false);
+    }
+
+    public abstract AsyncAction<Boolean> stop(boolean isRestart, boolean isKill);
 
     public abstract AsyncAction<Boolean> restart();
 
