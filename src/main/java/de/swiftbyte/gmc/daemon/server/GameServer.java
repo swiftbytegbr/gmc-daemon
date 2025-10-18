@@ -99,6 +99,10 @@ public abstract class GameServer {
 
         log.debug("Changing state of server '{}' from '{}' to '{}'.", friendlyName, this.state, state);
 
+        if(state == GameServerState.OFFLINE || state == GameServerState.INITIALIZING) {
+            this.PID = null;
+        }
+
         synchronized (this) {
             this.state = state;
             this.notifyAll();
