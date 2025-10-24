@@ -5,10 +5,10 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import de.swiftbyte.gmc.common.entity.Backup;
 import de.swiftbyte.gmc.common.packet.from.daemon.server.ServerBackupResponsePacket;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
-import de.swiftbyte.gmc.common.entity.Backup;
 import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
@@ -80,7 +80,7 @@ public class BackupService {
 
         GameServer server = GameServer.getServerById(serverId);
 
-        if(server.getSettings().getGmcSettings() == null) {
+        if (server.getSettings().getGmcSettings() == null) {
             log.debug("No GMC settings found for server '{}'. Skipping auto backup setup...", server.getFriendlyName());
             return;
         }
@@ -110,7 +110,9 @@ public class BackupService {
         ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
         try {
             File file = new File("./backups.json");
-            if (!file.exists()) file.createNewFile();
+            if (!file.exists()) {
+                file.createNewFile();
+            }
             writer.writeValue(file, backups);
         } catch (IOException e) {
             log.error("An unknown error occurred while saving backups.", e);
@@ -136,8 +138,9 @@ public class BackupService {
 
         log.debug("Backing up server '{}'...", server.getFriendlyName());
 
-        if (settings.hasAndNotEmpty("AutoBackupMessage"))
+        if (settings.hasAndNotEmpty("AutoBackupMessage")) {
             server.sendRconCommand("serverchat " + settings.get("AutoBackupMessage", "Server backup in progress..."));
+        }
 
         server.sendRconCommand("saveworld");
 
@@ -147,9 +150,11 @@ public class BackupService {
         backup.setCreatedAt(Instant.now());
         backup.setExpiresAt(backup.getCreatedAt().plus(settings.getInt("AutoBackupRetention") * 24 * 60, ChronoUnit.MINUTES));
         backup.setServerId(server.getServerId());
-        if (CommonUtils.isNullOrEmpty(name))
+        if (CommonUtils.isNullOrEmpty(name)) {
             backup.setName(DateTimeFormatter.ofPattern("yyyy.MM.dd_HH-mm-ss").withZone(ZoneId.systemDefault()).format(LocalDateTime.now()) + "_" + server.getSettings().getMap());
-        else backup.setName(name);
+        } else {
+            backup.setName(name);
+        }
         backup.setAutoBackup(autoBackup);
 
         File tempBackupLocation = new File(NodeUtils.TMP_PATH + server.getServerId() + "/" + backup.getBackupId());
@@ -286,7 +291,9 @@ public class BackupService {
         if (playerData) {
             File[] playerDataFiles = saveLocation.listFiles();
 
-            for (File playerDataFile : playerDataFiles) playerDataFile.delete();
+            for (File playerDataFile : playerDataFiles) {
+                playerDataFile.delete();
+            }
 
             ZipUtil.unpack(backupLocation, saveLocation);
         } else {

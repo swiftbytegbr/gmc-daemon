@@ -1,10 +1,10 @@
 package de.swiftbyte.gmc.daemon.server;
 
+import de.swiftbyte.gmc.common.entity.GameServerState;
+import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.from.daemon.server.ServerStatePacket;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
-import de.swiftbyte.gmc.common.entity.GameServerState;
-import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.service.FirewallService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
@@ -95,11 +95,13 @@ public abstract class GameServer {
 
     public void setState(GameServerState state) {
 
-        if (this.state == GameServerState.DELETING) return;
+        if (this.state == GameServerState.DELETING) {
+            return;
+        }
 
         log.debug("Changing state of server '{}' from '{}' to '{}'.", friendlyName, this.state, state);
 
-        if(state == GameServerState.OFFLINE || state == GameServerState.INITIALIZING) {
+        if (state == GameServerState.OFFLINE || state == GameServerState.INITIALIZING) {
             this.PID = null;
         }
 
@@ -116,7 +118,9 @@ public abstract class GameServer {
     }
 
     public void setSettings(SettingProfile settings) {
-        if (Node.INSTANCE.isManageFirewallAutomatically()) FirewallService.removePort(friendlyName);
+        if (Node.INSTANCE.isManageFirewallAutomatically()) {
+            FirewallService.removePort(friendlyName);
+        }
         this.settings = settings;
         allowFirewallPorts();
         BackupService.updateAutoBackupSettings(serverId);

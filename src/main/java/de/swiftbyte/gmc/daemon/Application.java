@@ -47,13 +47,19 @@ public class Application {
     }
 
     public static String getBackendUrl() {
-        if (isSecure()) return "https://" + getBackendDomain();
-        else return "http://" + getBackendDomain();
+        if (isSecure()) {
+            return "https://" + getBackendDomain();
+        } else {
+            return "http://" + getBackendDomain();
+        }
     }
 
     public static String getWebsocketUrl() {
-        if (isSecure()) return "wss://" + getBackendDomain() + "/websocket-nodes";
-        else return "ws://" + getBackendDomain() + "/websocket-nodes";
+        if (isSecure()) {
+            return "wss://" + getBackendDomain() + "/websocket-nodes";
+        } else {
+            return "ws://" + getBackendDomain() + "/websocket-nodes";
+        }
     }
 
     private static HashMap<Integer, MigrationScript> migrationScripts = new HashMap<>();
@@ -73,7 +79,9 @@ public class Application {
     private static ScheduledExecutorService executorService;
 
     private static final Thread shutdownHook = new Thread(() -> {
-        if (node == null) return;
+        if (node == null) {
+            return;
+        }
         log.debug("Shutting down...");
         node.shutdown();
         log.info("Goodbye!");
@@ -90,8 +98,11 @@ public class Application {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger("de.swiftbyte");
 
-        if (List.of(args).contains("-debug")) rootLogger.setLevel(Level.DEBUG);
-        else rootLogger.setLevel(Level.INFO);
+        if (List.of(args).contains("-debug")) {
+            rootLogger.setLevel(Level.DEBUG);
+        } else {
+            rootLogger.setLevel(Level.INFO);
+        }
 
         SpringApplication.run(Application.class);
     }
@@ -104,8 +115,11 @@ public class Application {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger("de.swiftbyte");
 
-        if (Boolean.parseBoolean(ConfigUtils.get("debug", "false"))) rootLogger.setLevel(Level.DEBUG);
-        else rootLogger.setLevel(Level.INFO);
+        if (Boolean.parseBoolean(ConfigUtils.get("debug", "false"))) {
+            rootLogger.setLevel(Level.DEBUG);
+        } else {
+            rootLogger.setLevel(Level.INFO);
+        }
 
         log.debug("Daemon ready... Version: {}", version);
 
@@ -132,16 +146,20 @@ public class Application {
         node = new Node();
         node.start();
 
-        if (node.getConnectionState() == ConnectionState.NOT_JOINED) node.joinTeam();
-        else if (node.getConnectionState() == ConnectionState.NOT_CONNECTED) node.connect();
-        else {
+        if (node.getConnectionState() == ConnectionState.NOT_JOINED) {
+            node.joinTeam();
+        } else if (node.getConnectionState() == ConnectionState.NOT_CONNECTED) {
+            node.connect();
+        } else {
             log.error("Illegal ConnectionState set... Start is aborted!");
             System.exit(1);
         }
     }
 
     public static ScheduledExecutorService getExecutor() {
-        if(executorService == null) executorService = Executors.newScheduledThreadPool(ConfigUtils.getInt("override-thread-pool-size", 32));
+        if (executorService == null) {
+            executorService = Executors.newScheduledThreadPool(ConfigUtils.getInt("override-thread-pool-size", 32));
+        }
         return executorService;
     }
 

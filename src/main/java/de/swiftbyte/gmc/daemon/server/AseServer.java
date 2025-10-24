@@ -1,8 +1,8 @@
 package de.swiftbyte.gmc.daemon.server;
 
-import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.common.entity.GameServerState;
 import de.swiftbyte.gmc.common.model.SettingProfile;
+import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.service.FirewallService;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
@@ -41,8 +41,9 @@ public class AseServer extends ArkServer {
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/ArkAscendedServer.exe"));
-            if (PID == null && gmcSettings.getBoolean("StartOnBoot", false)) start().queue();
-            else if (PID != null) {
+            if (PID == null && gmcSettings.getBoolean("StartOnBoot", false)) {
+                start().queue();
+            } else if (PID != null) {
                 log.debug("Server '{}' with PID {} is already running. Setting state to ONLINE.", PID, friendlyName);
                 super.setState(GameServerState.ONLINE);
             }
@@ -52,7 +53,9 @@ public class AseServer extends ArkServer {
     public AseServer(String id, String friendlyName, Path installDir, SettingProfile settings, boolean overrideAutoStart) {
 
         super(id, friendlyName, settings);
-        if (installDir != null) this.installDir = installDir;
+        if (installDir != null) {
+            this.installDir = installDir;
+        }
 
         INISettingsAdapter iniSettingsAdapter = new INISettingsAdapter(settings.getGameUserSettings());
         MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
@@ -62,8 +65,9 @@ public class AseServer extends ArkServer {
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(this.installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
-            if (PID == null && gmcSettings.getBoolean("StartOnBoot", false)) start().queue();
-            else if (PID != null) {
+            if (PID == null && gmcSettings.getBoolean("StartOnBoot", false)) {
+                start().queue();
+            } else if (PID != null) {
                 log.debug("Server '{}' with PID {} is already running. Setting state to ONLINE.", PID, friendlyName);
                 super.setState(GameServerState.ONLINE);
             }
@@ -78,11 +82,11 @@ public class AseServer extends ArkServer {
         MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
         MapSettingsAdapter oldGmcSettings = new MapSettingsAdapter(oldSettings.getGmcSettings());
 
-        if(gmcSettings.getBoolean("EnablePreaquaticaBeta", false) != oldGmcSettings.getBoolean("EnablePreaquaticaBeta", false)) {
+        if (gmcSettings.getBoolean("EnablePreaquaticaBeta", false) != oldGmcSettings.getBoolean("EnablePreaquaticaBeta", false)) {
             log.info("Detected change in Preaquatica Beta setting. Updating server to apply changes.");
             stop(false).queue((success) -> {
-                if(success) {
-                    if(install().complete()) {
+                if (success) {
+                    if (install().complete()) {
                         log.info("Updated server with id {} successfully.", serverId);
                     } else {
                         log.error("Failed to update server with id {} during installation!", serverId);
@@ -150,8 +154,9 @@ public class AseServer extends ArkServer {
 
         String serverExeName = "ShooterGameServer.exe";
 
-        if (Files.exists(Path.of(getInstallDir() + "/ShooterGame/Binaries/Win64/AseApiLoader.exe")))
+        if (Files.exists(Path.of(getInstallDir() + "/ShooterGame/Binaries/Win64/AseApiLoader.exe"))) {
             serverExeName = "AseApiLoader.exe";
+        }
 
         String startCommand = "cmd /c start \"" + getFriendlyName() + "\""
                 + " /min"

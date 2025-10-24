@@ -1,11 +1,11 @@
 package de.swiftbyte.gmc.daemon.utils;
 
+import de.swiftbyte.gmc.common.model.SettingProfile;
+import de.swiftbyte.gmc.common.parser.IniConverter;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.cache.CacheModel;
 import de.swiftbyte.gmc.daemon.cache.GameServerCacheModel;
-import de.swiftbyte.gmc.common.model.SettingProfile;
-import de.swiftbyte.gmc.common.parser.IniConverter;
 import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.AseServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
@@ -19,7 +19,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 public class ServerUtils {
@@ -35,11 +40,17 @@ public class ServerUtils {
         argsType1.stream()
                 .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.split("=")[0].equalsIgnoreCase(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
-                    if (CommonUtils.isNullOrEmpty(arg)) return;
-                    if (!arg.contains("?")) preArgs.append("?");
+                    if (CommonUtils.isNullOrEmpty(arg)) {
+                        return;
+                    }
+                    if (!arg.contains("?")) {
+                        preArgs.append("?");
+                    }
                     preArgs.append(arg);
                 });
-        if(!additionalArgsType1.isEmpty() && !additionalArgsType1.startsWith("?")) preArgs.append("?");
+        if (!additionalArgsType1.isEmpty() && !additionalArgsType1.startsWith("?")) {
+            preArgs.append("?");
+        }
         preArgs.append(additionalArgsType1);
 
         requiredArgs2.forEach(arg -> preArgs.append(" -").append(arg));
@@ -47,12 +58,19 @@ public class ServerUtils {
         argsType2.stream()
                 .filter(arg -> requiredArgs2.stream().noneMatch(requiredArg -> (arg.split("=")[0].equalsIgnoreCase(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
-                    if (CommonUtils.isNullOrEmpty(arg)) return;
-                    if (!arg.replace(" ", "").startsWith("-")) preArgs.append(" -");
-                    else preArgs.append(" ");
+                    if (CommonUtils.isNullOrEmpty(arg)) {
+                        return;
+                    }
+                    if (!arg.replace(" ", "").startsWith("-")) {
+                        preArgs.append(" -");
+                    } else {
+                        preArgs.append(" ");
+                    }
                     preArgs.append(arg);
                 });
-        if(!additionalArgsType2.isEmpty()) preArgs.append(" ");
+        if (!additionalArgsType2.isEmpty()) {
+            preArgs.append(" ");
+        }
         preArgs.append(additionalArgsType2);
 
         return preArgs.toString();
@@ -61,10 +79,16 @@ public class ServerUtils {
     public static List<String> generateArgListFromMap(Map<String, Object> args, boolean writeOutBooleanFlags) {
         ArrayList<String> argList = new ArrayList<>();
         args.forEach((key, value) -> {
-            if(value == null) return;
+            if (value == null) {
+                return;
+            }
             if (!writeOutBooleanFlags && value instanceof Boolean) {
-                if((Boolean) value) argList.add(key);
-            } else argList.add(key + "=" + value);
+                if ((Boolean) value) {
+                    argList.add(key);
+                }
+            } else {
+                argList.add(key + "=" + value);
+            }
         });
         return argList;
     }
@@ -75,7 +99,9 @@ public class ServerUtils {
 
     public static void killServerProcess(String PID) {
 
-        if (PID == null) return;
+        if (PID == null) {
+            return;
+        }
 
         Optional<ProcessHandle> handle = ProcessHandle.of(Long.parseLong(PID));
         if (handle.isPresent()) {
@@ -127,7 +153,9 @@ public class ServerUtils {
             HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
 
             for (Map.Entry<String, GameServerCacheModel> entry : gameServerCacheModelHashMap.entrySet()) {
-                if (entry.getKey().equals(id)) return entry.getValue().getInstallDir();
+                if (entry.getKey().equals(id)) {
+                    return entry.getValue().getInstallDir();
+                }
             }
 
         } catch (IOException e) {

@@ -20,7 +20,9 @@ public class ServerManagementCommands {
 
             AsaServer server = new AsaServer(id, name, new SettingProfile(), true);
 
-            if (install) server.install().queue();
+            if (install) {
+                server.install().queue();
+            }
 
             return "The specified server was installed!";
         }

@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.management.OperatingSystemMXBean;
+import de.swiftbyte.gmc.common.entity.NodeData;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeLoginPacket;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
-import de.swiftbyte.gmc.common.entity.NodeData;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
 import jakarta.websocket.ContainerProvider;
@@ -15,7 +15,11 @@ import jakarta.websocket.WebSocketContainer;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.simp.stomp.*;
+import org.springframework.messaging.simp.stomp.StompCommand;
+import org.springframework.messaging.simp.stomp.StompFrameHandler;
+import org.springframework.messaging.simp.stomp.StompHeaders;
+import org.springframework.messaging.simp.stomp.StompSession;
+import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
@@ -57,7 +61,7 @@ public class StompHandler {
             scanForPacketListeners();
         } catch (InterruptedException | ExecutionException e) {
 
-            if(e.getMessage() != null && e.getMessage().contains("Failed to handle HTTP response code [401]")) {
+            if (e.getMessage() != null && e.getMessage().contains("Failed to handle HTTP response code [401]")) {
                 log.error("Backend rejected connection. When you just deleted the node, please execute the 'delete' command in the daemon console as well.");
                 return false;
             }
@@ -71,8 +75,9 @@ public class StompHandler {
 
     public synchronized static void send(String destination, Object payload) {
         if (session == null) {
-            if (Node.INSTANCE.getConnectionState() != ConnectionState.RECONNECTING)
+            if (Node.INSTANCE.getConnectionState() != ConnectionState.RECONNECTING) {
                 log.error("Failed to send packet to {} because the session is null.", destination);
+            }
             return;
         }
 
@@ -166,7 +171,9 @@ public class StompHandler {
             if (!session.isConnected()) {
                 log.error("Failed to send packet to backend because the session is not connected. Is the backend running?");
                 Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
-            }else log.error("An error occurred while communicating with the backend.", e);
+            } else {
+                log.error("An error occurred while communicating with the backend.", e);
+            }
         }
 
         @Override

@@ -1,7 +1,8 @@
 package de.swiftbyte.gmc.daemon.stomp.consumers.node;
 
 import de.swiftbyte.gmc.common.packet.from.backend.node.NodeUpdatePacket;
-import de.swiftbyte.gmc.daemon.*;
+import de.swiftbyte.gmc.daemon.Application;
+import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.extern.slf4j.Slf4j;
