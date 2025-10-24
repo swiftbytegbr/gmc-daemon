@@ -1,8 +1,8 @@
 package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 
+import de.swiftbyte.gmc.common.packet.from.backend.server.ServerDeleteBackupPacket;
+import de.swiftbyte.gmc.common.packet.from.daemon.server.ServerDeleteBackupResponsePacket;
 import de.swiftbyte.gmc.daemon.Node;
-import de.swiftbyte.gmc.common.packet.server.ServerDeleteBackupPacket;
-import de.swiftbyte.gmc.common.packet.server.ServerDeleteBackupResponsePacket;
 import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;

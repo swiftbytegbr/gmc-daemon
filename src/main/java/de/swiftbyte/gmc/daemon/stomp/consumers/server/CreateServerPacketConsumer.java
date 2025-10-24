@@ -2,7 +2,7 @@ package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 
 import de.swiftbyte.gmc.common.entity.GameType;
 import de.swiftbyte.gmc.common.model.SettingProfile;
-import de.swiftbyte.gmc.common.packet.server.ServerCreatePacket;
+import de.swiftbyte.gmc.common.packet.from.backend.server.ServerCreatePacket;
 import de.swiftbyte.gmc.daemon.server.ArkServer;
 import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.AseServer;
