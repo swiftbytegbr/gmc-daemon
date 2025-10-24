@@ -2,19 +2,27 @@ package de.swiftbyte.gmc.daemon;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.swiftbyte.gmc.daemon.cache.CacheModel;
 import de.swiftbyte.gmc.common.entity.NodeSettings;
 import de.swiftbyte.gmc.common.entity.ResourceUsage;
-import de.swiftbyte.gmc.common.packet.node.NodeHeartbeatPacket;
-import de.swiftbyte.gmc.common.packet.node.NodeLogoutPacket;
+import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeHeartbeatPacket;
+import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeLogoutPacket;
+import de.swiftbyte.gmc.daemon.cache.CacheModel;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
-import de.swiftbyte.gmc.daemon.utils.*;
+import de.swiftbyte.gmc.daemon.utils.CommonUtils;
+import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
+import de.swiftbyte.gmc.daemon.utils.ConnectionState;
+import de.swiftbyte.gmc.daemon.utils.NodeUtils;
+import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.*;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import org.apache.commons.io.FileUtils;
 import org.jline.terminal.impl.DumbTerminal;
 import org.springframework.shell.component.context.ComponentContext;
@@ -106,7 +114,9 @@ public class Node extends Thread {
     }
 
     public void shutdown() {
-        if (getConnectionState() == ConnectionState.DELETING) return;
+        if (getConnectionState() == ConnectionState.DELETING) {
+            return;
+        }
         NodeLogoutPacket logoutPacket = new NodeLogoutPacket();
         logoutPacket.setReason("Terminated by user");
         log.debug("Sending shutdown packet...");
@@ -264,8 +274,11 @@ public class Node extends Thread {
         log.debug("Updating settings...");
         nodeName = nodeSettings.getName();
 
-        if (!CommonUtils.isNullOrEmpty(nodeSettings.getServerPath())) setServerPath(nodeSettings.getServerPath());
-        else setServerPath("./servers");
+        if (!CommonUtils.isNullOrEmpty(nodeSettings.getServerPath())) {
+            setServerPath(nodeSettings.getServerPath());
+        } else {
+            setServerPath("./servers");
+        }
 
         isAutoUpdateEnabled = nodeSettings.isEnableAutoUpdate();
         serverStopMessage = nodeSettings.getStopMessage();
@@ -313,7 +326,8 @@ public class Node extends Thread {
 
         try {
             Thread.sleep(5 * 1000);
-        } catch (InterruptedException ignored) {}
+        } catch (InterruptedException ignored) {
+        }
 
         System.exit(0);
     }
@@ -326,7 +340,7 @@ public class Node extends Thread {
 
     long lastUpdate = System.currentTimeMillis();
     private final Runnable updateRunnable = () -> {
-        if((System.currentTimeMillis() - lastUpdate) / 1000 > 15) {
+        if ((System.currentTimeMillis() - lastUpdate) / 1000 > 15) {
             log.warn("Last heartbeat was more than 15 seconds ago. Catching up...");
         }
         lastUpdate = System.currentTimeMillis();

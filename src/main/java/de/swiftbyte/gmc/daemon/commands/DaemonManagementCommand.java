@@ -2,15 +2,12 @@ package de.swiftbyte.gmc.daemon.commands;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
-import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.jline.terminal.impl.DumbTerminal;
 import org.slf4j.LoggerFactory;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
-import org.springframework.shell.component.flow.ComponentFlow;
 
 @Command
 @Slf4j

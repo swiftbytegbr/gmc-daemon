@@ -4,11 +4,11 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import de.swiftbyte.gmc.common.entity.GameType;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.cache.CacheModel;
 import de.swiftbyte.gmc.daemon.cache.GameServerCacheModel;
-import de.swiftbyte.gmc.common.entity.GameType;
 import de.swiftbyte.gmc.daemon.server.AseServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import lombok.extern.slf4j.Slf4j;
@@ -126,14 +126,18 @@ public class NodeUtils {
 
     public static void cacheInformation(Node node) {
 
-        if (node.getConnectionState() == ConnectionState.DELETING) return;
+        if (node.getConnectionState() == ConnectionState.DELETING) {
+            return;
+        }
 
         HashMap<String, GameServerCacheModel> gameServers = new HashMap<>();
 
         for (GameServer gameServer : GameServer.getAllServers()) {
 
             GameType gameType = GameType.ARK_ASCENDED;
-            if (gameServer instanceof AseServer) gameType = GameType.ARK_EVOLVED;
+            if (gameServer instanceof AseServer) {
+                gameType = GameType.ARK_EVOLVED;
+            }
 
             GameServerCacheModel gameServerCacheModel = GameServerCacheModel.builder()
                     .friendlyName(gameServer.getFriendlyName())
@@ -164,7 +168,9 @@ public class NodeUtils {
         ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
         try {
             File file = new File("./cache.json");
-            if (!file.exists()) file.createNewFile();
+            if (!file.exists()) {
+                file.createNewFile();
+            }
             writer.writeValue(file, cacheModel);
         } catch (IOException e) {
             log.error("An unknown error occurred while caching information.", e);

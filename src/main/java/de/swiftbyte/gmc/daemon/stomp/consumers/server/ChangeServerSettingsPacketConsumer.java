@@ -1,9 +1,8 @@
 package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 
 import de.swiftbyte.gmc.common.model.SettingProfile;
-import de.swiftbyte.gmc.common.packet.server.ServerSettingsPacket;
-import de.swiftbyte.gmc.common.packet.server.ServerSettingsResponsePacket;
-import de.swiftbyte.gmc.daemon.server.ArkServer;
+import de.swiftbyte.gmc.common.packet.from.backend.server.ServerSettingsPacket;
+import de.swiftbyte.gmc.common.packet.from.daemon.server.ServerSettingsResponsePacket;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;

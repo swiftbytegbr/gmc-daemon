@@ -1,9 +1,9 @@
 package de.swiftbyte.gmc.daemon.server;
 
-import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.common.entity.GameServerState;
 import de.swiftbyte.gmc.common.model.SettingProfile;
-import de.swiftbyte.gmc.common.packet.server.ServerDeletePacket;
+import de.swiftbyte.gmc.common.packet.from.backend.server.ServerDeletePacket;
+import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.service.FirewallService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
@@ -162,9 +162,21 @@ public abstract class ArkServer extends GameServer {
     }
 
     @Override
-    public AsyncAction<Boolean> stop(boolean isRestart) {
+    public AsyncAction<Boolean> stop(boolean isRestart, boolean isKill) {
         return () -> {
-            if (state == GameServerState.OFFLINE) return true;
+            if (isKill) {
+                log.debug("Killing server '{}'", friendlyName);
+                super.setState(GameServerState.STOPPING);
+                if (PID == null) {
+                    log.error("Killing server '{}' failed. Reason: PID not found.", friendlyName);
+                    return false;
+                }
+                ServerUtils.killServerProcess(PID);
+                return true;
+            }
+            if (state == GameServerState.OFFLINE) {
+                return true;
+            }
             super.setState(GameServerState.STOPPING);
 
             if (!isRestart) {
@@ -215,8 +227,9 @@ public abstract class ArkServer extends GameServer {
     }
 
     public AsyncAction<Boolean> restart() {
-        if (!CommonUtils.isNullOrEmpty(Node.INSTANCE.getServerStopMessage()))
+        if (!CommonUtils.isNullOrEmpty(Node.INSTANCE.getServerStopMessage())) {
             sendRconCommand("serverchat " + Node.INSTANCE.getServerRestartMessage());
+        }
         return () -> (stop(true).complete() && start().complete());
     }
 
@@ -224,8 +237,9 @@ public abstract class ArkServer extends GameServer {
 
     @Override
     public void update() {
-        if (PID == null && installDir != null)
+        if (PID == null && installDir != null) {
             PID = CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
+        }
 
         switch (state) {
             case INITIALIZING -> {
@@ -273,8 +287,9 @@ public abstract class ArkServer extends GameServer {
                 }).start();
             }
             case STOPPING -> {
-                if (CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/")) == null)
+                if (CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/")) == null) {
                     super.setState(GameServerState.OFFLINE);
+                }
             }
             case OFFLINE -> restartCounter = 0;
         }
@@ -287,7 +302,9 @@ public abstract class ArkServer extends GameServer {
     @Override
     public String sendRconCommand(String command) {
         try {
-            if (rconPort == 0 || CommonUtils.isNullOrEmpty(rconPassword)) return null;
+            if (rconPort == 0 || CommonUtils.isNullOrEmpty(rconPassword)) {
+                return null;
+            }
             Rcon rcon = new Rcon("127.0.0.1", rconPort, rconPassword.getBytes());
             return rcon.command(command);
         } catch (IOException e) {

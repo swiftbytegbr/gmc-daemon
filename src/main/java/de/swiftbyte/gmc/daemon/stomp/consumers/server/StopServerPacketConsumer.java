@@ -1,6 +1,6 @@
 package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 
-import de.swiftbyte.gmc.common.packet.server.ServerStopPacket;
+import de.swiftbyte.gmc.common.packet.from.backend.server.ServerStopPacket;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
@@ -16,7 +16,7 @@ public class StopServerPacketConsumer implements StompPacketConsumer<ServerStopP
         GameServer server = GameServer.getServerById(packet.getServerId());
 
         if (server != null) {
-            server.stop(false).complete();
+            server.stop(false, packet.isForceStop()).complete();
             log.info("Stopped server with id {} successfully.", packet.getServerId());
         } else {
             log.error("Server with id {} not found!", packet.getServerId());

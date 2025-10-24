@@ -1,10 +1,10 @@
 package de.swiftbyte.gmc.daemon.stomp.consumers.node;
 
-import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.common.entity.GameServerDto;
 import de.swiftbyte.gmc.common.entity.GameType;
 import de.swiftbyte.gmc.common.model.SettingProfile;
-import de.swiftbyte.gmc.common.packet.node.NodeLoginAckPacket;
+import de.swiftbyte.gmc.common.packet.from.backend.node.NodeLoginAckPacket;
+import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.AseServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
@@ -50,7 +50,7 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
 
         Node.INSTANCE.setConnectionState(ConnectionState.CONNECTED);
 
-        if(Node.INSTANCE.isFirstStart()) {
+        if (Node.INSTANCE.isFirstStart()) {
             log.info("""
                     
                     Congratulations — you have connected the daemon to your team!

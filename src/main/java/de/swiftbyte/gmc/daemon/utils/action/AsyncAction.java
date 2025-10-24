@@ -17,11 +17,14 @@ public interface AsyncAction<T> {
     default void queue(Consumer<? super T> success, Consumer<? super Throwable> failure) {
         Thread thread = new Thread(() -> {
             T action = complete();
-            if (action != null && success != null) success.accept(action);
+            if (action != null && success != null) {
+                success.accept(action);
+            }
         });
         thread.setUncaughtExceptionHandler((t, e) -> {
-            if (failure != null) failure.accept(e);
-            else {
+            if (failure != null) {
+                failure.accept(e);
+            } else {
                 LoggerFactory.getLogger(AsyncAction.class).error("An unknown error occurred while executing.", e);
             }
         });

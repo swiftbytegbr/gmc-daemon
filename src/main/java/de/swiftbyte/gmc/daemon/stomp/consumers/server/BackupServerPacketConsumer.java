@@ -1,6 +1,6 @@
 package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 
-import de.swiftbyte.gmc.common.packet.server.ServerBackupPacket;
+import de.swiftbyte.gmc.common.packet.from.backend.server.ServerBackupPacket;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;

@@ -1,8 +1,8 @@
 package de.swiftbyte.gmc.daemon.server;
 
-import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.common.entity.GameServerState;
 import de.swiftbyte.gmc.common.model.SettingProfile;
+import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.service.FirewallService;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
@@ -41,8 +41,9 @@ public class AsaServer extends ArkServer {
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
-            if (PID == null && gmcSettings.getBoolean("StartOnBoot", false)) start().queue();
-            else if (PID != null) {
+            if (PID == null && gmcSettings.getBoolean("StartOnBoot", false)) {
+                start().queue();
+            } else if (PID != null) {
                 log.debug("Server '{}' with PID {} is already running. Setting state to ONLINE.", PID, friendlyName);
                 super.setState(GameServerState.ONLINE);
             }
@@ -53,7 +54,9 @@ public class AsaServer extends ArkServer {
 
         super(id, friendlyName, settings);
 
-        if (installDir != null) this.installDir = installDir;
+        if (installDir != null) {
+            this.installDir = installDir;
+        }
 
         INISettingsAdapter iniSettingsAdapter = new INISettingsAdapter(settings.getGameUserSettings());
         MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
@@ -63,8 +66,9 @@ public class AsaServer extends ArkServer {
 
         if (!overrideAutoStart) {
             PID = CommonUtils.getProcessPID(this.installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
-            if (PID == null && gmcSettings.getBoolean("StartOnBoot", false)) start().queue();
-            else if (PID != null) {
+            if (PID == null && gmcSettings.getBoolean("StartOnBoot", false)) {
+                start().queue();
+            } else if (PID != null) {
                 log.debug("Server '{}' with PID {} is already running. Setting state to ONLINE.", PID, friendlyName);
                 super.setState(GameServerState.ONLINE);
             }
@@ -123,8 +127,9 @@ public class AsaServer extends ArkServer {
 
         String serverExeName = "ArkAscendedServer.exe";
 
-        if (Files.exists(Path.of(getInstallDir() + "/ShooterGame/Binaries/Win64/AsaApiLoader.exe")))
+        if (Files.exists(Path.of(getInstallDir() + "/ShooterGame/Binaries/Win64/AsaApiLoader.exe"))) {
             serverExeName = "AsaApiLoader.exe";
+        }
 
         String startCommand = "cmd.exe /c start \"" + getFriendlyName() + "\""
                 + " /min"

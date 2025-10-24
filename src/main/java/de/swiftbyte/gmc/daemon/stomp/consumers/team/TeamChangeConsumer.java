@@ -1,9 +1,7 @@
 package de.swiftbyte.gmc.daemon.stomp.consumers.team;
 
-import de.swiftbyte.gmc.common.packet.team.TeamChangePacket;
+import de.swiftbyte.gmc.common.packet.from.backend.team.TeamChangePacket;
 import de.swiftbyte.gmc.daemon.Node;
-import de.swiftbyte.gmc.daemon.server.GameServer;
-import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.extern.slf4j.Slf4j;

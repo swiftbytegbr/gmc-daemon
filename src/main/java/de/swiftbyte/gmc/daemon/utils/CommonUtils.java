@@ -14,7 +14,11 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 public class CommonUtils {
@@ -55,7 +59,9 @@ public class CommonUtils {
                 Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
                 while (inetAddresses.hasMoreElements()) {
                     InetAddress inetAddress = inetAddresses.nextElement();
-                    if (inetAddress instanceof Inet6Address) continue;
+                    if (inetAddress instanceof Inet6Address) {
+                        continue;
+                    }
                     ipAddresses.add(inetAddress.getHostAddress());
                 }
             }

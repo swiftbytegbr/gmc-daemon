@@ -29,17 +29,23 @@ public class MapSettingsAdapter {
     }
 
     public String get(String key, String defaultValue) {
-        if (!hasAndNotEmpty(key)) return defaultValue;
+        if (!hasAndNotEmpty(key)) {
+            return defaultValue;
+        }
         return get(key);
     }
 
     public Integer getInt(String key, int defaultValue) {
-        if (!hasAndNotEmpty(key)) return defaultValue;
+        if (!hasAndNotEmpty(key)) {
+            return defaultValue;
+        }
         return getInt(key);
     }
 
     public Boolean getBoolean(String key, boolean defaultValue) {
-        if (!hasAndNotEmpty(key)) return defaultValue;
+        if (!hasAndNotEmpty(key)) {
+            return defaultValue;
+        }
         return getBoolean(key);
     }
 
@@ -52,9 +58,11 @@ public class MapSettingsAdapter {
     }
 
     public static boolean isRestartOnCrash(HashMap<String, Object> gmcSettings) {
-        if(gmcSettings == null) return false;
-        if(gmcSettings.containsKey("RestartOnCrash")) {
-            if(gmcSettings.get("RestartOnCrash") instanceof Boolean) {
+        if (gmcSettings == null) {
+            return false;
+        }
+        if (gmcSettings.containsKey("RestartOnCrash")) {
+            if (gmcSettings.get("RestartOnCrash") instanceof Boolean) {
                 return (boolean) gmcSettings.get("RestartOnCrash");
             }
             return false;
@@ -63,9 +71,11 @@ public class MapSettingsAdapter {
     }
 
     public static boolean isStartOnBoot(HashMap<String, Object> gmcSettings) {
-        if(gmcSettings == null) return false;
-        if(gmcSettings.containsKey("StartOnBoot")) {
-            if(gmcSettings.get("StartOnBoot") instanceof Boolean) {
+        if (gmcSettings == null) {
+            return false;
+        }
+        if (gmcSettings.containsKey("StartOnBoot")) {
+            if (gmcSettings.get("StartOnBoot") instanceof Boolean) {
                 return (boolean) gmcSettings.get("StartOnBoot");
             }
             return false;

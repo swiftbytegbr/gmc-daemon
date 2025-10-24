@@ -1,8 +1,10 @@
 # Game Manager Cloud - Daemon
+
 ## Host, manage and monitor your Game Servers
 
 **"Game Manager Cloud" is a web application to manage game servers — especially ARK: Ascended and ARK: Evolved servers.
-You can host servers on your own dedicated machines, while allowing you to manage and organize all ark servers across different
+You can host servers on your own dedicated machines, while allowing you to manage and organize all ark servers across
+different
 machines in one panel.**
 
 ### 👾 GMC Info
