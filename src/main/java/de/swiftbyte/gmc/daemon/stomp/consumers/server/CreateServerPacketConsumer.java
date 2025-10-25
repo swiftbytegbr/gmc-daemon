@@ -22,13 +22,11 @@ public class CreateServerPacketConsumer implements StompPacketConsumer<ServerCre
 
             SettingProfile settings = ServerUtils.getSettingProfile(packet.getSettingProfileId());
             if (settings == null) {
-                log.error("Setting profile '{}' not found for game server '{}'. Using default setting profile.", packet.getSettingProfileId(), packet.getServerName());
-                settings = new SettingProfile();
-                //TODO handle default profile
+                log.error("Setting profile '{}' not found for game server '{}'. Cancel server creation.", packet.getSettingProfileId(), packet.getServerName());
                 return;
             }
 
-            ArkServer server = null;
+            ArkServer server;
 
             if (packet.getGameType() == GameType.ARK_ASCENDED) {
                 server = new AsaServer(packet.getServerId(), packet.getServerName(), settings, true);
