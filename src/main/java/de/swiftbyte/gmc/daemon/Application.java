@@ -62,7 +62,7 @@ public class Application {
         }
     }
 
-    private static HashMap<Integer, MigrationScript> migrationScripts = new HashMap<>();
+    private static final HashMap<Integer, MigrationScript> migrationScripts = new HashMap<>();
 
     @Getter
     private static String version;

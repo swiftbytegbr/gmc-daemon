@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Getter
@@ -43,6 +44,8 @@ public class Node extends Thread {
     public static Node INSTANCE;
 
     private volatile ConnectionState connectionState;
+
+    private ScheduledExecutorService heartbeatExecutor;
 
     @Setter
     private String nodeName;
@@ -117,6 +120,7 @@ public class Node extends Thread {
         if (getConnectionState() == ConnectionState.DELETING) {
             return;
         }
+        shutdownHeartbeatExecutor();
         NodeLogoutPacket logoutPacket = new NodeLogoutPacket();
         logoutPacket.setReason("Terminated by user");
         log.debug("Sending shutdown packet...");
@@ -335,7 +339,8 @@ public class Node extends Thread {
     @Override
     public void run() {
         super.run();
-        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(updateRunnable, 0, 10, TimeUnit.SECONDS);
+        heartbeatExecutor = Executors.newSingleThreadScheduledExecutor();
+        heartbeatExecutor.scheduleWithFixedDelay(updateRunnable, 0, 10, TimeUnit.SECONDS);
     }
 
     long lastUpdate = System.currentTimeMillis();
@@ -357,6 +362,14 @@ public class Node extends Thread {
             connect();
         }
     };
+
+    private void shutdownHeartbeatExecutor() {
+        if (heartbeatExecutor == null) {
+            return;
+        }
+        heartbeatExecutor.shutdownNow();
+        heartbeatExecutor = null;
+    }
 
     private static NodeHeartbeatPacket getNodeHeartbeatPacket() {
         SystemInfo systemInfo = new SystemInfo();

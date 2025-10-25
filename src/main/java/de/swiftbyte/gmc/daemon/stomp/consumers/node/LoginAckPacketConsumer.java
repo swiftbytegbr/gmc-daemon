@@ -37,9 +37,7 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
 
             SettingProfile settings = ServerUtils.getSettingProfile(gameServer.getSettingProfileId());
             if (settings == null) {
-                log.error("Setting profile '{}' not found for game server '{}'. Using default setting profile.", gameServer.getSettingProfileId(), gameServer.getDisplayName());
-                settings = new SettingProfile();
-                //TODO handle
+                log.error("Setting profile '{}' not found for game server '{}'. Canceling server initialization.", gameServer.getSettingProfileId(), gameServer.getDisplayName());
                 return;
             }
 

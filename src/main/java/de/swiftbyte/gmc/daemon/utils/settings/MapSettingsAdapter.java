@@ -5,13 +5,7 @@ import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MapSettingsAdapter {
-
-    private final Map<String, Object> settings;
-
-    public MapSettingsAdapter(Map<String, Object> settings) {
-        this.settings = settings;
-    }
+public record MapSettingsAdapter(Map<String, Object> settings) {
 
     public String get(String key) {
         Object value = settings.get(key);
