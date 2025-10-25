@@ -19,6 +19,8 @@ import org.zeroturnaround.zip.ZipUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -88,7 +90,7 @@ public class NodeUtils {
         File tmp = new File(TMP_PATH);
         try {
             FileUtils.copyURLToFile(
-                    new URL(STEAM_CMD_DOWNLOAD_URL),
+                    new URI(STEAM_CMD_DOWNLOAD_URL).toURL(),
                     new File(TMP_PATH + "steamcmd.zip"));
 
             ZipUtil.unpack(new File(TMP_PATH + "steamcmd.zip"), new File(STEAM_CMD_DIR));
@@ -102,6 +104,8 @@ public class NodeUtils {
                 log.warn("An error occurred while deleting the temporary directory.", ex);
             }
             System.exit(1);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -110,7 +114,7 @@ public class NodeUtils {
 
         try {
             FileUtils.copyURLToFile(
-                    new URL(DAEMON_LATEST_DOWNLOAD_URL),
+                    new URI(DAEMON_LATEST_DOWNLOAD_URL).toURL(),
                     new File(TMP_PATH + "latest-installer.exe"));
 
             log.debug("Update successfully downloaded!");
@@ -121,6 +125,8 @@ public class NodeUtils {
             } catch (IOException ex) {
                 log.warn("An error occurred while deleting the temporary directory.", ex);
             }
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
         }
     }
 
