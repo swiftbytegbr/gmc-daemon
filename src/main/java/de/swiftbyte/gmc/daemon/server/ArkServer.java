@@ -20,6 +20,8 @@ import xyz.astroark.exception.AuthenticationException;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 @Slf4j
@@ -48,12 +50,14 @@ public abstract class ArkServer extends GameServer {
             MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
             boolean isPreaquaticaBeta = gmcSettings.getBoolean("EnablePreaquaticaBeta", false);
 
-            String installCommand = "cmd /c start \"steamcmd\" \"" + CommonUtils.convertPathSeparator(NodeUtils.getSteamCmdPath().toAbsolutePath()) + "\""
-                    + " +force_install_dir \"" + CommonUtils.convertPathSeparator(installDir.toAbsolutePath()) + "\""
-                    + " +login anonymous +app_update " + getGameId() + (isPreaquaticaBeta ? " -beta preaquatica" : "") + " validate +quit";
-            log.debug("Starting server installation with command {}", installCommand);
+            String steamCmdPath = CommonUtils.convertPathSeparator(NodeUtils.getSteamCmdPath().toAbsolutePath());
+            String installDirectory = CommonUtils.convertPathSeparator(installDir.toAbsolutePath());
+
+            List<String> installCommand = getInstallCommand(steamCmdPath, installDirectory, isPreaquaticaBeta);
+
+            log.debug("Starting server installation with command {}", String.join(" ", installCommand));
             try {
-                Process process = Runtime.getRuntime().exec(installCommand);
+                Process process = new ProcessBuilder(installCommand).start();
 
                 Scanner scanner = new Scanner(process.getInputStream());
 
@@ -78,6 +82,28 @@ public abstract class ArkServer extends GameServer {
             }
             return true;
         };
+    }
+
+    private List<String> getInstallCommand(String steamCmdPath, String installDirectory, boolean isPreaquaticaBeta) {
+        List<String> installCommand = new ArrayList<>();
+        installCommand.add("cmd");
+        installCommand.add("/c");
+        installCommand.add("start");
+        installCommand.add("");
+        installCommand.add(steamCmdPath);
+        installCommand.add("+force_install_dir");
+        installCommand.add(installDirectory);
+        installCommand.add("+login");
+        installCommand.add("anonymous");
+        installCommand.add("+app_update");
+        installCommand.add(String.valueOf(getGameId()));
+        if (isPreaquaticaBeta) {
+            installCommand.add("-beta");
+            installCommand.add("preaquatica");
+        }
+        installCommand.add("validate");
+        installCommand.add("+quit");
+        return installCommand;
     }
 
     @Override
@@ -138,8 +164,10 @@ public abstract class ArkServer extends GameServer {
                 writeStartupBatch();
                 ServerUtils.writeIniFiles(this, installDir);
                 try {
-                    log.debug("cmd /c start \"{}", CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
-                    serverProcess = Runtime.getRuntime().exec("cmd /c start /min \"" + "\" \"" + CommonUtils.convertPathSeparator(installDir + "/start.bat\""));
+                    String startupScript = CommonUtils.convertPathSeparator(installDir.resolve("start.bat").toString());
+                    List<String> startCommand = List.of("cmd", "/c", "start", "/min", "", startupScript);
+                    log.debug("Starting server with command {}", String.join(" ", startCommand));
+                    serverProcess = new ProcessBuilder(startCommand).start();
                     Scanner scanner = new Scanner(serverProcess.getInputStream());
                     while (scanner.hasNextLine()) {
                     }
