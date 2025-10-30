@@ -48,7 +48,7 @@ public record MapSettingsAdapter(Map<String, Object> settings) {
     }
 
     public boolean hasAndNotEmpty(String key) {
-        return has(key) && !CommonUtils.isNullOrEmpty(settings.get(key).toString());
+        return has(key) && !CommonUtils.isNullOrEmpty((String) settings.get(key));
     }
 
     public static boolean isRestartOnCrash(HashMap<String, Object> gmcSettings) {

@@ -62,6 +62,6 @@ public record INISettingsAdapter(LinkedHashMap<String, LinkedHashMap<String, Obj
         if (!settings.containsKey(category)) {
             return false;
         }
-        return has(category, key) && !CommonUtils.isNullOrEmpty(settings.get(category).get(key).toString());
+        return has(category, key) && !CommonUtils.isNullOrEmpty((String) settings.get(category).get(key));
     }
 }
