@@ -34,8 +34,10 @@ public class CreateServerPacketConsumer implements StompPacketConsumer<ServerCre
                 server = new AseServer(packet.getServerId(), packet.getServerName(), settings, true);
             }
 
-            server.install().complete();
-            log.info("Installed server with id {} and name {} successfully.", packet.getServerId(), packet.getServerName());
+            server.install().queue(success -> {
+                if(success) log.info("Installed server with id {} and name {} successfully.", packet.getServerId(), packet.getServerName());
+                else log.error("Installing  server with id {} and name {} failed.", packet.getServerId(), packet.getServerName());
+            });
         } else {
             log.error("Game {} is not supported!", packet.getGameType());
         }

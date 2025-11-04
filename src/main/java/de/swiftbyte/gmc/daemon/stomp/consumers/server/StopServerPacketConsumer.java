@@ -16,8 +16,10 @@ public class StopServerPacketConsumer implements StompPacketConsumer<ServerStopP
         GameServer server = GameServer.getServerById(packet.getServerId());
 
         if (server != null) {
-            server.stop(false, packet.isForceStop()).complete();
-            log.info("Stopped server with id {} successfully.", packet.getServerId());
+            server.stop(false, packet.isForceStop()).queue(success -> {
+                if(success) log.info("Stopped server with id {} successfully.", packet.getServerId());
+                else log.error("Stopping server with id {} failed.", packet.getServerId());
+            });
         } else {
             log.error("Server with id {} not found!", packet.getServerId());
         }

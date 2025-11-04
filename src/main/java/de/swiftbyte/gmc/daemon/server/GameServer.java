@@ -14,15 +14,15 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public abstract class GameServer {
 
-    private static final HashMap<String, GameServer> GAME_SERVERS = new HashMap<>();
+    private static final ConcurrentHashMap<String, GameServer> GAME_SERVERS = new ConcurrentHashMap<>();
 
     protected ScheduledFuture<?> updateScheduler;
 

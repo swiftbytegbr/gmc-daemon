@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 @Getter
 @Slf4j
-public class Node extends Thread {
+public class Node {
 
     public static Node INSTANCE;
 
@@ -82,6 +82,9 @@ public class Node extends Thread {
         getCachedNodeInformation();
         BackupService.initialiseBackupService();
         NodeUtils.checkInstallation();
+
+        heartbeatExecutor = Executors.newSingleThreadScheduledExecutor();
+        heartbeatExecutor.scheduleWithFixedDelay(updateRunnable, 0, 10, TimeUnit.SECONDS);
     }
 
     private void getCachedNodeInformation() {
@@ -336,13 +339,6 @@ public class Node extends Thread {
         System.exit(0);
     }
 
-    @Override
-    public void run() {
-        super.run();
-        heartbeatExecutor = Executors.newSingleThreadScheduledExecutor();
-        heartbeatExecutor.scheduleWithFixedDelay(updateRunnable, 0, 10, TimeUnit.SECONDS);
-    }
-
     long lastUpdate = System.currentTimeMillis();
     private final Runnable updateRunnable = () -> {
         if ((System.currentTimeMillis() - lastUpdate) / 1000 > 15) {
@@ -367,7 +363,7 @@ public class Node extends Thread {
         if (heartbeatExecutor == null) {
             return;
         }
-        heartbeatExecutor.shutdownNow();
+        heartbeatExecutor.shutdown();
         heartbeatExecutor = null;
     }
 
@@ -397,7 +393,7 @@ public class Node extends Thread {
     }
 
     public synchronized void setConnectionState(ConnectionState connectionState) {
-        log.debug("Connection state changed from {} to {}", this.connectionState, connectionState.name());
+        log.debug("Connection state changed from {} to {}", this.connectionState, connectionState);
         this.connectionState = connectionState;
     }
 

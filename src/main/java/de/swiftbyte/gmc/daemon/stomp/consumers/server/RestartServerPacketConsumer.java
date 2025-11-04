@@ -16,8 +16,10 @@ public class RestartServerPacketConsumer implements StompPacketConsumer<ServerRe
         GameServer server = GameServer.getServerById(packet.getServerId());
 
         if (server != null) {
-            server.restart().complete();
-            log.info("Restarted server with id {} successfully.", packet.getServerId());
+            server.restart().queue(success -> {
+                if(success) log.info("Restarted server with id {} successfully.", packet.getServerId());
+                else log.error("Restarting server with id {} failed.", packet.getServerId());
+            });
         } else {
             log.error("Server with id {} not found!", packet.getServerId());
         }

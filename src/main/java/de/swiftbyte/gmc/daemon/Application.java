@@ -83,6 +83,9 @@ public class Application {
             return;
         }
         log.debug("Shutting down...");
+        if(executorService != null) {
+            executorService.shutdown();
+        }
         node.shutdown();
         log.info("Goodbye!");
     });
@@ -144,7 +147,6 @@ public class Application {
 
 
         node = new Node();
-        node.start();
 
         if (node.getConnectionState() == ConnectionState.NOT_JOINED) {
             node.joinTeam();
