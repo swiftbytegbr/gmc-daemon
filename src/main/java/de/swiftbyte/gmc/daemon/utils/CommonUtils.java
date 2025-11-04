@@ -23,8 +23,11 @@ import java.util.Optional;
 @Slf4j
 public class CommonUtils {
 
-    public static boolean isNullOrEmpty(String string) {
-        return string == null || string.isEmpty();
+    public static boolean isNullOrEmpty(Object obj) {
+
+        if(obj == null) return true;
+
+        return obj.toString().isEmpty();
     }
 
     public static String convertPathSeparator(String path) {
