@@ -9,6 +9,7 @@ import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeLoginPacket;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
+import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
@@ -20,6 +21,7 @@ import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
@@ -31,6 +33,7 @@ import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Slf4j
 public class StompHandler {
@@ -38,13 +41,24 @@ public class StompHandler {
     // 2MB
     private static final int MAX_MESSAGE_BUFFER_SIZE_BYTES = 1024 * 1024 * 2;
 
+    private static ThreadPoolTaskScheduler threadPoolTaskScheduler;
+    private static WebSocketStompClient stompClient;
     private static StompSession session;
 
     public static boolean initialiseStomp() {
 
+        disconnect();
+
+        threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
+        threadPoolTaskScheduler.setPoolSize(ConfigUtils.getInt("override-stomp-pool-size", 32));
+        threadPoolTaskScheduler.setThreadNamePrefix("stomp-");
+        threadPoolTaskScheduler.initialize();
+
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
         container.setDefaultMaxTextMessageBufferSize(MAX_MESSAGE_BUFFER_SIZE_BYTES);
-        WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient(container));
+        stompClient = new WebSocketStompClient(new StandardWebSocketClient(container));
+        stompClient.setTaskScheduler(threadPoolTaskScheduler);
+        stompClient.setDefaultHeartbeat(new long[] {10_000, 10_000});
         stompClient.setInboundMessageSizeLimit(MAX_MESSAGE_BUFFER_SIZE_BYTES);
         WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
         headers.add("Node-Id", Node.INSTANCE.getNodeId());
@@ -91,8 +105,20 @@ public class StompHandler {
     }
 
     public static void disconnect() {
-        session.disconnect();
-        session = null;
+        if(session != null) {
+            session.disconnect();
+            session = null;
+        }
+
+        if(stompClient != null) {
+            stompClient.stop();
+            stompClient = null;
+        }
+
+        if(threadPoolTaskScheduler != null) {
+            threadPoolTaskScheduler.shutdown();
+            threadPoolTaskScheduler = null;
+        }
     }
 
     private static void scanForPacketListeners() {
@@ -124,7 +150,7 @@ public class StompHandler {
 
                         @Override
                         public void handleFrame(StompHeaders headers, Object payload) {
-                            new Thread(() -> packetConsumer.onReceive(payload)).start();
+                            packetConsumer.onReceive(payload);
                         }
                     });
                 }
@@ -180,13 +206,6 @@ public class StompHandler {
         public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload, Throwable exception) {
             super.handleException(session, command, headers, payload, exception);
             log.error("An unknown error occurred.", exception);
-        }
-
-        @Override
-        public void handleFrame(StompHeaders headers, Object payload) {
-            log.info("Received message: {}", payload);
-            headers.keySet().forEach(key -> log.info("{}: {}", key, headers.get(key)));
-            super.handleFrame(headers, payload);
         }
     }
 }

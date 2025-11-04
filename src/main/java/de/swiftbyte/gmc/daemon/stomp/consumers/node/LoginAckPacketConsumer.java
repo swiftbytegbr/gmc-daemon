@@ -4,6 +4,7 @@ import de.swiftbyte.gmc.common.entity.GameServerDto;
 import de.swiftbyte.gmc.common.entity.GameType;
 import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.from.backend.node.NodeLoginAckPacket;
+import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.AseServer;
@@ -23,42 +24,48 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
     @Override
     public void onReceive(NodeLoginAckPacket packet) {
 
-        Node.INSTANCE.setTeamName(packet.getTeamName());
+        try {
 
-        log.info("Backend running in profile '{}' with version '{}'.", packet.getBackendProfile(), packet.getBackendVersion());
-        log.info("I am '{}' in team {}!", packet.getNodeSettings().getName(), packet.getTeamName());
+            Node.INSTANCE.setTeamName(packet.getTeamName());
 
-        log.info("Loading '{}' game servers...", packet.getGameServers().size());
-        GameServer.abandonAll();
-        packet.getGameServers().forEach(gameServer -> {
-            log.debug("Loading game server '{}' as type {}...", gameServer.getDisplayName(), gameServer.getType());
+            log.info("Backend running in profile '{}' with version '{}'.", packet.getBackendProfile(), packet.getBackendVersion());
+            log.info("I am '{}' in team {}!", packet.getNodeSettings().getName(), packet.getTeamName());
 
-            String serverInstallDir = ServerUtils.getCachedServerInstallDir(gameServer.getId());
+            log.info("Loading '{}' game servers...", packet.getGameServers().size());
+            GameServer.abandonAll();
+            packet.getGameServers().forEach(gameServer -> {
+                log.debug("Loading game server '{}' as type {}...", gameServer.getDisplayName(), gameServer.getType());
 
-            SettingProfile settings = ServerUtils.getSettingProfile(gameServer.getSettingProfileId());
-            if (settings == null) {
-                log.error("Setting profile '{}' not found for game server '{}'. Canceling server initialization.", gameServer.getSettingProfileId(), gameServer.getDisplayName());
-                return;
+                String serverInstallDir = ServerUtils.getCachedServerInstallDir(gameServer.getId());
+
+                SettingProfile settings = ServerUtils.getSettingProfile(gameServer.getSettingProfileId());
+                if (settings == null) {
+                    log.error("Setting profile '{}' not found for game server '{}'. Canceling server initialization.", gameServer.getSettingProfileId(), gameServer.getDisplayName());
+                    return;
+                }
+
+                createGameServer(gameServer, settings, serverInstallDir);
+            });
+
+            Node.INSTANCE.updateSettings(packet.getNodeSettings());
+
+            Node.INSTANCE.setConnectionState(ConnectionState.CONNECTED);
+
+            if (Node.INSTANCE.isFirstStart()) {
+                log.info("""
+                        
+                        Congratulations — you have connected the daemon to your team!
+                        
+                        The daemon will continue to run on your server. Every time you perform an action in the web app, commands are sent to the daemon. It then executes these commands. If GMC ever needs to perform maintenance, you can manage the server using commands via the console.
+                        
+                        You are now finished here and can switch back to app.gamemanager.cloud.""");
+                Node.INSTANCE.setFirstStart(false);
             }
 
-            createGameServer(gameServer, settings, serverInstallDir);
-        });
-
-        Node.INSTANCE.updateSettings(packet.getNodeSettings());
-
-        Node.INSTANCE.setConnectionState(ConnectionState.CONNECTED);
-
-        if (Node.INSTANCE.isFirstStart()) {
-            log.info("""
-                    
-                    Congratulations — you have connected the daemon to your team!
-                    
-                    The daemon will continue to run on your server. Every time you perform an action in the web app, commands are sent to the daemon. It then executes these commands. If GMC ever needs to perform maintenance, you can manage the server using commands via the console.
-                    
-                    You are now finished here and can switch back to app.gamemanager.cloud.""");
-            Node.INSTANCE.setFirstStart(false);
+        } catch (Exception e) {
+            log.error("An unknown error occurred while trying to start the daemon.", e);
+            Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
         }
-
     }
 
     private void createGameServer(GameServerDto gameServer, SettingProfile settings, String serverInstallDir) {
