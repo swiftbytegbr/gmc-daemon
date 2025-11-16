@@ -58,6 +58,8 @@ public abstract class GameServer {
         this.installDir = Path.of(Node.INSTANCE.getServerPath() + "/" + friendlyName.toLowerCase()).toAbsolutePath();
         this.settings = settings;
 
+        setState(GameServerState.OFFLINE);
+
         GAME_SERVERS.put(id, this);
         updateScheduler = Application.getExecutor().scheduleWithFixedDelay(() -> {
             try {
@@ -67,7 +69,6 @@ public abstract class GameServer {
             }
         }, 0, 10, TimeUnit.SECONDS);
 
-        setState(GameServerState.OFFLINE);
         BackupService.updateAutoBackupSettings(serverId);
     }
 
