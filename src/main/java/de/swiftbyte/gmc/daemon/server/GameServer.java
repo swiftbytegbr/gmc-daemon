@@ -59,7 +59,13 @@ public abstract class GameServer {
         this.settings = settings;
 
         GAME_SERVERS.put(id, this);
-        updateScheduler = Application.getExecutor().scheduleWithFixedDelay(this::update, 0, 10, TimeUnit.SECONDS);
+        updateScheduler = Application.getExecutor().scheduleWithFixedDelay(() -> {
+            try {
+                this.update();
+            } catch (Exception e) {
+                log.error("Unhandled exception in server '{}'.", friendlyName, e);
+            }
+        }, 0, 10, TimeUnit.SECONDS);
 
         setState(GameServerState.OFFLINE);
         BackupService.updateAutoBackupSettings(serverId);

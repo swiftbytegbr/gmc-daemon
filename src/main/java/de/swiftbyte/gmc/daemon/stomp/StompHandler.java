@@ -16,6 +16,7 @@ import jakarta.websocket.WebSocketContainer;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.simp.stomp.ConnectionLostException;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
@@ -80,7 +81,7 @@ public class StompHandler {
                 return false;
             }
 
-            log.error("Failed to establish connection to backend. Is the backend running?");
+            log.error("Failed to establish connection to backend. Please check your connection and the status of the backend.");
             log.debug("Error: ", e);
             return false;
         }
@@ -91,12 +92,13 @@ public class StompHandler {
         if (session == null) {
             if (Node.INSTANCE.getConnectionState() != ConnectionState.RECONNECTING) {
                 log.error("Failed to send packet to {} because the session is null.", destination);
+                Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
             }
             return;
         }
 
         if (!session.isConnected()) {
-            log.error("Failed to send packet to {} because the session is not connected. Is the backend running?", destination);
+            log.error("Failed to send packet to {} because the session is not connected.", destination);
             Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
             return;
         }
@@ -105,17 +107,17 @@ public class StompHandler {
     }
 
     public static void disconnect() {
-        if(session != null) {
+        if(session != null && session.isConnected()) {
             session.disconnect();
             session = null;
         }
 
-        if(stompClient != null) {
+        if(stompClient != null && stompClient.isRunning()) {
             stompClient.stop();
             stompClient = null;
         }
 
-        if(threadPoolTaskScheduler != null) {
+        if(threadPoolTaskScheduler != null && threadPoolTaskScheduler.isRunning()) {
             threadPoolTaskScheduler.shutdown();
             threadPoolTaskScheduler = null;
         }
@@ -194,12 +196,14 @@ public class StompHandler {
 
         @Override
         public void handleTransportError(StompSession session, Throwable e) {
-            if (!session.isConnected()) {
-                log.error("Failed to send packet to backend because the session is not connected. Is the backend running?");
+
+            if(e instanceof ConnectionLostException) {
+                log.error("The daemon lost connection to the backend. Please check the internet connection or the current backend status.");
                 Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
-            } else {
-                log.error("An error occurred while communicating with the backend.", e);
+                return;
             }
+
+            log.error("An error occurred while communicating with the backend.", e);
         }
 
         @Override

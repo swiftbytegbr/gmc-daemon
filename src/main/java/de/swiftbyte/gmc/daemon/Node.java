@@ -341,21 +341,25 @@ public class Node {
 
     long lastUpdate = System.currentTimeMillis();
     private final Runnable updateRunnable = () -> {
-        if ((System.currentTimeMillis() - lastUpdate) / 1000 > 15) {
-            log.warn("Last heartbeat was more than 15 seconds ago. Catching up...");
-        }
-        lastUpdate = System.currentTimeMillis();
-        if (getConnectionState() == ConnectionState.CONNECTED) {
+        try {
+            if ((System.currentTimeMillis() - lastUpdate) / 1000 > 15) {
+                log.warn("Last heartbeat was more than 15 seconds ago. Catching up...");
+            }
+            lastUpdate = System.currentTimeMillis();
+            if (getConnectionState() == ConnectionState.CONNECTED) {
 
-            NodeUtils.cacheInformation(this);
+                NodeUtils.cacheInformation(this);
 
-            NodeHeartbeatPacket heartbeatPacket = getNodeHeartbeatPacket();
+                NodeHeartbeatPacket heartbeatPacket = getNodeHeartbeatPacket();
 
-            StompHandler.send("/app/node/heartbeat", heartbeatPacket);
+                StompHandler.send("/app/node/heartbeat", heartbeatPacket);
 
-            BackupService.deleteAllExpiredBackups();
-        } else if (getConnectionState() == ConnectionState.RECONNECTING) {
-            connect();
+                BackupService.deleteAllExpiredBackups();
+            } else if (getConnectionState() == ConnectionState.RECONNECTING) {
+                connect();
+            }
+        } catch (Exception e) {
+            log.error("Unhandled exception in heartbeat executor.", e);
         }
     };
 

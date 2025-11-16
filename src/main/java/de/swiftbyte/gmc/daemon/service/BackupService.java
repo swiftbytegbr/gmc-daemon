@@ -97,8 +97,12 @@ public class BackupService {
             log.debug("Starting auto backup in {} minutes.", delay);
 
             backupSchedulers.put(serverId, Application.getExecutor().scheduleAtFixedRate(() -> {
-                log.debug("Starting auto backup...");
-                BackupService.backupServer(serverId, true);
+                try {
+                    log.debug("Starting auto backup...");
+                    BackupService.backupServer(serverId, true);
+                } catch (Exception e) {
+                    log.error("Unhandled exception during auto backup for server '{}'.", server.getFriendlyName(), e);
+                }
             }, delay, autoBackupInterval, TimeUnit.MINUTES));
 
         }
