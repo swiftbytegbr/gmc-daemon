@@ -334,7 +334,11 @@ public abstract class ArkServer extends GameServer {
                 return null;
             }
             Rcon rcon = new Rcon("127.0.0.1", rconPort, rconPassword.getBytes());
-            return rcon.command(command);
+            String response = rcon.command(command);
+
+            rcon.disconnect();
+
+            return response;
         } catch (IOException e) {
             log.debug("Information: Port: {}, Password: {}", rconPort, rconPassword);
             log.debug("Can not send rcon command because server '{}' is offline.", friendlyName, e);
