@@ -48,6 +48,6 @@ public record MapSettingsAdapter(Map<String, Object> settings) {
     }
 
     public boolean hasAndNotEmpty(String key) {
-        return has(key) && CommonUtils.isNullOrEmpty(settings.get(key));
+        return has(key) && !CommonUtils.isNullOrEmpty(settings.get(key));
     }
 }
