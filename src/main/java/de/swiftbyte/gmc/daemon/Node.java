@@ -13,6 +13,7 @@ import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
+import de.swiftbyte.gmc.daemon.tasks.consumers.BackupDirectoryChangeTaskConsumer;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
@@ -56,6 +57,7 @@ public class Node {
     private String teamName;
 
     private String serverPath;
+    private String backupPath;
     private boolean manageFirewallAutomatically;
 
     private boolean isAutoUpdateEnabled;
@@ -79,6 +81,8 @@ public class Node {
         this.teamName = "gmc";
 
         setServerPath("./servers");
+        // Default backups to serverPath/backups until settings provide a path
+        this.backupPath = Path.of(getServerPath(), "backups").toString();
 
         getCachedNodeInformation();
         BackupService.initialiseBackupService();
@@ -107,6 +111,7 @@ public class Node {
             nodeName = cacheModel.getNodeName();
             teamName = cacheModel.getTeamName();
             setServerPath(cacheModel.getServerPath());
+            // backupPath is not cached yet; keep default (serverPath/backups)
             isAutoUpdateEnabled = cacheModel.isAutoUpdateEnabled();
             manageFirewallAutomatically = cacheModel.isManageFirewallAutomatically();
 
@@ -295,36 +300,36 @@ public class Node {
         log.debug("Updating settings...");
         nodeName = nodeSettings.getName();
 
-        String oldPath = this.serverPath;
-        String incomingPath = !CommonUtils.isNullOrEmpty(nodeSettings.getServerPath()) ? nodeSettings.getServerPath() : "./servers";
-        String newPath = Path.of(incomingPath).normalize().toString();
-        String oldNorm = Path.of(oldPath == null ? "./servers" : oldPath).normalize().toString();
+        String oldServerPath = this.serverPath;
+        String incomingServerPath = !CommonUtils.isNullOrEmpty(nodeSettings.getServerPath()) ? nodeSettings.getServerPath() : "./servers";
+        String newServerPath = Path.of(incomingServerPath).normalize().toString();
+        String oldServerNorm = Path.of(oldServerPath == null ? "./servers" : oldServerPath).normalize().toString();
+
+        // Resolve current and new backup paths
+        String currentBackupPath = this.backupPath != null ? Path.of(this.backupPath).normalize().toString() : Path.of(oldServerNorm, "backups").toString();
+        String resolvedBackupPath = resolveBackupPathFromSettings(nodeSettings);
+        if (CommonUtils.isNullOrEmpty(resolvedBackupPath)) {
+            resolvedBackupPath = Path.of(newServerPath, "backups").toString();
+        }
+        String newBackupPath = Path.of(resolvedBackupPath).normalize().toString();
 
         isAutoUpdateEnabled = nodeSettings.isEnableAutoUpdate();
         // Deprecated: stop/restart messages now come from GMC settings per server
         manageFirewallAutomatically = nodeSettings.isManageFirewallAutomatically();
 
         NodeUtils.cacheInformation(this);
+        // Apply server path immediately
+        setServerPath(newServerPath);
 
-        // If server/backup directory changed, schedule move task
-        if (!oldNorm.equalsIgnoreCase(newPath)) {
-            log.info("Server path changed from '{}' to '{}'. Scheduling backups move task...", oldNorm, newPath);
+        // Move backups only when backup directory actually changes
+        if (!currentBackupPath.equalsIgnoreCase(newBackupPath)) {
+            log.info("Backup path changed from '{}' to '{}'. Scheduling backups move task...", currentBackupPath, newBackupPath);
             try {
-                boolean created;
-                try {
-                    created = TaskService.createTask(
-                            NodeTask.Type.BACKUP_DIRECTORY_CHANGE,
-                            new de.swiftbyte.gmc.daemon.tasks.consumers.BackupDirectoryChangeTaskConsumer.BackupDirectoryChangeTaskPayload(oldNorm, newPath),
-                            this.nodeId
-                    );
-                } catch (NoClassDefFoundError e) {
-                    // Fallback for older common libs (should not happen if BACKUP_DIRECTORY_CHANGE exists)
-                    created = TaskService.createTask(
-                            NodeTask.Type.BACKUP,
-                            new de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer.MoveBackupsTaskPayload(oldNorm, newPath),
-                            this.nodeId
-                    );
-                }
+                boolean created = TaskService.createTask(
+                        NodeTask.Type.BACKUP_DIRECTORY_CHANGE,
+                        new BackupDirectoryChangeTaskConsumer.BackupDirectoryChangeTaskPayload(currentBackupPath, newBackupPath),
+                        this.nodeId
+                );
                 if (!created) {
                     log.warn("Failed to create backups move task. Backups may remain in old directory.");
                 }
@@ -332,9 +337,22 @@ public class Node {
                 log.error("Error while scheduling backups move task.", e);
             }
         } else {
-            // No change; keep or set as provided
-            setServerPath(newPath);
+            setBackupPath(newBackupPath);
         }
+    }
+
+    private String resolveBackupPathFromSettings(NodeSettings nodeSettings) {
+        try {
+            var m = nodeSettings.getClass().getMethod("getBackupDirectory");
+            Object val = m.invoke(nodeSettings);
+            return val != null ? Path.of(val.toString()).toString() : null;
+        } catch (Exception ignored) {}
+        try {
+            var m = nodeSettings.getClass().getMethod("getBackupPath");
+            Object val = m.invoke(nodeSettings);
+            return val != null ? Path.of(val.toString()).toString() : null;
+        } catch (Exception ignored) {}
+        return null;
     }
 
     public void delete() {
@@ -449,5 +467,13 @@ public class Node {
 
     public void setServerPath(String serverPath) {
         this.serverPath = Path.of(serverPath).normalize().toString();
+    }
+
+    public String getBackupPath() {
+        return backupPath != null ? Path.of(backupPath).normalize().toString() : Path.of(getServerPath(), "backups").toString();
+    }
+
+    public void setBackupPath(String backupPath) {
+        this.backupPath = Path.of(backupPath).normalize().toString();
     }
 }

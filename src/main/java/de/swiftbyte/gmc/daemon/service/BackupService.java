@@ -172,7 +172,7 @@ public class BackupService {
         backup.setAutoBackup(autoBackup);
 
         File tempBackupLocation = new File(NodeUtils.TMP_PATH + server.getServerId() + "/" + backup.getBackupId());
-        File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
+        File backupLocation = new File(Node.INSTANCE.getBackupPath() + "/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
 
         //TODO find a better way to handle different save locations for different game servers then hardcoding it here
         File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks" + (server instanceof AsaServer ? "/" + server.getSettings().getMap() : ""));
@@ -241,7 +241,7 @@ public class BackupService {
         }
 
         log.debug("Deleting backup '{}'...", backup.getName());
-        File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + GameServer.getServerById(backup.getServerId()).getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
+        File backupLocation = new File(Node.INSTANCE.getBackupPath() + "/" + GameServer.getServerById(backup.getServerId()).getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
         if (!backupLocation.exists()) {
             log.error("Could not delete backup because backup location does not exist!");
             backups.remove(backupId);
@@ -291,7 +291,7 @@ public class BackupService {
 
         server.stop(false).complete();
 
-        File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
+        File backupLocation = new File(Node.INSTANCE.getBackupPath() + "/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
 
         //TODO find a better way to handle different save locations for different game servers then hardcoding it here
         File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks" + (server instanceof AsaServer ? "/" + server.getSettings().getMap() : ""));
@@ -368,9 +368,10 @@ public class BackupService {
         GameServer.getAllServers().forEach(server -> updateAutoBackupSettings(server.getServerId()));
     }
 
-    public static void moveBackupsDirectory(String oldServerPath, String newServerPath) throws IOException {
-        File oldBackupsDir = new File(oldServerPath, "backups");
-        File newBackupsDir = new File(newServerPath, "backups");
+    public static void moveBackupsDirectory(String oldBackupsDirPath, String newBackupsDirPath) throws IOException {
+        // Treat inputs as backup base directories
+        File oldBackupsDir = new File(oldBackupsDirPath);
+        File newBackupsDir = new File(newBackupsDirPath);
 
         log.info("Moving backups from '{}' to '{}'...", oldBackupsDir.getAbsolutePath(), newBackupsDir.getAbsolutePath());
 
