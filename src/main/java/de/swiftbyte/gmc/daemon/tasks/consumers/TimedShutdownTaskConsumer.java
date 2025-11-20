@@ -101,6 +101,7 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
 
     private void sendMessage(GameServer server, String template, int minutesLeft) {
         String msg = template.replace("{minutes}", String.valueOf(minutesLeft));
+        log.debug("Sending timed shutdown message for server {}: {}", server.getFriendlyName(), msg);
         server.sendRconCommand("serverchat " + msg);
     }
 
