@@ -2,6 +2,7 @@ package de.swiftbyte.gmc.daemon;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.swiftbyte.gmc.common.entity.NodeSettings;
 import de.swiftbyte.gmc.common.entity.ResourceUsage;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeHeartbeatPacket;
@@ -188,7 +189,19 @@ public class Node {
 
         OkHttpClient client = new OkHttpClient();
 
-        String json = "{\"inviteToken\": \"" + token + "\"}";
+        String defaultServerDirectory = Path.of("./servers").toAbsolutePath().normalize().toString();
+        ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        ObjectNode jsonNode = mapper.createObjectNode();
+        jsonNode.put("inviteToken", String.valueOf(token));
+        jsonNode.put("defaultServerDirectory", defaultServerDirectory);
+        String json;
+        try {
+            json = mapper.writeValueAsString(jsonNode);
+        } catch (Exception e) {
+            log.error("Failed to create registration payload.", e);
+            setConnectionState(ConnectionState.NOT_JOINED);
+            return;
+        }
         RequestBody body = RequestBody.create(json, MediaType.get("application/json; charset=utf-8"));
 
         Request request = new Request.Builder()
@@ -206,9 +219,9 @@ public class Node {
             }
 
             ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(response.body().string());
-            nodeId = jsonNode.get("nodeId").asText();
-            secret = jsonNode.get("nodeSecret").asText();
+            JsonNode responseJson = objectMapper.readTree(response.body().string());
+            nodeId = responseJson.get("nodeId").asText();
+            secret = responseJson.get("nodeSecret").asText();
 
         } catch (IOException e) {
             log.error("An unknown error occurred.", e);
