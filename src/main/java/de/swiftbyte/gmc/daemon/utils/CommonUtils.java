@@ -47,7 +47,7 @@ public class CommonUtils {
 
     public static String getProcessPID(String command) {
         Optional<ProcessHandle> processHandle = ProcessHandle.allProcesses()
-                .filter(ph -> ph.info().command().isPresent() && ph.info().command().get().contains(command))
+                .filter(ph -> ph.info().command().isPresent()).filter(ph -> ph.info().command().get().contains(command))
                 .findFirst();
 
         return processHandle.map(handle -> String.valueOf(handle.pid())).orElse(null);
