@@ -17,6 +17,13 @@ public class StopServerPacketConsumer implements StompPacketConsumer<ServerStopP
     @Override
     public void onReceive(ServerStopPacket packet) {
         log.info("Stopping server with id {}.", packet.getServerId());
+        if (packet.getDelayMinutes() != null && packet.getDelayMinutes() > 0) {
+            log.debug("Received timed stop request: serverId={}, delayMinutes={}, forceStop={}, hasMessage={}",
+                    packet.getServerId(), packet.getDelayMinutes(), packet.isForceStop(), packet.getDelayedStopMessage() != null);
+        } else {
+            log.debug("Received immediate stop request: serverId={}, forceStop={}, hasMessage={}",
+                    packet.getServerId(), packet.isForceStop(), packet.getDelayedStopMessage() != null);
+        }
         Integer delay = packet.getDelayMinutes();
         if (delay != null && delay > 0) {
             // Create a timed shutdown task
@@ -28,6 +35,8 @@ public class StopServerPacketConsumer implements StompPacketConsumer<ServerStopP
             );
             if (!created) {
                 log.warn("Could not create timed shutdown task for server {}", packet.getServerId());
+            } else {
+                log.debug("Timed shutdown task created for server {} with delay {} min", packet.getServerId(), delay);
             }
             return;
         }

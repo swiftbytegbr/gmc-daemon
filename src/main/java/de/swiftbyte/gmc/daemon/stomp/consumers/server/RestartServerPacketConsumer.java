@@ -17,6 +17,13 @@ public class RestartServerPacketConsumer implements StompPacketConsumer<ServerRe
     @Override
     public void onReceive(ServerRestartPacket packet) {
         log.info("Restarting server with id {}.", packet.getServerId());
+        if (packet.getDelayMinutes() != null && packet.getDelayMinutes() > 0) {
+            log.debug("Received timed restart request: serverId={}, delayMinutes={}, hasMessage={}",
+                    packet.getServerId(), packet.getDelayMinutes(), packet.getDelayedRestartMessage() != null);
+        } else {
+            log.debug("Received immediate restart request: serverId={}, hasMessage={}",
+                    packet.getServerId(), packet.getDelayedRestartMessage() != null);
+        }
         Integer delay = packet.getDelayMinutes();
         if (delay != null && delay > 0) {
             boolean created = TaskService.createTask(
@@ -27,6 +34,8 @@ public class RestartServerPacketConsumer implements StompPacketConsumer<ServerRe
             );
             if (!created) {
                 log.warn("Could not create timed restart task for server {}", packet.getServerId());
+            } else {
+                log.debug("Timed restart task created for server {} with delay {} min", packet.getServerId(), delay);
             }
             return;
         }

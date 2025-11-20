@@ -213,7 +213,7 @@ public abstract class ArkServer extends GameServer {
                 if (!CommonUtils.isNullOrEmpty(stopMessage)) {
                     sendRconCommand("serverchat " + stopMessage);
                 } else {
-                    sendRconCommand("serverchat server ist stopping...");
+                    sendRconCommand("serverchat server is stopping...");
                     log.debug("Sending stop message to server '{}'...", friendlyName);
                 }
             }

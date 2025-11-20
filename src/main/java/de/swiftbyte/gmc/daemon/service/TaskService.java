@@ -83,25 +83,32 @@ public class TaskService {
         task.setCancellable(CONSUMERS.get(type).isCancellable(payload));
         //TODO add is blocking
 
+        log.debug("Creating task: id={}, type={}, nodeId={}, targets={}, initialCancellable={}",
+                task.getId(), type, nodeId, Arrays.toString(affectedIds), task.isCancellable());
+
         NodeTaskCreatePacket packet = new NodeTaskCreatePacket();
         packet.setNodeTask(task);
         StompHandler.send("/app/node/task-create", packet);
+        log.debug("Task create packet sent: id={}", task.getId());
 
         Future<?> future = executor.submit(() -> {
             try {
                 task.setState(NodeTask.State.RUNNING);
                 sendUpdatePacket(task);
+                log.debug("Task started: id={}, type={}", task.getId(), task.getType());
 
                 CONSUMERS.get(type).run(task, payload);
 
                 NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
                 completePacket.setNodeTask(task);
                 StompHandler.send("/app/node/task-complete", completePacket);
+                log.debug("Task completed: id={}, type={}", task.getId(), task.getType());
 
             } catch (Exception e) {
                 log.error("An unhandled exception occurred while executing task {}", type, e);
                 task.setState(NodeTask.State.FAILED);
                 sendUpdatePacket(task);
+                log.debug("Task failed: id={}, type={}", task.getId(), task.getType());
             }
 
             TASKS.remove(task.getId());
@@ -139,6 +146,7 @@ public class TaskService {
         NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
         completePacket.setNodeTask(taskRun.task);
         StompHandler.send("/app/node/task-complete", completePacket);
+        log.debug("Task canceled: id={}, type={}", taskRun.task.getId(), taskRun.task.getType());
 
         return true;
     }
@@ -148,6 +156,7 @@ public class TaskService {
         packet.setNodeTask(task);
 
         StompHandler.send("/app/node/task-update", packet);
+        log.debug("Task update sent: id={}, state={}, cancellable={}", task.getId(), task.getState(), task.isCancellable());
     }
 
     public static void updateTask(NodeTask task) {
