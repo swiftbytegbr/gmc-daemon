@@ -1,0 +1,149 @@
+package de.swiftbyte.gmc.daemon.service;
+
+import de.swiftbyte.gmc.common.model.NodeTask;
+import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeTaskCompletePacket;
+import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeTaskCreatePacket;
+import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeTaskUpdatePacket;
+import de.swiftbyte.gmc.daemon.Application;
+import de.swiftbyte.gmc.daemon.stomp.StompHandler;
+import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
+import de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer;
+import lombok.extern.slf4j.Slf4j;
+
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+@Slf4j
+public class TaskService {
+
+    private static final HashMap<NodeTask.Type, NodeTaskConsumer> CONSUMERS = new HashMap<>();
+    private static final ConcurrentHashMap<String, TaskRun> TASKS = new ConcurrentHashMap<>();
+
+    private static ExecutorService executor = null;
+
+    public static void initializeTaskService() {
+
+        shutdownTaskService();
+
+        executor = Executors.newCachedThreadPool();
+
+        registerConsumer(NodeTask.Type.BACKUP, new BackupTaskConsumer());
+
+    }
+
+    public static void shutdownTaskService() {
+
+        TASKS.keySet().forEach(id -> cancelTask(id, true));
+
+        if(executor != null) {
+            executor.shutdownNow();
+            executor = null;
+        }
+
+        CONSUMERS.clear();
+    }
+
+    public static boolean createTask(NodeTask.Type type, String nodeId, String...targetIds) {
+        return createTask(type, null, nodeId, targetIds);
+    }
+
+    public static boolean createTask(NodeTask.Type type, Object payload, String nodeId, String...affectedIds) {
+
+        int maxTasks = CONSUMERS.get(type).maxConcurrentTasks();
+        if(maxTasks > 0 && CONSUMERS.keySet().stream().filter(it -> it == type).count() >= maxTasks + 1) {
+            log.debug("Max count of concurrent tasks exceeded for type {}. Skipping creation...", type);
+            return false;
+        }
+
+        NodeTask task = new NodeTask();
+        task.setId(UUID.randomUUID().toString());
+        task.setType(type);
+        task.setCreatedAt(Instant.now());
+        task.setState(NodeTask.State.PENDING);
+        task.setNodeId(nodeId);
+        task.setTargetIds(Arrays.asList(affectedIds));
+        task.setCancellable(CONSUMERS.get(type).isCancellable());
+        //TODO add is blocking
+
+        NodeTaskCreatePacket packet = new NodeTaskCreatePacket();
+        packet.setNodeTask(task);
+        StompHandler.send("/app/node/task-create", packet);
+
+        Future<?> future = executor.submit(() -> {
+            try {
+                task.setState(NodeTask.State.RUNNING);
+                sendUpdatePacket(task);
+
+                CONSUMERS.get(type).run(task, payload);
+
+                NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
+                completePacket.setNodeTask(task);
+                StompHandler.send("/app/node/task-complete", completePacket);
+
+            } catch (Exception e) {
+                log.error("An unhandled exception occurred while executing task {}", type, e);
+                task.setState(NodeTask.State.FAILED);
+                sendUpdatePacket(task);
+            }
+
+            TASKS.remove(task.getId());
+        });
+
+        TASKS.put(task.getId(), new TaskRun(future, task, payload));
+        return true;
+    }
+
+    public static boolean cancelTask(String taskId) {
+        return cancelTask(taskId, false);
+    }
+
+    public static boolean cancelTask(String taskId, boolean force) {
+
+        if(!TASKS.containsKey(taskId)) {
+            log.warn("Tried to cancel non-existing task {}", taskId);
+            return false;
+        }
+
+        TaskRun taskRun = TASKS.get(taskId);
+
+        if(!taskRun.task.isCancellable() && !force) {
+            log.warn("Tried to cancel task that is not cancelable {}", taskId);
+            return false;
+        }
+
+        taskRun.future.cancel(true);
+        TASKS.remove(taskId);
+
+        CONSUMERS.get(taskRun.task.getType()).cancel(taskRun.task);
+        taskRun.task.setState(NodeTask.State.CANCELED);
+        sendUpdatePacket(taskRun.task);
+
+        return true;
+    }
+
+    private static void sendUpdatePacket(NodeTask task) {
+        NodeTaskUpdatePacket packet = new NodeTaskUpdatePacket();
+        packet.setNodeTask(task);
+
+        StompHandler.send("/app/node/task-update", packet);
+    }
+
+
+    private static void registerConsumer(NodeTask.Type type, NodeTaskConsumer consumer) {
+        CONSUMERS.put(type, consumer);
+    }
+
+    private record TaskRun(
+            Future<?> future,
+            NodeTask task,
+            Object payload
+    ) {}
+}
