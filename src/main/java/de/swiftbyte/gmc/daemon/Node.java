@@ -9,6 +9,7 @@ import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeLogoutPacket;
 import de.swiftbyte.gmc.daemon.cache.CacheModel;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.BackupService;
+import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
@@ -233,6 +234,7 @@ public class Node {
         if (getConnectionState() == ConnectionState.RECONNECTING) {
             log.info("Reconnecting to backend...");
             StompHandler.initialiseStomp();
+            TaskService.initializeTaskService();
         } else {
             log.info("Connecting to backend...");
             setConnectionState(ConnectionState.CONNECTING);
@@ -240,6 +242,7 @@ public class Node {
                 setConnectionState(ConnectionState.RECONNECTING);
                 ServerUtils.getCachedServerInformation();
             }
+            TaskService.initializeTaskService();
         }
     }
 
