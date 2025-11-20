@@ -8,6 +8,7 @@ import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer;
+import de.swiftbyte.gmc.daemon.tasks.consumers.BackupDirectoryChangeTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.TimedRestartTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.TimedShutdownTaskConsumer;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,11 @@ public class TaskService {
         executor = Executors.newCachedThreadPool();
 
         registerConsumer(NodeTask.Type.BACKUP, new BackupTaskConsumer());
+        try {
+            registerConsumer(NodeTask.Type.BACKUP_DIRECTORY_CHANGE, new BackupDirectoryChangeTaskConsumer());
+        } catch (NoClassDefFoundError | Exception ignored) {
+            // Older common lib without this type; safe to ignore
+        }
         // Timed actions
         try {
             // Only register if enum values exist in current common lib

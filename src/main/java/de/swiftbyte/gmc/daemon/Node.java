@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.swiftbyte.gmc.common.entity.NodeSettings;
+import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.entity.ResourceUsage;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeHeartbeatPacket;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeLogoutPacket;
@@ -294,17 +295,46 @@ public class Node {
         log.debug("Updating settings...");
         nodeName = nodeSettings.getName();
 
-        if (!CommonUtils.isNullOrEmpty(nodeSettings.getServerPath())) {
-            setServerPath(nodeSettings.getServerPath());
-        } else {
-            setServerPath("./servers");
-        }
+        String oldPath = this.serverPath;
+        String incomingPath = !CommonUtils.isNullOrEmpty(nodeSettings.getServerPath()) ? nodeSettings.getServerPath() : "./servers";
+        String newPath = Path.of(incomingPath).normalize().toString();
+        String oldNorm = Path.of(oldPath == null ? "./servers" : oldPath).normalize().toString();
 
         isAutoUpdateEnabled = nodeSettings.isEnableAutoUpdate();
         // Deprecated: stop/restart messages now come from GMC settings per server
         manageFirewallAutomatically = nodeSettings.isManageFirewallAutomatically();
 
         NodeUtils.cacheInformation(this);
+
+        // If server/backup directory changed, schedule move task
+        if (!oldNorm.equalsIgnoreCase(newPath)) {
+            log.info("Server path changed from '{}' to '{}'. Scheduling backups move task...", oldNorm, newPath);
+            try {
+                boolean created;
+                try {
+                    created = TaskService.createTask(
+                            NodeTask.Type.BACKUP_DIRECTORY_CHANGE,
+                            new de.swiftbyte.gmc.daemon.tasks.consumers.BackupDirectoryChangeTaskConsumer.BackupDirectoryChangeTaskPayload(oldNorm, newPath),
+                            this.nodeId
+                    );
+                } catch (NoClassDefFoundError e) {
+                    // Fallback for older common libs (should not happen if BACKUP_DIRECTORY_CHANGE exists)
+                    created = TaskService.createTask(
+                            NodeTask.Type.BACKUP,
+                            new de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer.MoveBackupsTaskPayload(oldNorm, newPath),
+                            this.nodeId
+                    );
+                }
+                if (!created) {
+                    log.warn("Failed to create backups move task. Backups may remain in old directory.");
+                }
+            } catch (Exception e) {
+                log.error("Error while scheduling backups move task.", e);
+            }
+        } else {
+            // No change; keep or set as provided
+            setServerPath(newPath);
+        }
     }
 
     public void delete() {

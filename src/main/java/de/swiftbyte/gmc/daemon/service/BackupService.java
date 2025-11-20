@@ -42,6 +42,7 @@ public class BackupService {
 
     private static HashMap<String, Backup> backups = new HashMap<>();
     private static HashMap<String, ScheduledFuture<?>> backupSchedulers;
+    private static volatile boolean backupsSuspended = false;
 
     public static void initialiseBackupService() {
 
@@ -89,7 +90,7 @@ public class BackupService {
 
         int autoBackupInterval = settings.getInt("AutoBackupInterval", 30);
 
-        if (settings.getBoolean("AutoBackupEnabled", false) && autoBackupInterval > 0) {
+        if (!backupsSuspended && settings.getBoolean("AutoBackupEnabled", false) && autoBackupInterval > 0) {
             log.debug("Starting backup scheduler...");
 
             long delay = autoBackupInterval - (System.currentTimeMillis() / 60000) % autoBackupInterval;
@@ -98,6 +99,10 @@ public class BackupService {
 
             backupSchedulers.put(serverId, Application.getExecutor().scheduleAtFixedRate(() -> {
                 try {
+                    if (backupsSuspended) {
+                        log.debug("Auto backup skipped (backups suspended).");
+                        return;
+                    }
                     log.debug("Starting auto backup...");
                     BackupService.backupServer(serverId, true);
                 } catch (Exception e) {
@@ -135,6 +140,11 @@ public class BackupService {
 
         if (server == null) {
             log.error("Could not backup server because server id was not found!");
+            return;
+        }
+
+        if (backupsSuspended) {
+            log.warn("Backups are currently suspended. Skipping backup for server '{}'.", server.getFriendlyName());
             return;
         }
 
@@ -251,6 +261,10 @@ public class BackupService {
 
 
     public static void deleteAllExpiredBackups() {
+        if (backupsSuspended) {
+            log.debug("Skipping expired backup cleanup; backups suspended.");
+            return;
+        }
         List<Backup> expiredBackups = backups.values().stream().filter(backup -> backup.getExpiresAt().isBefore(Instant.now())).toList();
 
         expiredBackups.forEach(backup -> {
@@ -308,6 +322,10 @@ public class BackupService {
 
     public static void backupAllServers(boolean autoBackup) {
 
+        if (backupsSuspended) {
+            log.debug("Skipping backupAllServers; backups suspended.");
+            return;
+        }
         GameServer.getAllServers().forEach((server) -> backupServer(server, autoBackup));
 
     }
@@ -330,5 +348,70 @@ public class BackupService {
 
     public static void deleteAllBackupsByServer(GameServer server) {
         getBackupsByServer(server).forEach(backup -> deleteBackup(backup.getBackupId()));
+    }
+
+    public static void suspendBackups() {
+        log.info("Suspending backups and auto-backup schedulers...");
+        backupsSuspended = true;
+        if (backupSchedulers != null) {
+            backupSchedulers.values().forEach(s -> {
+                try { s.cancel(false); } catch (Exception ignored) {}
+            });
+            backupSchedulers.clear();
+        }
+    }
+
+    public static void resumeBackups() {
+        log.info("Resuming backups and restoring auto-backup schedulers...");
+        backupsSuspended = false;
+        // Recreate auto-backup schedulers for all servers based on their settings
+        GameServer.getAllServers().forEach(server -> updateAutoBackupSettings(server.getServerId()));
+    }
+
+    public static void moveBackupsDirectory(String oldServerPath, String newServerPath) throws IOException {
+        File oldBackupsDir = new File(oldServerPath, "backups");
+        File newBackupsDir = new File(newServerPath, "backups");
+
+        log.info("Moving backups from '{}' to '{}'...", oldBackupsDir.getAbsolutePath(), newBackupsDir.getAbsolutePath());
+
+        if (!oldBackupsDir.exists()) {
+            log.info("Old backups directory does not exist. Nothing to move.");
+            return;
+        }
+
+        if (!newBackupsDir.exists()) {
+            if (!newBackupsDir.mkdirs()) {
+                throw new IOException("Failed to create new backups directory: " + newBackupsDir.getAbsolutePath());
+            }
+        }
+
+        File[] entries = oldBackupsDir.listFiles();
+        if (entries == null) return;
+
+        for (File entry : entries) {
+            File dest = new File(newBackupsDir, entry.getName());
+            if (entry.isDirectory()) {
+                if (dest.exists()) {
+                    // merge
+                    FileUtils.copyDirectory(entry, dest);
+                    FileUtils.deleteDirectory(entry);
+                } else {
+                    FileUtils.moveDirectory(entry, dest);
+                }
+            } else {
+                if (dest.exists()) {
+                    FileUtils.forceDelete(dest);
+                }
+                FileUtils.moveFile(entry, dest);
+            }
+        }
+
+        // Try to remove old empty backups dir
+        try {
+            FileUtils.deleteDirectory(oldBackupsDir);
+        } catch (Exception ignored) {
+        }
+
+        log.info("Backups move completed.");
     }
 }
