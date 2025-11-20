@@ -342,7 +342,6 @@ public abstract class ArkServer extends GameServer {
             }
             Rcon rcon = new Rcon("127.0.0.1", rconPort, rconPassword.getBytes());
             String response = rcon.command(command);
-            log.debug("Server '{}' sending command '{}'", friendlyName, command);
 
             rcon.disconnect();
 
