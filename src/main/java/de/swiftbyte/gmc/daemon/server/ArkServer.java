@@ -208,8 +208,10 @@ public abstract class ArkServer extends GameServer {
             super.setState(GameServerState.STOPPING);
 
             if (!isRestart) {
-                if (!CommonUtils.isNullOrEmpty(Node.INSTANCE.getServerStopMessage())) {
-                    sendRconCommand("serverchat " + Node.INSTANCE.getServerStopMessage());
+                MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
+                String stopMessage = gmcSettings.get("StopMessage", null);
+                if (!CommonUtils.isNullOrEmpty(stopMessage)) {
+                    sendRconCommand("serverchat " + stopMessage);
                 } else {
                     sendRconCommand("serverchat server ist stopping...");
                     log.debug("Sending stop message to server '{}'...", friendlyName);
@@ -255,10 +257,15 @@ public abstract class ArkServer extends GameServer {
     }
 
     public AsyncAction<Boolean> restart() {
-        if (!CommonUtils.isNullOrEmpty(Node.INSTANCE.getServerStopMessage())) {
-            sendRconCommand("serverchat " + Node.INSTANCE.getServerRestartMessage());
-        }
-        return () -> (stop(true).complete() && start().complete());
+        return () -> {
+            MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
+            String restartMessage = gmcSettings.get("RestartMessage", null);
+            if (!CommonUtils.isNullOrEmpty(restartMessage)) {
+                sendRconCommand("serverchat " + restartMessage);
+                try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+            }
+            return (stop(true).complete() && start().complete());
+        };
     }
 
     private int restartCounter = 0;
@@ -335,6 +342,7 @@ public abstract class ArkServer extends GameServer {
             }
             Rcon rcon = new Rcon("127.0.0.1", rconPort, rconPassword.getBytes());
             String response = rcon.command(command);
+            log.debug("Server '{}' sending command '{}'", friendlyName, command);
 
             rcon.disconnect();
 

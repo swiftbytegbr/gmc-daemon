@@ -8,6 +8,8 @@ import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer;
+import de.swiftbyte.gmc.daemon.tasks.consumers.TimedRestartTaskConsumer;
+import de.swiftbyte.gmc.daemon.tasks.consumers.TimedShutdownTaskConsumer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
@@ -36,6 +38,14 @@ public class TaskService {
         executor = Executors.newCachedThreadPool();
 
         registerConsumer(NodeTask.Type.BACKUP, new BackupTaskConsumer());
+        // Timed actions
+        try {
+            // Only register if enum values exist in current common lib
+            registerConsumer(NodeTask.Type.TIMED_SHUTDOWN, new TimedShutdownTaskConsumer());
+            registerConsumer(NodeTask.Type.TIMED_RESTART, new TimedRestartTaskConsumer());
+        } catch (NoClassDefFoundError | Exception ignored) {
+            // Older common lib without these types; safe to ignore
+        }
 
     }
 
@@ -70,7 +80,7 @@ public class TaskService {
         task.setState(NodeTask.State.PENDING);
         task.setNodeId(nodeId);
         task.setTargetIds(Arrays.asList(affectedIds));
-        task.setCancellable(CONSUMERS.get(type).isCancellable());
+        task.setCancellable(CONSUMERS.get(type).isCancellable(payload));
         //TODO add is blocking
 
         NodeTaskCreatePacket packet = new NodeTaskCreatePacket();
@@ -124,7 +134,11 @@ public class TaskService {
 
         CONSUMERS.get(taskRun.task.getType()).cancel(taskRun.task);
         taskRun.task.setState(NodeTask.State.CANCELED);
+        // Inform backend about cancellation and completion (so it can remove stored task)
         sendUpdatePacket(taskRun.task);
+        NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
+        completePacket.setNodeTask(taskRun.task);
+        StompHandler.send("/app/node/task-complete", completePacket);
 
         return true;
     }
@@ -134,6 +148,10 @@ public class TaskService {
         packet.setNodeTask(task);
 
         StompHandler.send("/app/node/task-update", packet);
+    }
+
+    public static void updateTask(NodeTask task) {
+        sendUpdatePacket(task);
     }
 
 

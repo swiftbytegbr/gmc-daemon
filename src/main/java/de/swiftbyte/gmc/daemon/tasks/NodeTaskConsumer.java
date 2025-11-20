@@ -10,7 +10,7 @@ public interface NodeTaskConsumer {
         throw new RuntimeException("Cancellation of task type " + task.getType() + " not supported");
     }
 
-    default boolean isCancellable() {
+    default boolean isCancellable(Object payload) {
         return false;
     }
 
