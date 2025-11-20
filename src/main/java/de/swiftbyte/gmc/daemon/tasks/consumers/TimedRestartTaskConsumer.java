@@ -48,7 +48,7 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
                     ? gmc.get("DefaultDelayedRestartMessage", null)
                     : p.message();
             java.util.List<Integer> milestones = TimedMessageUtils.getMessageMilestoneList(gmc);
-            if (!CommonUtils.isNullOrEmpty(baseMessage) && minutesLeft > 0 && !milestones.isEmpty()) {
+            if (!CommonUtils.isNullOrEmpty(baseMessage) && minutesLeft > 0) {
                 sendMessage(server, baseMessage, minutesLeft);
             }
 
@@ -66,6 +66,14 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
                 if (!CommonUtils.isNullOrEmpty(baseMessage) && minutesLeft > 0 && !milestones.isEmpty() && milestones.contains(minutesLeft)) {
                     sendMessage(server, baseMessage, minutesLeft);
                 }
+            }
+
+            // Final cancellation check just before executing the action
+            if (Thread.currentThread().isInterrupted() || cancelFlag.get()) {
+                log.debug("Timed restart for server {} canceled right before execution", p.serverId());
+                task.setState(NodeTask.State.CANCELED);
+                TaskService.updateTask(task);
+                return;
             }
 
             log.info("Executing timed restart for server {}", p.serverId());

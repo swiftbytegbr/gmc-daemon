@@ -138,8 +138,15 @@ public class TaskService {
         TaskRun taskRun = TASKS.get(taskId);
 
         if(!taskRun.task.isCancellable() && !force) {
-            log.warn("Tried to cancel task that is not cancelable {}", taskId);
-            return false;
+            // Soft-cancel: inform consumer to stop at next safe checkpoint
+            try {
+                CONSUMERS.get(taskRun.task.getType()).cancel(taskRun.task);
+                log.debug("Accepted late cancellation for task {} (soft cancel)", taskId);
+                return true;
+            } catch (Exception e) {
+                log.warn("Late cancellation not supported by consumer for task {}", taskId);
+                return false;
+            }
         }
 
         taskRun.future.cancel(true);

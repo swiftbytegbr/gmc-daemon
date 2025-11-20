@@ -48,7 +48,7 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
                     ? gmc.get("DefaultDelayedStopMessage", null)
                     : p.message();
             List<Integer> milestones = TimedMessageUtils.getMessageMilestoneList(gmc);
-            if (!CommonUtils.isNullOrEmpty(baseMessage) && minutesLeft > 0 && !milestones.isEmpty()) {
+            if (!CommonUtils.isNullOrEmpty(baseMessage) && minutesLeft > 0) {
                 sendMessage(server, baseMessage, minutesLeft);
             }
 
@@ -66,6 +66,14 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
                 if (!CommonUtils.isNullOrEmpty(baseMessage) && minutesLeft > 0 && !milestones.isEmpty() && milestones.contains(minutesLeft)) {
                     sendMessage(server, baseMessage, minutesLeft);
                 }
+            }
+
+            // Final cancellation check just before executing the action
+            if (Thread.currentThread().isInterrupted() || cancelFlag.get()) {
+                log.debug("Timed shutdown for server {} canceled right before execution", p.serverId());
+                task.setState(NodeTask.State.CANCELED);
+                TaskService.updateTask(task);
+                return;
             }
 
             log.info("Executing timed shutdown for server {} (force: {})", p.serverId(), p.forceStop());
