@@ -45,7 +45,7 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
         try {
             MapSettingsAdapter gmc = new MapSettingsAdapter(server.getSettings().getGmcSettings());
             String baseMessage = CommonUtils.isNullOrEmpty(p.message())
-                    ? gmc.get("DefaultDelayedStopMessage", null)
+                    ? gmc.get("DefaultDelayedShutdownMessage", null)
                     : p.message();
             List<Integer> milestones = TimedMessageUtils.getMessageMilestoneList(gmc);
             if (!CommonUtils.isNullOrEmpty(baseMessage) && minutesLeft > 0) {
