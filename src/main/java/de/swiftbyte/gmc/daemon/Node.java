@@ -303,15 +303,10 @@ public class Node {
         String oldServerPath = this.serverPath;
         String incomingServerPath = !CommonUtils.isNullOrEmpty(nodeSettings.getServerPath()) ? nodeSettings.getServerPath() : "./servers";
         String newServerPath = Path.of(incomingServerPath).normalize().toString();
-        String oldServerNorm = Path.of(oldServerPath == null ? "./servers" : oldServerPath).normalize().toString();
 
         // Resolve current and new backup paths
-        String currentBackupPath = this.backupPath != null ? Path.of(this.backupPath).normalize().toString() : Path.of(oldServerNorm, "backups").toString();
-        String resolvedBackupPath = resolveBackupPathFromSettings(nodeSettings);
-        if (CommonUtils.isNullOrEmpty(resolvedBackupPath)) {
-            resolvedBackupPath = Path.of(newServerPath, "backups").toString();
-        }
-        String newBackupPath = Path.of(resolvedBackupPath).normalize().toString();
+        String currentBackupPath = this.backupPath;
+        String newBackupPath = nodeSettings.getServerBackupsDirectory();
 
         isAutoUpdateEnabled = nodeSettings.isEnableAutoUpdate();
         // Deprecated: stop/restart messages now come from GMC settings per server
@@ -341,19 +336,6 @@ public class Node {
         }
     }
 
-    private String resolveBackupPathFromSettings(NodeSettings nodeSettings) {
-        try {
-            var m = nodeSettings.getClass().getMethod("getBackupDirectory");
-            Object val = m.invoke(nodeSettings);
-            return val != null ? Path.of(val.toString()).toString() : null;
-        } catch (Exception ignored) {}
-        try {
-            var m = nodeSettings.getClass().getMethod("getBackupPath");
-            Object val = m.invoke(nodeSettings);
-            return val != null ? Path.of(val.toString()).toString() : null;
-        } catch (Exception ignored) {}
-        return null;
-    }
 
     public void delete() {
 
