@@ -15,20 +15,20 @@ public class BackupTaskConsumer implements NodeTaskConsumer {
 
     @Override
     public void run(NodeTask task, Object payload) {
-        if (payload instanceof MoveBackupsTaskPayload(String oldPath, String newPath)) {
+        if (payload instanceof MoveBackupsTaskPayload(String oldBackupPath, String newBackupPath)) {
             // Suspend backups and schedulers, move backups, then resume
             try {
                 BackupService.suspendBackups();
-                BackupService.moveBackupsDirectory(oldPath, newPath);
-                try { Node.INSTANCE.setServerPath(newPath); NodeUtils.cacheInformation(Node.INSTANCE);} catch (Exception ignored) {}
+                BackupService.moveBackupsDirectory(oldBackupPath, newBackupPath);
+                try { Node.INSTANCE.setBackupPath(newBackupPath); NodeUtils.cacheInformation(Node.INSTANCE);} catch (Exception ignored) {}
             } catch (Exception e) {
                 // Best-effort: revert local server path so daemon stays consistent
                 // No backend rollback API available here
-                try { Node.INSTANCE.setServerPath(oldPath); } catch (Exception ignored) {}
+                try { Node.INSTANCE.setBackupPath(oldBackupPath); } catch (Exception ignored) {}
                 try {
                     NodeSettings rollback = new NodeSettings();
                     rollback.setName(Node.INSTANCE.getNodeName());
-                    rollback.setServerPath(oldPath);
+                    rollback.setServerPath(Node.INSTANCE.getServerPath());
                     rollback.setEnableAutoUpdate(Node.INSTANCE.isAutoUpdateEnabled());
                     rollback.setManageFirewallAutomatically(Node.INSTANCE.isManageFirewallAutomatically());
 
@@ -53,5 +53,5 @@ public class BackupTaskConsumer implements NodeTaskConsumer {
     }
 
     public record BackupTaskPayload(boolean isAutoUpdate) {}
-    public record MoveBackupsTaskPayload(String oldServerPath, String newServerPath) {}
+    public record MoveBackupsTaskPayload(String oldBackupPath, String newBackupPath) {}
 }
