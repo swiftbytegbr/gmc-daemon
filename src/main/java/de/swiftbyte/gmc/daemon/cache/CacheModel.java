@@ -20,8 +20,6 @@ public class CacheModel {
     private String serverPath;
     private boolean manageFirewallAutomatically;
     private boolean isAutoUpdateEnabled;
-    private String serverStopMessage;
-    private String serverRestartMessage;
 
     private HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap;
 }

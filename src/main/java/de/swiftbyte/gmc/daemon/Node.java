@@ -57,8 +57,6 @@ public class Node {
     private boolean manageFirewallAutomatically;
 
     private boolean isAutoUpdateEnabled;
-    private String serverStopMessage;
-    private String serverRestartMessage;
 
     private String secret;
     private String nodeId;
@@ -110,8 +108,7 @@ public class Node {
             isAutoUpdateEnabled = cacheModel.isAutoUpdateEnabled();
             manageFirewallAutomatically = cacheModel.isManageFirewallAutomatically();
 
-            serverStopMessage = cacheModel.getServerStopMessage();
-            serverRestartMessage = cacheModel.getServerRestartMessage();
+            // Deprecated: stop/restart messages now come from GMC settings per server
 
             log.debug("Got cached information.");
 
@@ -291,8 +288,7 @@ public class Node {
         }
 
         isAutoUpdateEnabled = nodeSettings.isEnableAutoUpdate();
-        serverStopMessage = nodeSettings.getStopMessage();
-        serverRestartMessage = nodeSettings.getRestartMessage();
+        // Deprecated: stop/restart messages now come from GMC settings per server
         manageFirewallAutomatically = nodeSettings.isManageFirewallAutomatically();
 
         NodeUtils.cacheInformation(this);

@@ -164,8 +164,6 @@ public class NodeUtils {
                 .isAutoUpdateEnabled(node.isAutoUpdateEnabled())
                 .gameServerCacheModelHashMap(gameServers)
                 .manageFirewallAutomatically(node.isManageFirewallAutomatically())
-                .serverRestartMessage(node.getServerRestartMessage())
-                .serverStopMessage(node.getServerStopMessage())
                 .build();
 
         ObjectMapper mapper = new ObjectMapper();
