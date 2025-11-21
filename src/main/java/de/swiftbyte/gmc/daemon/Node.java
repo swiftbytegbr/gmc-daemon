@@ -36,6 +36,7 @@ import oshi.SystemInfo;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.InvalidPathException;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Executors;
@@ -58,6 +59,9 @@ public class Node {
     private String teamName;
 
     private String serverPath;
+
+    @Setter
+    private Path defaultServerPath;
 
     @Setter
     private Path backupPath;
@@ -302,8 +306,9 @@ public class Node {
         log.debug("Updating settings...");
         nodeName = nodeSettings.getName();
 
-        String incomingServerPath = !CommonUtils.isNullOrEmpty(nodeSettings.getServerPath()) ? nodeSettings.getServerPath() : "./servers";
-        String newServerPath = Path.of(incomingServerPath).normalize().toString();
+        // Validate/backfill default server directory (sets to absolute ./servers if null/invalid)
+        backfillNodeSettingsDefaultServerDirectory(nodeSettings);
+        this.defaultServerPath = Path.of(nodeSettings.getDefaultServerDirectory());
 
         // Resolve current and new backup paths
         Path currentBackupPath = this.backupPath;
@@ -315,8 +320,6 @@ public class Node {
         manageFirewallAutomatically = nodeSettings.isManageFirewallAutomatically();
 
         NodeUtils.cacheInformation(this);
-        // Apply server path immediately
-        setServerPath(newServerPath);
 
         // Move backups only when backup directory actually changes
         if (!currentBackupPath.equals(newBackupPath)) {
@@ -333,6 +336,43 @@ public class Node {
             } catch (Exception e) {
                 log.error("Error while scheduling backups move task.", e);
             }
+        }
+    }
+
+    /**
+     * Validates and normalizes NodeSettings.defaultServerDirectory in one place.
+     * - If null/empty or invalid: set to absolute, normalized ./servers and sync.
+     * - If valid: normalize to absolute; sync only when value changes.
+     * Returns the effective directory after this call.
+     */
+    public String backfillNodeSettingsDefaultServerDirectory(NodeSettings nodeSettings) {
+        String incoming = nodeSettings.getDefaultServerDirectory();
+        try {
+            if (CommonUtils.isNullOrEmpty(incoming)) {
+                // Use exception path to unify handling
+                throw new InvalidPathException("defaultServerDirectory", "is null or empty");
+            }
+
+            String normalized = Path.of(incoming).toAbsolutePath().normalize().toString();
+            if (!normalized.equals(incoming)) {
+                nodeSettings.setDefaultServerDirectory(normalized);
+                NodeSettingsPacket packet = new NodeSettingsPacket();
+                packet.setNodeSettings(nodeSettings);
+                StompHandler.send("/app/node/settings", packet);
+                log.info("Normalized defaultServerDirectory to '{}' and synced to backend.", normalized);
+            }
+            return nodeSettings.getDefaultServerDirectory();
+
+        } catch (InvalidPathException ex) {
+            String absoluteDefault = Path.of("./servers").toAbsolutePath().normalize().toString();
+            if (!absoluteDefault.equals(incoming)) {
+                nodeSettings.setDefaultServerDirectory(absoluteDefault);
+                NodeSettingsPacket packet = new NodeSettingsPacket();
+                packet.setNodeSettings(nodeSettings);
+                StompHandler.send("/app/node/settings", packet);
+                log.info("Backfilled defaultServerDirectory to '{}' and synced to backend.", absoluteDefault);
+            }
+            return absoluteDefault;
         }
     }
 
