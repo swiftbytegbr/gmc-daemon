@@ -78,6 +78,7 @@ public abstract class ArkServer extends GameServer {
 
             } catch (IOException e) {
                 log.error("An unknown exception occurred while installing the server '{}'.", friendlyName, e);
+                setState(GameServerState.OFFLINE);
                 return false;
             }
             return true;
