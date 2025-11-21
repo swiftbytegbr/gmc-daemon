@@ -111,11 +111,9 @@ public class Node {
             nodeName = cacheModel.getNodeName();
             teamName = cacheModel.getTeamName();
             setServerPath(cacheModel.getServerPath());
-            // backupPath is not cached yet; keep default (serverPath/backups)
+            backupPath = cacheModel.getBackupPath();
             isAutoUpdateEnabled = cacheModel.isAutoUpdateEnabled();
             manageFirewallAutomatically = cacheModel.isManageFirewallAutomatically();
-
-            // Deprecated: stop/restart messages now come from GMC settings per server
 
             log.debug("Got cached information.");
 

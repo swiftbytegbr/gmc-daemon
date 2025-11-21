@@ -18,6 +18,7 @@ public class CacheModel {
     private String nodeName;
     private String teamName;
     private String serverPath;
+    private String backupPath;
     private boolean manageFirewallAutomatically;
     private boolean isAutoUpdateEnabled;
 
