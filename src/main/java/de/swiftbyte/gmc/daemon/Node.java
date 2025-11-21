@@ -34,6 +34,7 @@ import oshi.SystemInfo;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
@@ -57,7 +58,9 @@ public class Node {
     private String teamName;
 
     private String serverPath;
-    private String backupPath;
+
+    @Setter
+    private Path backupPath;
     private boolean manageFirewallAutomatically;
 
     private boolean isAutoUpdateEnabled;
@@ -82,7 +85,7 @@ public class Node {
 
         setServerPath("./servers");
         // Default backups to serverPath/backups until settings provide a path
-        this.backupPath = Path.of(getServerPath(), "backups").toString();
+        this.backupPath = Path.of(serverPath, "backups");
 
         getCachedNodeInformation();
         BackupService.initialiseBackupService();
@@ -300,13 +303,12 @@ public class Node {
         log.debug("Updating settings...");
         nodeName = nodeSettings.getName();
 
-        String oldServerPath = this.serverPath;
         String incomingServerPath = !CommonUtils.isNullOrEmpty(nodeSettings.getServerPath()) ? nodeSettings.getServerPath() : "./servers";
         String newServerPath = Path.of(incomingServerPath).normalize().toString();
 
         // Resolve current and new backup paths
-        String currentBackupPath = this.backupPath;
-        String newBackupPath = nodeSettings.getServerBackupsDirectory();
+        Path currentBackupPath = this.backupPath;
+        Path newBackupPath = Path.of(newServerPath).normalize();
 
         isAutoUpdateEnabled = nodeSettings.isEnableAutoUpdate();
         // Deprecated: stop/restart messages now come from GMC settings per server
@@ -317,7 +319,7 @@ public class Node {
         setServerPath(newServerPath);
 
         // Move backups only when backup directory actually changes
-        if (!currentBackupPath.equalsIgnoreCase(newBackupPath)) {
+        if (!currentBackupPath.equals(newBackupPath)) {
             log.info("Backup path changed from '{}' to '{}'. Scheduling backups move task...", currentBackupPath, newBackupPath);
             try {
                 boolean created = TaskService.createTask(
@@ -331,8 +333,6 @@ public class Node {
             } catch (Exception e) {
                 log.error("Error while scheduling backups move task.", e);
             }
-        } else {
-            setBackupPath(newBackupPath);
         }
     }
 
@@ -452,10 +452,7 @@ public class Node {
     }
 
     public String getBackupPath() {
-        return backupPath != null ? Path.of(backupPath).normalize().toString() : Path.of(getServerPath(), "backups").toString();
+        return backupPath != null ? backupPath.normalize().toString() : Path.of(getServerPath(), "backups").toString();
     }
 
-    public void setBackupPath(String backupPath) {
-        this.backupPath = Path.of(backupPath).normalize().toString();
-    }
 }

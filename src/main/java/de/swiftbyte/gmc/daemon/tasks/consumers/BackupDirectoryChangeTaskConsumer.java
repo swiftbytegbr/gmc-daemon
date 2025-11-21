@@ -10,12 +10,14 @@ import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
 import de.swiftbyte.gmc.daemon.utils.NodeUtils;
 import lombok.extern.slf4j.Slf4j;
 
+import java.nio.file.Path;
+
 @Slf4j
 public class BackupDirectoryChangeTaskConsumer implements NodeTaskConsumer {
 
     @Override
     public void run(NodeTask task, Object payload) {
-        if (!(payload instanceof BackupDirectoryChangeTaskPayload(String oldBackupPath, String newBackupPath))) {
+        if (!(payload instanceof BackupDirectoryChangeTaskPayload(Path oldBackupPath, Path newBackupPath))) {
             throw new IllegalArgumentException("Expected BackupDirectoryChangeTaskPayload");
         }
 
@@ -37,7 +39,7 @@ public class BackupDirectoryChangeTaskConsumer implements NodeTaskConsumer {
                 rollback.setEnableAutoUpdate(Node.INSTANCE.isAutoUpdateEnabled());
                 rollback.setManageFirewallAutomatically(Node.INSTANCE.isManageFirewallAutomatically());
                 // Use backend-provided helper to revert backups dir to server-based default
-                rollback.setServerBackupsDirectory(oldBackupPath);
+                rollback.setServerBackupsDirectory(oldBackupPath.toString());
 
                 NodeSettingsPacket packet = new NodeSettingsPacket();
                 packet.setNodeSettings(rollback);
@@ -52,5 +54,5 @@ public class BackupDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         }
     }
 
-    public record BackupDirectoryChangeTaskPayload(String oldBackupPath, String newBackupPath) {}
+    public record BackupDirectoryChangeTaskPayload(Path oldBackupPath, Path newBackupPath) {}
 }

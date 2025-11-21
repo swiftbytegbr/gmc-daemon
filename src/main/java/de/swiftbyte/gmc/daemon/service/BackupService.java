@@ -25,6 +25,7 @@ import org.zeroturnaround.zip.ZipUtil;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -368,10 +369,10 @@ public class BackupService {
         GameServer.getAllServers().forEach(server -> updateAutoBackupSettings(server.getServerId()));
     }
 
-    public static void moveBackupsDirectory(String oldBackupsDirPath, String newBackupsDirPath) throws IOException {
+    public static void moveBackupsDirectory(Path oldBackupsDirPath, Path newBackupsDirPath) throws IOException {
         // Treat inputs as backup base directories
-        File oldBackupsDir = new File(oldBackupsDirPath);
-        File newBackupsDir = new File(newBackupsDirPath);
+        File oldBackupsDir = oldBackupsDirPath.toFile();
+        File newBackupsDir = newBackupsDirPath.toFile();
 
         log.info("Moving backups from '{}' to '{}'...", oldBackupsDir.getAbsolutePath(), newBackupsDir.getAbsolutePath());
 
