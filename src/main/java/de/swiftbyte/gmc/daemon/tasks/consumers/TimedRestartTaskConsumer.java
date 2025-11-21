@@ -10,6 +10,7 @@ import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import de.swiftbyte.gmc.daemon.utils.TimedMessageUtils;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,6 +38,8 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
         boolean shouldBeCancellable = minutesLeft > 1;
         if (task.isCancellable() != shouldBeCancellable) {
             task.setCancellable(shouldBeCancellable);
+            if(task.getContext() == null) task.setContext(new HashMap<>());
+            task.getContext().put("delayMinutes", minutesLeft);
             TaskService.updateTask(task);
         }
 
