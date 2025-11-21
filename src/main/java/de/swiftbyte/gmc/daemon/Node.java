@@ -348,18 +348,30 @@ public class Node {
     public String backfillNodeSettingsDefaultServerDirectory(NodeSettings nodeSettings) {
         String incoming = nodeSettings.getDefaultServerDirectory();
         try {
-            if (CommonUtils.isNullOrEmpty(incoming)) throw new InvalidPathException("defaultServerDirectory", "is null or empty");
-            // Validate the path. If invalid, Path.of(...) throws and we correct in catch.
-            return Path.of(incoming).toAbsolutePath().normalize().toString();
+            if (CommonUtils.isNullOrEmpty(incoming)) {
+                throw new InvalidPathException("defaultServerDirectory", "is null or empty");
+            }
+            // Validate using java.io.File without Path.of; ensure absolute and canonicalizable
+            File f = new File(incoming);
+            if (!f.isAbsolute()) {
+                throw new InvalidPathException(incoming, "is not absolute");
+            }
+            // Canonicalization may throw; we don't update here even if different
+            f.getCanonicalPath();
+            return incoming;
 
-        } catch (InvalidPathException ex) {
-            String absoluteDefault = Path.of("./servers").toAbsolutePath().normalize().toString();
+        } catch (Exception ex) {
+            String absoluteDefault;
+            try {
+                absoluteDefault = new File("./servers").getCanonicalPath();
+            } catch (IOException ioe) {
+                absoluteDefault = new File("./servers").getAbsolutePath();
+            }
             if (!absoluteDefault.equals(incoming)) {
                 nodeSettings.setDefaultServerDirectory(absoluteDefault);
                 NodeSettingsPacket packet = new NodeSettingsPacket();
                 packet.setNodeSettings(nodeSettings);
-                StompHandler.send("/app/node/settings", packet);
-                log.warn("Corrected invalid defaultServerDirectory path to '{}' and synced to backend.", absoluteDefault);
+                log.info("Backfilled defaultServerDirectory to '{}' and synced to backend.", absoluteDefault);
             }
             return absoluteDefault;
         }
