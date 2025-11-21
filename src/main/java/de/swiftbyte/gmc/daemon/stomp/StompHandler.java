@@ -15,6 +15,7 @@ import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.ConnectionLostException;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -103,7 +104,20 @@ public class StompHandler {
             return;
         }
 
-        session.send(destination, payload);
+        try {
+            session.send(destination, payload);
+        } catch (MessageDeliveryException e) {
+            if (Thread.currentThread().isInterrupted()) {
+                Thread.currentThread().interrupt();
+                log.debug("Send to {} aborted because the thread was interrupted.", destination);
+                return;
+            }
+            log.error("Failed to deliver packet to {}.", destination, e);
+            Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
+        } catch (Exception e) {
+            log.error("Failed to send packet to {}.", destination, e);
+            Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
+        }
     }
 
     public static void disconnect() {
