@@ -114,7 +114,8 @@ public class Node {
             nodeName = cacheModel.getNodeName();
             teamName = cacheModel.getTeamName();
             setServerPath(cacheModel.getServerPath());
-            backupPath = Path.of(cacheModel.getBackupPath()).normalize();
+
+            if(cacheModel.getBackupPath() != null) backupPath = Path.of(cacheModel.getBackupPath()).normalize();
             isAutoUpdateEnabled = cacheModel.isAutoUpdateEnabled();
             manageFirewallAutomatically = cacheModel.isManageFirewallAutomatically();
 
