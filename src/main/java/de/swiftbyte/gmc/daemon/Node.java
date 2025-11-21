@@ -307,7 +307,7 @@ public class Node {
 
         // Resolve current and new backup paths
         Path currentBackupPath = this.backupPath;
-        Path newBackupPath = Path.of(newServerPath).normalize();
+        Path newBackupPath = Path.of(nodeSettings.getServerBackupsDirectory()).normalize();
 
         isAutoUpdateEnabled = nodeSettings.isEnableAutoUpdate();
         // Deprecated: stop/restart messages now come from GMC settings per server
