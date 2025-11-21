@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.swiftbyte.gmc.common.entity.NodeSettings;
 import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.entity.ResourceUsage;
+import de.swiftbyte.gmc.common.packet.from.bidirectional.node.NodeSettingsPacket;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeHeartbeatPacket;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeLogoutPacket;
 import de.swiftbyte.gmc.daemon.cache.CacheModel;
@@ -34,7 +35,6 @@ import oshi.SystemInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
@@ -307,6 +307,7 @@ public class Node {
 
         // Resolve current and new backup paths
         Path currentBackupPath = this.backupPath;
+        if(nodeSettings.getServerBackupsDirectory() == null) nodeSettings.setServerBackupsDirectory(backfillNodeSettingsBackupPath(nodeSettings));
         Path newBackupPath = Path.of(nodeSettings.getServerBackupsDirectory()).normalize();
 
         isAutoUpdateEnabled = nodeSettings.isEnableAutoUpdate();
@@ -333,6 +334,15 @@ public class Node {
                 log.error("Error while scheduling backups move task.", e);
             }
         }
+    }
+
+    public String backfillNodeSettingsBackupPath(NodeSettings nodeSettings) {
+        nodeSettings.setServerBackupsDirectory(this.backupPath.toString());
+        NodeSettingsPacket packet = new NodeSettingsPacket();
+        packet.setNodeSettings(nodeSettings);
+
+        StompHandler.send("/app/node/settings", packet);
+        return nodeSettings.getServerBackupsDirectory();
     }
 
 
