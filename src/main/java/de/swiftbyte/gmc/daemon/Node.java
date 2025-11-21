@@ -307,8 +307,8 @@ public class Node {
         nodeName = nodeSettings.getName();
 
         // Validate/backfill default server directory (sets to absolute ./servers if null/invalid)
-        backfillNodeSettingsDefaultServerDirectory(nodeSettings);
-        this.defaultServerPath = Path.of(nodeSettings.getDefaultServerDirectory());
+        this.defaultServerPath = Path.of(backfillNodeSettingsDefaultServerDirectory(nodeSettings));
+
 
         // Resolve current and new backup paths
         Path currentBackupPath = this.backupPath;
@@ -340,28 +340,17 @@ public class Node {
     }
 
     /**
-     * Validates and normalizes NodeSettings.defaultServerDirectory in one place.
-     * - If null/empty or invalid: set to absolute, normalized ./servers and sync.
-     * - If valid: normalize to absolute; sync only when value changes.
+     * Validates NodeSettings.defaultServerDirectory in one place.
+     * - Try: accept non-empty, valid paths as-is (no change/sync here).
+     * - Catch InvalidPathException or empty: set absolute, normalized ./servers and sync once.
      * Returns the effective directory after this call.
      */
     public String backfillNodeSettingsDefaultServerDirectory(NodeSettings nodeSettings) {
         String incoming = nodeSettings.getDefaultServerDirectory();
         try {
-            if (CommonUtils.isNullOrEmpty(incoming)) {
-                // Use exception path to unify handling
-                throw new InvalidPathException("defaultServerDirectory", "is null or empty");
-            }
-
-            String normalized = Path.of(incoming).toAbsolutePath().normalize().toString();
-            if (!normalized.equals(incoming)) {
-                nodeSettings.setDefaultServerDirectory(normalized);
-                NodeSettingsPacket packet = new NodeSettingsPacket();
-                packet.setNodeSettings(nodeSettings);
-                StompHandler.send("/app/node/settings", packet);
-                log.info("Normalized defaultServerDirectory to '{}' and synced to backend.", normalized);
-            }
-            return nodeSettings.getDefaultServerDirectory();
+            if (CommonUtils.isNullOrEmpty(incoming)) throw new InvalidPathException("defaultServerDirectory", "is null or empty");
+            // Validate the path. If invalid, Path.of(...) throws and we correct in catch.
+            return Path.of(incoming).toAbsolutePath().normalize().toString();
 
         } catch (InvalidPathException ex) {
             String absoluteDefault = Path.of("./servers").toAbsolutePath().normalize().toString();
@@ -370,7 +359,7 @@ public class Node {
                 NodeSettingsPacket packet = new NodeSettingsPacket();
                 packet.setNodeSettings(nodeSettings);
                 StompHandler.send("/app/node/settings", packet);
-                log.info("Backfilled defaultServerDirectory to '{}' and synced to backend.", absoluteDefault);
+                log.warn("Corrected invalid defaultServerDirectory path to '{}' and synced to backend.", absoluteDefault);
             }
             return absoluteDefault;
         }
