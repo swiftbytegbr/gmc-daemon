@@ -39,25 +39,20 @@ public class TaskService {
         executor = Executors.newCachedThreadPool();
 
         registerConsumer(NodeTask.Type.BACKUP, new BackupTaskConsumer());
-        try {
-            registerConsumer(NodeTask.Type.BACKUP_DIRECTORY_CHANGE, new BackupDirectoryChangeTaskConsumer());
-        } catch (NoClassDefFoundError | Exception ignored) {
-            // Older common lib without this type; safe to ignore
-        }
-        // Timed actions
-        try {
-            // Only register if enum values exist in current common lib
-            registerConsumer(NodeTask.Type.TIMED_SHUTDOWN, new TimedShutdownTaskConsumer());
-            registerConsumer(NodeTask.Type.TIMED_RESTART, new TimedRestartTaskConsumer());
-        } catch (NoClassDefFoundError | Exception ignored) {
-            // Older common lib without these types; safe to ignore
-        }
+        registerConsumer(NodeTask.Type.BACKUP_DIRECTORY_CHANGE, new BackupDirectoryChangeTaskConsumer());
+
+        registerConsumer(NodeTask.Type.TIMED_SHUTDOWN, new TimedShutdownTaskConsumer());
+        registerConsumer(NodeTask.Type.TIMED_RESTART, new TimedRestartTaskConsumer());
 
     }
 
     public static void shutdownTaskService() {
 
-        TASKS.keySet().forEach(id -> cancelTask(id, true));
+        TASKS.forEach((_, taskRun) -> {
+            if(CONSUMERS.get(taskRun.task.getType()).isCancellable(taskRun.payload)) {
+                cancelTask(taskRun.task.getId(), false);
+            }
+        });
 
         if(executor != null) {
             executor.shutdownNow();
@@ -87,7 +82,6 @@ public class TaskService {
         task.setNodeId(nodeId);
         task.setTargetIds(Arrays.asList(affectedIds));
         task.setCancellable(CONSUMERS.get(type).isCancellable(payload));
-        //TODO add is blocking
 
         log.debug("Creating task: id={}, type={}, nodeId={}, targets={}, initialCancellable={}",
                 task.getId(), type, nodeId, Arrays.toString(affectedIds), task.isCancellable());

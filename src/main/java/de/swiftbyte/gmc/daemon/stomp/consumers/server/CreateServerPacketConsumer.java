@@ -3,9 +3,12 @@ package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 import de.swiftbyte.gmc.common.entity.GameType;
 import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.from.backend.server.ServerCreatePacket;
+import de.swiftbyte.gmc.common.packet.from.daemon.server.ServerDeleteBackupResponsePacket;
+import de.swiftbyte.gmc.common.packet.from.daemon.server.ServerDeleteResponse;
 import de.swiftbyte.gmc.daemon.server.ArkServer;
 import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.AseServer;
+import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
@@ -23,6 +26,11 @@ public class CreateServerPacketConsumer implements StompPacketConsumer<ServerCre
             SettingProfile settings = ServerUtils.getSettingProfile(packet.getSettingProfileId());
             if (settings == null) {
                 log.error("Setting profile '{}' not found for game server '{}'. Cancel server creation.", packet.getSettingProfileId(), packet.getServerName());
+
+                //Delete server in backend
+                ServerDeleteResponse deletePacket = new ServerDeleteResponse();
+                deletePacket.setServerId(packet.getServerId());
+                StompHandler.send("/app/server/delete", deletePacket);
                 return;
             }
 
@@ -36,7 +44,14 @@ public class CreateServerPacketConsumer implements StompPacketConsumer<ServerCre
 
             server.install().queue(success -> {
                 if(success) log.info("Installed server with id {} and name {} successfully.", packet.getServerId(), packet.getServerName());
-                else log.error("Installing  server with id {} and name {} failed.", packet.getServerId(), packet.getServerName());
+                else {
+                    log.error("Installing  server with id {} and name {} failed.", packet.getServerId(), packet.getServerName());
+
+                    //Delete server in backend
+                    ServerDeleteResponse deletePacket = new ServerDeleteResponse();
+                    deletePacket.setServerId(packet.getServerId());
+                    StompHandler.send("/app/server/delete", deletePacket);
+                }
             });
         } else {
             log.error("Game {} is not supported!", packet.getGameType());
