@@ -107,7 +107,9 @@ public class TaskService {
             } catch (Exception e) {
                 log.error("An unhandled exception occurred while executing task {}", type, e);
                 task.setState(NodeTask.State.FAILED);
-                sendUpdatePacket(task);
+                NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
+                completePacket.setNodeTask(task);
+                StompHandler.send("/app/node/task-complete", completePacket);
                 log.debug("Task failed: id={}, type={}", task.getId(), task.getType());
             }
 
