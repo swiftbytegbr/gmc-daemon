@@ -21,5 +21,13 @@ public final class PathValidationUtils {
         }
         return ok;
     }
-}
 
+    // Returns canonical path if available, else absolute path
+    public static String canonicalizeOrAbsolute(String path) {
+        try {
+            return new File(path).getCanonicalPath();
+        } catch (Exception e) {
+            return new File(path).getAbsolutePath();
+        }
+    }
+}

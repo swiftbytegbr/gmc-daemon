@@ -55,8 +55,8 @@ public class Node {
 
     private String serverPath;
 
-    @Setter
-    private Path defaultServerPath;
+    // Track current valid default server directory for rollback
+    private Path defaultServerDirectory;
 
     @Setter
     private Path backupPath;
@@ -85,6 +85,8 @@ public class Node {
         setServerPath("./servers");
         // Default backups to serverPath/backups until settings provide a path
         this.backupPath = Path.of(serverPath, "backups");
+        // Initialize current valid default dir to canonical ./servers
+        this.defaultServerDirectory = Path.of(PathValidationUtils.canonicalizeOrAbsolute("./servers"));
 
         getCachedNodeInformation();
         BackupService.initialiseBackupService();
@@ -196,7 +198,7 @@ public class Node {
 
         OkHttpClient client = new OkHttpClient();
 
-        String defaultServerDirectory = Path.of("./servers").toAbsolutePath().normalize().toString();
+        String defaultServerDirectory = PathValidationUtils.canonicalizeOrAbsolute("./servers");
         ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
         ObjectNode jsonNode = mapper.createObjectNode();
         jsonNode.put("inviteToken", String.valueOf(token));
@@ -302,8 +304,12 @@ public class Node {
         nodeName = nodeSettings.getName();
 
         // Validate/backfill default server directory (sets to absolute ./servers if null/invalid)
-        this.defaultServerPath = Path.of(backfillNodeSettingsDefaultServerDirectory(nodeSettings));
+        backfillNodeSettingsDefaultServerDirectory(nodeSettings);
 
+        // Apply server path from settings (default to ./servers)
+        String incomingServerPath = !CommonUtils.isNullOrEmpty(nodeSettings.getServerPath()) ? nodeSettings.getServerPath() : "./servers";
+        String newServerPath = Path.of(incomingServerPath).normalize().toString();
+        setServerPath(newServerPath);
 
         // Resolve current and new backup paths
         Path currentBackupPath = this.backupPath;
@@ -339,20 +345,30 @@ public class Node {
      * If null/empty or write test fails: set to absolute ./servers and sync once.
      */
     public String backfillNodeSettingsDefaultServerDirectory(NodeSettings nodeSettings) {
-        String dir = nodeSettings.getDefaultServerDirectory();
+        String incoming = nodeSettings.getDefaultServerDirectory();
 
-        if (!PathValidationUtils.isWritableDirectory(dir)) {
-            String def = new File("./servers").getAbsolutePath();
-            if (!def.equals(dir)) {
-                nodeSettings.setDefaultServerDirectory(def);
+        boolean incomingValid = PathValidationUtils.isWritableDirectory(incoming);
+        if (!incomingValid) {
+            String fallback = (defaultServerDirectory != null && PathValidationUtils.isWritableDirectory(defaultServerDirectory.toString()))
+                    ? defaultServerDirectory.toString()
+                    : PathValidationUtils.canonicalizeOrAbsolute("./servers");
+
+            if (!fallback.equals(incoming)) {
+                nodeSettings.setDefaultServerDirectory(fallback);
                 NodeSettingsPacket packet = new NodeSettingsPacket();
                 packet.setNodeSettings(nodeSettings);
                 StompHandler.send("/app/node/settings", packet);
-                log.info("Backfilled defaultServerDirectory to '{}' (invalid or empty).", def);
+                log.info("Backfilled defaultServerDirectory to '{}' (invalid or empty).", fallback);
             }
-            return def;
+            if (PathValidationUtils.isWritableDirectory(fallback)) {
+                defaultServerDirectory = Path.of(PathValidationUtils.canonicalizeOrAbsolute(fallback));
+            }
+            return fallback;
         }
-        return dir;
+
+        // Update current valid to canonicalized incoming
+        defaultServerDirectory = Path.of(PathValidationUtils.canonicalizeOrAbsolute(incoming));
+        return incoming;
     }
 
     public String backfillNodeSettingsBackupPath(NodeSettings nodeSettings) {
