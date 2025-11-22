@@ -14,6 +14,8 @@ import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
+import java.nio.file.Path;
+
 @Slf4j
 @StompPacketInfo(path = "/user/queue/server/create", packetClass = ServerCreatePacket.class)
 public class CreateServerPacketConsumer implements StompPacketConsumer<ServerCreatePacket> {
@@ -36,10 +38,12 @@ public class CreateServerPacketConsumer implements StompPacketConsumer<ServerCre
 
             ArkServer server;
 
+            Path installDir = Path.of(packet.getServerDirectory(), packet.getServerId());
+
             if (packet.getGameType() == GameType.ARK_ASCENDED) {
-                server = new AsaServer(packet.getServerId(), packet.getServerName(), settings, true);
+                server = new AsaServer(packet.getServerId(), packet.getServerName(), installDir, settings, true);
             } else {
-                server = new AseServer(packet.getServerId(), packet.getServerName(), settings, true);
+                server = new AseServer(packet.getServerId(), packet.getServerName(), installDir, settings, true);
             }
 
             server.install().queue(success -> {

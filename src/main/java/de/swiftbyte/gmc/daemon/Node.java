@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.swiftbyte.gmc.common.entity.NodeSettings;
 import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.entity.ResourceUsage;
-import de.swiftbyte.gmc.common.packet.from.bidirectional.node.NodeSettingsPacket;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeHeartbeatPacket;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeLogoutPacket;
 import de.swiftbyte.gmc.daemon.cache.CacheModel;

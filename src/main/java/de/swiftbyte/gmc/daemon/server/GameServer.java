@@ -11,6 +11,7 @@ import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.utils.action.AsyncAction;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -51,11 +52,11 @@ public abstract class GameServer {
 
     public abstract String getGameId();
 
-    public GameServer(String id, String friendlyName, SettingProfile settings) {
+    public GameServer(String id, @NotNull Path installDir, String friendlyName, SettingProfile settings) {
 
         this.serverId = id;
         this.friendlyName = friendlyName;
-        this.installDir = Path.of(Node.INSTANCE.getServerPath() + "/" + friendlyName.toLowerCase()).toAbsolutePath();
+        this.installDir = installDir.toAbsolutePath();
         this.settings = settings;
 
         setState(GameServerState.OFFLINE);

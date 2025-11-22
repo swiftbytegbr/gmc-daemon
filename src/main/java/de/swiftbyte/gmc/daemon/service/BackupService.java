@@ -178,8 +178,8 @@ public class BackupService {
         }
         backup.setAutoBackup(autoBackup);
 
-        File tempBackupLocation = new File(NodeUtils.TMP_PATH + server.getServerId() + "/" + backup.getBackupId());
-        File backupLocation = new File(Node.INSTANCE.getBackupPath() + "/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
+        File tempBackupLocation = Path.of(NodeUtils.TMP_PATH, server.getServerId(), backup.getBackupId()).toFile();
+        File backupLocation = Path.of(Node.INSTANCE.getBackupPath(), server.getServerId(), backup.getName() + ".zip").toFile();
 
         //TODO find a better way to handle different save locations for different game servers then hardcoding it here
         File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks" + (server instanceof AsaServer ? "/" + server.getSettings().getMap() : ""));
@@ -247,7 +247,7 @@ public class BackupService {
         }
 
         log.debug("Deleting backup '{}'...", backup.getName());
-        File backupLocation = new File(Node.INSTANCE.getBackupPath() + "/" + GameServer.getServerById(backup.getServerId()).getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
+        File backupLocation = Path.of(Node.INSTANCE.getBackupPath(), server.getServerId(), backup.getName() + ".zip").toFile();
         if (!backupLocation.exists()) {
             log.error("Could not delete backup because backup location does not exist!");
             backups.remove(backupId);
@@ -295,7 +295,7 @@ public class BackupService {
 
         server.stop(false).complete();
 
-        File backupLocation = new File(Node.INSTANCE.getBackupPath() + "/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
+        File backupLocation = Path.of(Node.INSTANCE.getBackupPath(), server.getServerId(), backup.getName() + ".zip").toFile();
 
         //TODO find a better way to handle different save locations for different game servers then hardcoding it here
         File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks" + (server instanceof AsaServer ? "/" + server.getSettings().getMap() : ""));

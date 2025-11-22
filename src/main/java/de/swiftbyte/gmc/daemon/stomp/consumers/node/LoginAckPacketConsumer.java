@@ -14,6 +14,7 @@ import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 
@@ -34,17 +35,25 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
             log.info("Loading '{}' game servers...", packet.getGameServers().size());
             GameServer.abandonAll();
             packet.getGameServers().forEach(gameServer -> {
-                log.debug("Loading game server '{}' as type {}...", gameServer.getDisplayName(), gameServer.getType());
+                try {
+                    log.debug("Loading game server '{}' as type {}...", gameServer.getDisplayName(), gameServer.getType());
 
-                String serverInstallDir = ServerUtils.getCachedServerInstallDir(gameServer.getId());
+                    if (gameServer.getServerDirectory() == null) {
+                        throw new RuntimeException("Server installation directory could not be found.");
+                    }
 
-                SettingProfile settings = ServerUtils.getSettingProfile(gameServer.getSettingProfileId());
-                if (settings == null) {
-                    log.error("Setting profile '{}' not found for game server '{}'. Canceling server initialization.", gameServer.getSettingProfileId(), gameServer.getDisplayName());
-                    return;
+                    Path serverInstallDir = Path.of(gameServer.getServerDirectory(), gameServer.getId());
+
+                    SettingProfile settings = ServerUtils.getSettingProfile(gameServer.getSettingProfileId());
+                    if (settings == null) {
+                        log.error("Setting profile '{}' not found for game server '{}'. Canceling server initialization.", gameServer.getSettingProfileId(), gameServer.getDisplayName());
+                        return;
+                    }
+
+                    createGameServer(gameServer, settings, serverInstallDir);
+                } catch (Exception e) {
+                    log.error("An unhandled exception occurred while initializing game server '{}'.", gameServer.getDisplayName(), e);
                 }
-
-                createGameServer(gameServer, settings, serverInstallDir);
             });
 
             Node.INSTANCE.updateSettings(packet.getNodeSettings());
@@ -68,8 +77,7 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
         }
     }
 
-    private void createGameServer(GameServerDto gameServer, SettingProfile settings, String serverInstallDir) {
-        Path installDir = serverInstallDir != null ? Path.of(serverInstallDir) : null;
+    private void createGameServer(GameServerDto gameServer, SettingProfile settings, @NotNull Path serverInstallDir) {
 
         if (gameServer.getType() == null) {
             log.error("Game server type is null for game server '{}'. Using ARK_ASCENDED to continue!", gameServer.getDisplayName());
@@ -78,9 +86,9 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
 
         switch (gameServer.getType()) {
             case ARK_ASCENDED ->
-                    new AsaServer(gameServer.getId(), gameServer.getDisplayName(), installDir, settings, false);
+                    new AsaServer(gameServer.getId(), gameServer.getDisplayName(), serverInstallDir, settings, false);
             case ARK_EVOLVED ->
-                    new AseServer(gameServer.getId(), gameServer.getDisplayName(), installDir, settings, false);
+                    new AseServer(gameServer.getId(), gameServer.getDisplayName(), serverInstallDir, settings, false);
             default -> log.error("Unknown game server type '{}'.", gameServer.getType());
         }
     }

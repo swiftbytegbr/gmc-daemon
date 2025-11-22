@@ -15,11 +15,13 @@ import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import xyz.astroark.Rcon;
 import xyz.astroark.exception.AuthenticationException;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -33,8 +35,8 @@ public abstract class ArkServer extends GameServer {
     @Setter
     protected String rconPassword;
 
-    public ArkServer(String id, String friendlyName, SettingProfile settings) {
-        super(id, friendlyName, settings);
+    public ArkServer(String id, @NotNull Path installDir, String friendlyName, SettingProfile settings) {
+        super(id, installDir, friendlyName, settings);
     }
 
     @Override
