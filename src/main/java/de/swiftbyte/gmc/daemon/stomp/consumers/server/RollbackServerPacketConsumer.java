@@ -1,8 +1,11 @@
 package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 
 import de.swiftbyte.gmc.common.packet.from.backend.server.ServerRollbackPacket;
+import de.swiftbyte.gmc.common.model.NodeTask;
+import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.GameServer;
-import de.swiftbyte.gmc.daemon.service.BackupService;
+import de.swiftbyte.gmc.daemon.service.TaskService;
+import de.swiftbyte.gmc.daemon.tasks.consumers.RollbackTaskConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +20,13 @@ public class RollbackServerPacketConsumer implements StompPacketConsumer<ServerR
         GameServer server = GameServer.getServerById(packet.getServerId());
 
         if (server != null) {
-            BackupService.rollbackBackup(packet.getBackupId(), packet.isRollbackPlayers());
+            // Create a ROLLBACK task using RollbackTaskConsumer payload
+            TaskService.createTask(
+                    NodeTask.Type.ROLLBACK,
+                    new RollbackTaskConsumer.RollbackTaskPayload(packet.getBackupId(), packet.isRollbackPlayers()),
+                    Node.INSTANCE.getNodeId(),
+                    packet.getServerId()
+            );
         } else {
             log.error("Server with id {} not found!", packet.getServerId());
         }

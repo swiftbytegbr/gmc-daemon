@@ -12,6 +12,7 @@ import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
+import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.NodeUtils;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
@@ -105,7 +106,13 @@ public class BackupService {
                         return;
                     }
                     log.debug("Starting auto backup...");
-                    BackupService.backupServer(serverId, true);
+                    // Schedule backup as a non-cancellable task via TaskService
+                    TaskService.createTask(
+                            de.swiftbyte.gmc.common.model.NodeTask.Type.BACKUP,
+                            new de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer.BackupTaskPayload(true, null),
+                            Node.INSTANCE.getNodeId(),
+                            serverId
+                    );
                 } catch (Exception e) {
                     log.error("Unhandled exception during auto backup for server '{}'.", server.getFriendlyName(), e);
                 }

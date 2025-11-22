@@ -10,6 +10,7 @@ import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.BackupDirectoryChangeTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.TimedRestartTaskConsumer;
+import de.swiftbyte.gmc.daemon.tasks.consumers.RollbackTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.TimedShutdownTaskConsumer;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,6 +40,7 @@ public class TaskService {
         executor = Executors.newCachedThreadPool();
 
         registerConsumer(NodeTask.Type.BACKUP, new BackupTaskConsumer());
+        registerConsumer(NodeTask.Type.ROLLBACK, new RollbackTaskConsumer());
         registerConsumer(NodeTask.Type.BACKUP_DIRECTORY_CHANGE, new BackupDirectoryChangeTaskConsumer());
 
         registerConsumer(NodeTask.Type.TIMED_SHUTDOWN, new TimedShutdownTaskConsumer());
