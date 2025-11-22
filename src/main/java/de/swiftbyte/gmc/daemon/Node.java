@@ -115,6 +115,9 @@ public class Node {
             nodeName = cacheModel.getNodeName();
             teamName = cacheModel.getTeamName();
             setServerPath(cacheModel.getServerPath());
+            if (cacheModel.getDefaultServerDirectory() != null) {
+                this.defaultServerDirectory = Path.of(PathValidationUtils.canonicalizeOrAbsolute(cacheModel.getDefaultServerDirectory())).normalize();
+            }
 
             if(cacheModel.getBackupPath() != null) backupPath = Path.of(cacheModel.getBackupPath()).normalize();
             isAutoUpdateEnabled = cacheModel.isAutoUpdateEnabled();
@@ -304,7 +307,8 @@ public class Node {
         nodeName = nodeSettings.getName();
 
         // Validate/backfill default server directory (sets to absolute ./servers if null/invalid)
-        backfillNodeSettingsDefaultServerDirectory(nodeSettings);
+        String effectiveDefaultDir = NodeSettingsUtils.validateOrBackfillDefaultServerDirectory(nodeSettings, this.defaultServerDirectory);
+        this.defaultServerDirectory = Path.of(PathValidationUtils.canonicalizeOrAbsolute(effectiveDefaultDir));
 
         // Apply server path from settings (default to ./servers)
         String incomingServerPath = !CommonUtils.isNullOrEmpty(nodeSettings.getServerPath()) ? nodeSettings.getServerPath() : "./servers";
@@ -313,7 +317,7 @@ public class Node {
 
         // Resolve and validate backup paths
         Path currentBackupPath = this.backupPath;
-        String effectiveBackupDir = validateOrBackfillBackupDirectory(nodeSettings, currentBackupPath);
+        String effectiveBackupDir = NodeSettingsUtils.validateOrBackfillServerBackupsDirectory(nodeSettings, currentBackupPath);
         Path newBackupPath = Path.of(effectiveBackupDir).normalize();
         // Always update local cache value from settings resolution (covers cache->backend and backend->cache sync)
         this.backupPath = newBackupPath;
@@ -343,53 +347,7 @@ public class Node {
         }
     }
 
-    /**
-     * Validates NodeSettings.defaultServerDirectory using PathValidationUtils.
-     * If null/empty or write test fails: set to absolute ./servers and sync once.
-     */
-    public String backfillNodeSettingsDefaultServerDirectory(NodeSettings nodeSettings) {
-        String incoming = nodeSettings.getDefaultServerDirectory();
-
-        boolean incomingValid = PathValidationUtils.isWritableDirectory(incoming);
-        if (!incomingValid) {
-            String fallback = (defaultServerDirectory != null && PathValidationUtils.isWritableDirectory(defaultServerDirectory.toString()))
-                    ? defaultServerDirectory.toString()
-                    : PathValidationUtils.canonicalizeOrAbsolute("./servers");
-
-            if (!fallback.equals(incoming)) {
-                nodeSettings.setDefaultServerDirectory(fallback);
-                NodeSettingsPacket packet = new NodeSettingsPacket();
-                packet.setNodeSettings(nodeSettings);
-                StompHandler.send("/app/node/settings", packet);
-                log.info("Backfilled defaultServerDirectory to '{}' (invalid or empty).", fallback);
-            }
-            if (PathValidationUtils.isWritableDirectory(fallback)) {
-                defaultServerDirectory = Path.of(PathValidationUtils.canonicalizeOrAbsolute(fallback));
-            }
-            return fallback;
-        }
-
-        // Update current valid to canonicalized incoming
-        defaultServerDirectory = Path.of(PathValidationUtils.canonicalizeOrAbsolute(incoming));
-        return incoming;
-    }
-
-    // Validate incoming backup directory; if null/invalid, backfill to currentBackupPath and sync once
-    private String validateOrBackfillBackupDirectory(NodeSettings nodeSettings, Path currentBackupPath) {
-        String incoming = nodeSettings.getServerBackupsDirectory();
-        if (CommonUtils.isNullOrEmpty(incoming) || !PathValidationUtils.isWritableDirectory(incoming)) {
-            String fallback = currentBackupPath.normalize().toString();
-            if (!fallback.equals(incoming)) {
-                nodeSettings.setServerBackupsDirectory(fallback);
-                NodeSettingsPacket packet = new NodeSettingsPacket();
-                packet.setNodeSettings(nodeSettings);
-                StompHandler.send("/app/node/settings", packet);
-                log.info("Backfilled serverBackupsDirectory to '{}' (invalid or empty).", fallback);
-            }
-            return fallback;
-        }
-        return incoming;
-    }
+    
 
 
     public void delete() {

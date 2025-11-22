@@ -157,10 +157,15 @@ public class NodeUtils {
             gameServers.put(gameServer.getServerId(), gameServerCacheModel);
         }
 
+        String defaultServers = node.getDefaultServerDirectory() != null
+                ? node.getDefaultServerDirectory().normalize().toString()
+                : PathValidationUtils.canonicalizeOrAbsolute("./servers");
+
         CacheModel cacheModel = CacheModel.builder()
                 .nodeName(node.getNodeName())
                 .teamName(node.getTeamName())
                 .serverPath(node.getServerPath())
+                .defaultServerDirectory(defaultServers)
                 .backupPath(node.getBackupPath())
                 .isAutoUpdateEnabled(node.isAutoUpdateEnabled())
                 .gameServerCacheModelHashMap(gameServers)
