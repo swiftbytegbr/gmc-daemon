@@ -13,6 +13,9 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +74,16 @@ public abstract class GameServer {
         }, 0, 10, TimeUnit.SECONDS);
 
         BackupService.updateAutoBackupSettings(serverId);
+
+        //Generate server aliases
+        Path aliasPath = installDir.getParent().resolve(friendlyName + " - Link");
+        if(Files.exists(aliasPath)) return;
+
+        try {
+            Files.createSymbolicLink(aliasPath, installDir);
+        } catch (IOException e) {
+            log.warn("Failed to create symbolic link for '{}'.", friendlyName, e);
+        }
     }
 
     public abstract AsyncAction<Boolean> install();
