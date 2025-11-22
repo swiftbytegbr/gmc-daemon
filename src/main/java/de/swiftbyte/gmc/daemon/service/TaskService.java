@@ -101,6 +101,9 @@ public class TaskService {
 
                 CONSUMERS.get(type).run(task, payload);
 
+                // Mark success and completion explicitly
+                task.setState(NodeTask.State.SUCCEEDED);
+                task.setFinishedAt(Instant.now());
                 NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
                 completePacket.setNodeTask(task);
                 StompHandler.send("/app/node/task-complete", completePacket);
@@ -109,6 +112,8 @@ public class TaskService {
             } catch (Exception e) {
                 log.error("An unhandled exception occurred while executing task {}", type, e);
                 task.setState(NodeTask.State.FAILED);
+                task.setErrorMessage(e.getMessage());
+                task.setFinishedAt(Instant.now());
                 NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
                 completePacket.setNodeTask(task);
                 StompHandler.send("/app/node/task-complete", completePacket);
@@ -152,6 +157,7 @@ public class TaskService {
 
         CONSUMERS.get(taskRun.task.getType()).cancel(taskRun.task);
         taskRun.task.setState(NodeTask.State.CANCELED);
+        taskRun.task.setFinishedAt(Instant.now());
         // Inform backend about cancellation and completion (so it can remove stored task)
         sendUpdatePacket(taskRun.task);
         NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
