@@ -15,11 +15,7 @@ import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.tasks.consumers.BackupDirectoryChangeTaskConsumer;
-import de.swiftbyte.gmc.daemon.utils.CommonUtils;
-import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
-import de.swiftbyte.gmc.daemon.utils.ConnectionState;
-import de.swiftbyte.gmc.daemon.utils.NodeUtils;
-import de.swiftbyte.gmc.daemon.utils.ServerUtils;
+import de.swiftbyte.gmc.daemon.utils.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +32,6 @@ import oshi.SystemInfo;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.InvalidPathException;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Executors;
@@ -340,41 +335,24 @@ public class Node {
     }
 
     /**
-     * Validates NodeSettings.defaultServerDirectory in one place.
-     * - Try: accept non-empty, valid paths as-is (no change/sync here).
-     * - Catch InvalidPathException or empty: set absolute, normalized ./servers and sync once.
-     * Returns the effective directory after this call.
+     * Validates NodeSettings.defaultServerDirectory using PathValidationUtils.
+     * If null/empty or write test fails: set to absolute ./servers and sync once.
      */
     public String backfillNodeSettingsDefaultServerDirectory(NodeSettings nodeSettings) {
-        String incoming = nodeSettings.getDefaultServerDirectory();
-        try {
-            if (CommonUtils.isNullOrEmpty(incoming)) {
-                throw new InvalidPathException("defaultServerDirectory", "is null or empty");
-            }
-            // Validate using java.io.File without Path.of; ensure absolute and canonicalizable
-            File f = new File(incoming);
-            if (!f.isAbsolute()) {
-                throw new InvalidPathException(incoming, "is not absolute");
-            }
-            // Canonicalization may throw; we don't update here even if different
-            f.getCanonicalPath();
-            return incoming;
+        String dir = nodeSettings.getDefaultServerDirectory();
 
-        } catch (Exception ex) {
-            String absoluteDefault;
-            try {
-                absoluteDefault = new File("./servers").getCanonicalPath();
-            } catch (IOException ioe) {
-                absoluteDefault = new File("./servers").getAbsolutePath();
-            }
-            if (!absoluteDefault.equals(incoming)) {
-                nodeSettings.setDefaultServerDirectory(absoluteDefault);
+        if (!PathValidationUtils.isWritableDirectory(dir)) {
+            String def = new File("./servers").getAbsolutePath();
+            if (!def.equals(dir)) {
+                nodeSettings.setDefaultServerDirectory(def);
                 NodeSettingsPacket packet = new NodeSettingsPacket();
                 packet.setNodeSettings(nodeSettings);
-                log.info("Backfilled defaultServerDirectory to '{}' and synced to backend.", absoluteDefault);
+                StompHandler.send("/app/node/settings", packet);
+                log.info("Backfilled defaultServerDirectory to '{}' (invalid or empty).", def);
             }
-            return absoluteDefault;
+            return def;
         }
+        return dir;
     }
 
     public String backfillNodeSettingsBackupPath(NodeSettings nodeSettings) {
