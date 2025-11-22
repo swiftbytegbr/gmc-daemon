@@ -101,13 +101,17 @@ public class TaskService {
 
                 CONSUMERS.get(type).run(task, payload);
 
-                // Mark success and completion explicitly
-                task.setState(NodeTask.State.SUCCEEDED);
-                task.setFinishedAt(Instant.now());
+                // If consumer didn't set terminal state, mark as succeeded by default
+                if (task.getState() == null || task.getState() == NodeTask.State.RUNNING || task.getState() == NodeTask.State.PENDING) {
+                    task.setState(NodeTask.State.SUCCEEDED);
+                }
+                if (task.getFinishedAt() == null) {
+                    task.setFinishedAt(Instant.now());
+                }
                 NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
                 completePacket.setNodeTask(task);
                 StompHandler.send("/app/node/task-complete", completePacket);
-                log.debug("Task completed: id={}, type={}", task.getId(), task.getType());
+                log.debug("Task completed: id={}, type={}, finalState={}", task.getId(), task.getType(), task.getState());
 
             } catch (Exception e) {
                 log.error("An unhandled exception occurred while executing task {}", type, e);

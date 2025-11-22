@@ -147,8 +147,7 @@ public class BackupService {
     public static void backupServer(GameServer server, boolean autoBackup, String name) {
 
         if (server == null) {
-            log.error("Could not backup server because server id was not found!");
-            return;
+            throw new IllegalArgumentException("Cannot create backup: server not found");
         }
 
         if (backupsSuspended) {
@@ -196,8 +195,7 @@ public class BackupService {
         }
 
         if (!saveLocation.exists()) {
-            log.error("Could not backup server because save location does not exist!");
-            return;
+            throw new IllegalStateException("Save location does not exist: " + saveLocation.getAbsolutePath());
         }
 
         log.debug("Copying save files to temporary backup location...");
@@ -228,7 +226,7 @@ public class BackupService {
 
             saveBackupCache();
         } catch (IOException e) {
-            log.error("An unknown error occurred while backing up server '{}'.", server.getFriendlyName(), e);
+            throw new RuntimeException("Backup failed for server '" + server.getFriendlyName() + "': " + e.getMessage(), e);
         }
     }
 
@@ -287,14 +285,12 @@ public class BackupService {
 
         Backup backup = backups.get(backupId);
         if (backup == null) {
-            log.error("Could not find backup because backup id was not found!");
-            return;
+            throw new IllegalArgumentException("Backup not found: " + backupId);
         }
 
         GameServer server = GameServer.getServerById(backup.getServerId());
         if (server == null) {
-            log.error("Could not delete backup because server id was not found!");
-            return;
+            throw new IllegalStateException("Server not found for backup: " + backup.getServerId());
         }
 
         server.stop(false).complete();
@@ -305,25 +301,29 @@ public class BackupService {
         File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks" + (server instanceof AsaServer ? "/" + server.getSettings().getMap() : ""));
 
         if (!backupLocation.exists()) {
-            log.error("Could not rollback backup because backup location does not exist!");
-            return;
+            throw new IllegalStateException("Backup file does not exist: " + backupLocation.getAbsolutePath());
         }
 
         if (!saveLocation.exists()) {
-            log.error("Could not rollback backup because server save location does not exist!");
-            return;
+            throw new IllegalStateException("Server save location does not exist: " + saveLocation.getAbsolutePath());
         }
 
-        if (playerData) {
-            File[] playerDataFiles = saveLocation.listFiles();
-
-            for (File playerDataFile : playerDataFiles) {
-                playerDataFile.delete();
+        try {
+            if (playerData) {
+                File[] playerDataFiles = saveLocation.listFiles();
+                if (playerDataFiles != null) {
+                    for (File playerDataFile : playerDataFiles) {
+                        if (!playerDataFile.delete()) {
+                            // Non-fatal: try to continue and let Zip overwrite
+                        }
+                    }
+                }
+                ZipUtil.unpack(backupLocation, saveLocation);
+            } else {
+                ZipUtil.unpackEntry(backupLocation, server.getSettings().getMap() + ".ark", new File(saveLocation + "/" + server.getSettings().getMap() + ".ark"));
             }
-
-            ZipUtil.unpack(backupLocation, saveLocation);
-        } else {
-            ZipUtil.unpackEntry(backupLocation, server.getSettings().getMap() + ".ark", new File(saveLocation + "/" + server.getSettings().getMap() + ".ark"));
+        } catch (Exception e) {
+            throw new RuntimeException("Rollback failed for backup '" + backupId + "': " + e.getMessage(), e);
         }
 
     }
