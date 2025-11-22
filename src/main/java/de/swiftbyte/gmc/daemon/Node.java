@@ -311,10 +311,10 @@ public class Node {
         String newServerPath = Path.of(incomingServerPath).normalize().toString();
         setServerPath(newServerPath);
 
-        // Resolve current and new backup paths
+        // Resolve and validate backup paths
         Path currentBackupPath = this.backupPath;
-        if(nodeSettings.getServerBackupsDirectory() == null) nodeSettings.setServerBackupsDirectory(backfillNodeSettingsBackupPath(nodeSettings));
-        Path newBackupPath = Path.of(nodeSettings.getServerBackupsDirectory()).normalize();
+        String effectiveBackupDir = validateOrBackfillBackupDirectory(nodeSettings, currentBackupPath);
+        Path newBackupPath = Path.of(effectiveBackupDir).normalize();
 
         isAutoUpdateEnabled = nodeSettings.isEnableAutoUpdate();
         // Deprecated: stop/restart messages now come from GMC settings per server
@@ -371,13 +371,21 @@ public class Node {
         return incoming;
     }
 
-    public String backfillNodeSettingsBackupPath(NodeSettings nodeSettings) {
-        nodeSettings.setServerBackupsDirectory(this.backupPath.toString());
-        NodeSettingsPacket packet = new NodeSettingsPacket();
-        packet.setNodeSettings(nodeSettings);
-
-        StompHandler.send("/app/node/settings", packet);
-        return nodeSettings.getServerBackupsDirectory();
+    // Validate incoming backup directory; if null/invalid, backfill to currentBackupPath and sync once
+    private String validateOrBackfillBackupDirectory(NodeSettings nodeSettings, Path currentBackupPath) {
+        String incoming = nodeSettings.getServerBackupsDirectory();
+        if (CommonUtils.isNullOrEmpty(incoming) || !PathValidationUtils.isWritableDirectory(incoming)) {
+            String fallback = currentBackupPath.normalize().toString();
+            if (!fallback.equals(incoming)) {
+                nodeSettings.setServerBackupsDirectory(fallback);
+                NodeSettingsPacket packet = new NodeSettingsPacket();
+                packet.setNodeSettings(nodeSettings);
+                StompHandler.send("/app/node/settings", packet);
+                log.info("Backfilled serverBackupsDirectory to '{}' (invalid or empty).", fallback);
+            }
+            return fallback;
+        }
+        return incoming;
     }
 
 

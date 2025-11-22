@@ -38,7 +38,13 @@ public class BackupDirectoryChangeTaskConsumer implements NodeTaskConsumer {
                 rollback.setServerPath(Node.INSTANCE.getServerPath());
                 rollback.setEnableAutoUpdate(Node.INSTANCE.isAutoUpdateEnabled());
                 rollback.setManageFirewallAutomatically(Node.INSTANCE.isManageFirewallAutomatically());
-                // Use backend-provided helper to revert backups dir to server-based default
+                // Ensure defaultServerDirectory is preserved during rollback
+                try {
+                    if (Node.INSTANCE.getDefaultServerDirectory() != null) {
+                        rollback.setDefaultServerDirectory(Node.INSTANCE.getDefaultServerDirectory().toString());
+                    }
+                } catch (Exception ignored) { }
+                // Revert backups dir to the previous value
                 rollback.setServerBackupsDirectory(oldBackupPath.toString());
 
                 NodeSettingsPacket packet = new NodeSettingsPacket();
