@@ -83,8 +83,8 @@ public class Node {
         this.teamName = "gmc";
 
         setServerPath("./servers");
-        // Default backups to serverPath/backups until settings provide a path
-        this.backupPath = Path.of(serverPath, "backups");
+        // Default backups to absolute ./backups until settings provide a path
+        this.backupPath = Path.of(PathValidationUtils.canonicalizeOrAbsolute("./backups"));
         // Initialize current valid default dir to canonical ./servers
         this.defaultServerDirectory = Path.of(PathValidationUtils.canonicalizeOrAbsolute("./servers"));
 
@@ -315,11 +315,14 @@ public class Node {
         Path currentBackupPath = this.backupPath;
         String effectiveBackupDir = validateOrBackfillBackupDirectory(nodeSettings, currentBackupPath);
         Path newBackupPath = Path.of(effectiveBackupDir).normalize();
+        // Always update local cache value from settings resolution (covers cache->backend and backend->cache sync)
+        this.backupPath = newBackupPath;
 
         isAutoUpdateEnabled = nodeSettings.isEnableAutoUpdate();
         // Deprecated: stop/restart messages now come from GMC settings per server
         manageFirewallAutomatically = nodeSettings.isManageFirewallAutomatically();
 
+        // Persist updated backup path to cache so cache gets backfilled from backend when previously null
         NodeUtils.cacheInformation(this);
 
         // Move backups only when backup directory actually changes
@@ -504,7 +507,9 @@ public class Node {
     }
 
     public String getBackupPath() {
-        return backupPath != null ? backupPath.normalize().toString() : Path.of(getServerPath(), "backups").toString();
+        return backupPath != null
+                ? backupPath.normalize().toString()
+                : PathValidationUtils.canonicalizeOrAbsolute("./backups");
     }
 
 }
