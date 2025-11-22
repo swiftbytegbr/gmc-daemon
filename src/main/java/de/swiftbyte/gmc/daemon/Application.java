@@ -2,6 +2,7 @@ package de.swiftbyte.gmc.daemon;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import de.swiftbyte.gmc.daemon.migration.MigrateServerInstallDir;
 import de.swiftbyte.gmc.daemon.migration.MigrationScript;
 import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
@@ -35,7 +36,7 @@ import java.util.concurrent.ScheduledExecutorService;
 public class Application {
 
 
-    private static final int MIGRATION_LEVEL = 0;
+    private static final int MIGRATION_LEVEL = 1;
 
 
     public static String getBackendDomain() {
@@ -106,6 +107,8 @@ public class Application {
         } else {
             rootLogger.setLevel(Level.INFO);
         }
+
+        migrationScripts.put(0, new MigrateServerInstallDir());
 
         SpringApplication.run(Application.class);
     }
