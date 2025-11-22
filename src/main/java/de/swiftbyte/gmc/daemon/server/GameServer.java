@@ -59,7 +59,7 @@ public abstract class GameServer {
 
         this.serverId = id;
         this.friendlyName = friendlyName;
-        this.installDir = installDir.toAbsolutePath();
+        this.installDir = installDir.toAbsolutePath().normalize();
         this.settings = settings;
 
         setState(GameServerState.OFFLINE);
@@ -76,11 +76,11 @@ public abstract class GameServer {
         BackupService.updateAutoBackupSettings(serverId);
 
         //Generate server aliases
-        Path aliasPath = installDir.getParent().resolve(friendlyName + " - Link");
+        Path aliasPath = this.installDir.getParent().resolve(friendlyName + " - Link");
         if(Files.exists(aliasPath)) return;
 
         try {
-            Files.createSymbolicLink(aliasPath, installDir);
+            Files.createSymbolicLink(aliasPath, this.installDir);
         } catch (IOException e) {
             log.warn("Failed to create symbolic link for '{}'.", friendlyName, e);
         }
