@@ -167,7 +167,7 @@ public class TaskService {
                     StompHandler.send("/app/node/task-complete", completePacket);
                     log.debug("Task canceled via interruption: id={}, type={}", task.getId(), task.getType());
                 } else {
-                    log.error("An unhandled exception occurred while executing task {}", task.getType(), e);
+                    log.error("An exception occurred while executing task {}", task.getType(), e);
                     task.setState(NodeTask.State.FAILED);
                     task.setErrorMessage(e.getMessage());
                     task.setFinishedAt(Instant.now());

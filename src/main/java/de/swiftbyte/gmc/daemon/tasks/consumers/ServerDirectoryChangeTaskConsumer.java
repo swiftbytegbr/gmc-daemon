@@ -74,7 +74,9 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         } catch (Exception e) {
             try {
                 sendFailedPacket(p, e.getMessage());
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+                log.error("Could not rollback server directory changes. Please contact support.");
+            }
             // Best-effort cleanup of destination if we created it and the task failed
             if (!destExistedBefore) {
                 try {
