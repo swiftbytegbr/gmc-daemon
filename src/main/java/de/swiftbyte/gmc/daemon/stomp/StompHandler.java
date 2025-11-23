@@ -34,6 +34,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -46,6 +48,16 @@ public class StompHandler {
     private static ThreadPoolTaskScheduler threadPoolTaskScheduler;
     private static WebSocketStompClient stompClient;
     private static StompSession session;
+    private static ExecutorService sendExecutor; // single-threaded sender
+
+    private static boolean hasInterruptedCause(Throwable t) {
+        Throwable c = t;
+        while (c != null) {
+            if (c instanceof InterruptedException) return true;
+            c = c.getCause();
+        }
+        return false;
+    }
 
     public static boolean initialiseStomp() {
 
@@ -74,6 +86,7 @@ public class StompHandler {
         try {
             log.debug("Connecting WebSocket to {}", Application.getWebsocketUrl());
             session = stompClient.connectAsync(Application.getWebsocketUrl(), headers, new StompSessionHandler()).get();
+            ensureSender();
             scanForPacketListeners();
         } catch (InterruptedException | ExecutionException e) {
 
@@ -89,7 +102,27 @@ public class StompHandler {
         return true;
     }
 
-    public synchronized static void send(String destination, Object payload) {
+    private static synchronized void ensureSender() {
+        if (sendExecutor == null) {
+            sendExecutor = Executors.newSingleThreadExecutor(r -> {
+                Thread t = new Thread(r, "stomp-sender");
+                t.setDaemon(true);
+                return t;
+            });
+        }
+    }
+
+    public static void send(String destination, Object payload) {
+        ensureSender();
+        sendExecutor.execute(() -> doSend(destination, payload));
+    }
+
+    public static void sendNonCritical(String destination, Object payload) {
+        // For now, same as send; could apply drop/merge policy later
+        send(destination, payload);
+    }
+
+    private static void doSend(String destination, Object payload) {
         if (session == null) {
             if (Node.INSTANCE.getConnectionState() != ConnectionState.RECONNECTING) {
                 log.error("Failed to send packet to {} because the session is null.", destination);
@@ -107,9 +140,8 @@ public class StompHandler {
         try {
             session.send(destination, payload);
         } catch (MessageDeliveryException e) {
-            if (Thread.currentThread().isInterrupted()) {
-                Thread.currentThread().interrupt();
-                log.debug("Send to {} aborted because the thread was interrupted.", destination);
+            if (hasInterruptedCause(e)) {
+                log.debug("Send to {} aborted due to interrupt; not marking connection lost.", destination);
                 return;
             }
             log.error("Failed to deliver packet to {}.", destination, e);
@@ -158,7 +190,8 @@ public class StompHandler {
                 }
 
                 for (String path : annotation.path()) {
-                    session.subscribe(path, new StompFrameHandler() {
+                    ensureSender();
+                    sendExecutor.execute(() -> session.subscribe(path, new StompFrameHandler() {
                         @Override
                         public Type getPayloadType(StompHeaders headers) {
                             return annotation.packetClass();
@@ -168,7 +201,7 @@ public class StompHandler {
                         public void handleFrame(StompHeaders headers, Object payload) {
                             packetConsumer.onReceive(payload);
                         }
-                    });
+                    }));
                 }
 
             } else {
@@ -205,7 +238,8 @@ public class StompHandler {
 
             log.debug("Sending login packet: {} to /node/login", loginPacket);
 
-            session.send("/app/node/login", loginPacket);
+            // Enqueue login send on dedicated sender thread
+            StompHandler.send("/app/node/login", loginPacket);
         }
 
         @Override

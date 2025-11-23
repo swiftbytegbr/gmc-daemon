@@ -406,7 +406,7 @@ public class Node {
 
                 NodeHeartbeatPacket heartbeatPacket = getNodeHeartbeatPacket();
 
-                StompHandler.send("/app/node/heartbeat", heartbeatPacket);
+                StompHandler.sendNonCritical("/app/node/heartbeat", heartbeatPacket);
 
                 BackupService.deleteAllExpiredBackups();
             } else if (getConnectionState() == ConnectionState.RECONNECTING) {

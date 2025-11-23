@@ -217,7 +217,7 @@ public class TaskService {
         NodeTaskUpdatePacket packet = new NodeTaskUpdatePacket();
         packet.setNodeTask(task);
 
-        StompHandler.send("/app/node/task-update", packet);
+        StompHandler.sendNonCritical("/app/node/task-update", packet);
         log.debug("Task update sent: id={}, state={}, cancellable={}", task.getId(), task.getState(), task.isCancellable());
     }
 
