@@ -10,6 +10,8 @@ import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.HashMap;
+
 @Slf4j
 @StompPacketInfo(path = "/user/queue/server/backup", packetClass = ServerBackupPacket.class)
 public class BackupServerPacketConsumer implements StompPacketConsumer<ServerBackupPacket> {
@@ -21,10 +23,15 @@ public class BackupServerPacketConsumer implements StompPacketConsumer<ServerBac
 
         if (server != null) {
             // Create a non-cancellable BACKUP task for this server
+
+            HashMap<String, Object> context = new HashMap<>();
+            context.put("backupName", packet.getName());
+
             TaskService.createTask(
                     NodeTask.Type.BACKUP,
                     new BackupTaskConsumer.BackupTaskPayload(false, packet.getName()),
                     Node.INSTANCE.getNodeId(),
+                    context,
                     packet.getServerId()
             );
         } else {

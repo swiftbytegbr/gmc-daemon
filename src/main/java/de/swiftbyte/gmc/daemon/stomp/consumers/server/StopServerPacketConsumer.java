@@ -10,6 +10,8 @@ import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.HashMap;
+
 @Slf4j
 @StompPacketInfo(path = "/user/queue/server/stop", packetClass = ServerStopPacket.class)
 public class StopServerPacketConsumer implements StompPacketConsumer<ServerStopPacket> {
@@ -27,10 +29,14 @@ public class StopServerPacketConsumer implements StompPacketConsumer<ServerStopP
         Integer delay = packet.getDelayMinutes();
         if (delay != null && delay > 0) {
             // Create a timed shutdown task
+            HashMap<String, Object> context = new HashMap<>();
+            context.put("delay", delay);
+
             boolean created = TaskService.createTask(
                     NodeTask.Type.TIMED_SHUTDOWN,
                     new TimedShutdownPayload(packet.getServerId(), delay, packet.isForceStop(), packet.getDelayedStopMessage()),
                     Node.INSTANCE.getNodeId(),
+                    context,
                     packet.getServerId()
             );
             if (!created) {

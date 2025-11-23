@@ -69,6 +69,10 @@ public class TaskService {
     }
 
     public static boolean createTask(NodeTask.Type type, Object payload, String nodeId, String...affectedIds) {
+        return createTask(type, payload, nodeId, null, affectedIds);
+    }
+
+    public static boolean createTask(NodeTask.Type type, Object payload, String nodeId, HashMap<String, Object> context, String...affectedIds) {
 
         int maxTasks = CONSUMERS.get(type).maxConcurrentTasks();
         if(maxTasks > 0 && CONSUMERS.keySet().stream().filter(it -> it == type).count() >= maxTasks + 1) {
@@ -82,6 +86,7 @@ public class TaskService {
         task.setCreatedAt(Instant.now());
         task.setState(NodeTask.State.PENDING);
         task.setNodeId(nodeId);
+        task.setContext(context);
         task.setTargetIds(Arrays.asList(affectedIds));
         task.setCancellable(CONSUMERS.get(type).isCancellable(payload));
 

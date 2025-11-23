@@ -10,6 +10,8 @@ import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.HashMap;
+
 @Slf4j
 @StompPacketInfo(path = "/user/queue/server/restart", packetClass = ServerRestartPacket.class)
 public class RestartServerPacketConsumer implements StompPacketConsumer<ServerRestartPacket> {
@@ -26,10 +28,15 @@ public class RestartServerPacketConsumer implements StompPacketConsumer<ServerRe
         }
         Integer delay = packet.getDelayMinutes();
         if (delay != null && delay > 0) {
+
+            HashMap<String, Object> context = new HashMap<>();
+            context.put("delay", delay);
+
             boolean created = TaskService.createTask(
                     NodeTask.Type.TIMED_RESTART,
                     new TimedRestartPayload(packet.getServerId(), delay, packet.getDelayedRestartMessage()),
                     Node.INSTANCE.getNodeId(),
+                    context,
                     packet.getServerId()
             );
             if (!created) {

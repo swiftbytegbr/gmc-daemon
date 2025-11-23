@@ -10,6 +10,8 @@ import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.HashMap;
+
 @Slf4j
 @StompPacketInfo(path = "/user/queue/server/rollback", packetClass = ServerRollbackPacket.class)
 public class RollbackServerPacketConsumer implements StompPacketConsumer<ServerRollbackPacket> {
@@ -21,10 +23,15 @@ public class RollbackServerPacketConsumer implements StompPacketConsumer<ServerR
 
         if (server != null) {
             // Create a ROLLBACK task using RollbackTaskConsumer payload
+
+            HashMap<String, Object> context = new HashMap<>();
+            context.put("backupId", packet.getBackupId());
+
             TaskService.createTask(
                     NodeTask.Type.ROLLBACK,
                     new RollbackTaskConsumer.RollbackTaskPayload(packet.getBackupId(), packet.isRollbackPlayers()),
                     Node.INSTANCE.getNodeId(),
+                    context,
                     packet.getServerId()
             );
         } else {

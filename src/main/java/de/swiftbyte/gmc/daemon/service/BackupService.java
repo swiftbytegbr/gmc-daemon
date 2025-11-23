@@ -107,10 +107,15 @@ public class BackupService {
                     }
                     log.debug("Starting auto backup...");
                     // Schedule backup as a non-cancellable task via TaskService
+
+                    HashMap<String, Object> context = new HashMap<>();
+                    context.put("backupName", "Auto Backup");
+
                     TaskService.createTask(
                             de.swiftbyte.gmc.common.model.NodeTask.Type.BACKUP,
                             new de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer.BackupTaskPayload(true, null),
                             Node.INSTANCE.getNodeId(),
+                            context,
                             serverId
                     );
                 } catch (Exception e) {
