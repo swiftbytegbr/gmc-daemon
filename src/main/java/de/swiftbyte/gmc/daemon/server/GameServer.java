@@ -120,6 +120,50 @@ public abstract class GameServer {
         this.installDir = newInstallDir.toAbsolutePath().normalize();
     }
 
+    /**
+     * Updates the server's friendly name and refreshes the symbolic link under the parent directory
+     * from the old display name to the new one.
+     *
+     * The symlink format follows the convention used elsewhere in the daemon:
+     *   "<DisplayName> - Link" -> <installDir>
+     */
+    public void changeFriendlyName(@NotNull String newFriendlyName) {
+        if (newFriendlyName.equals(this.friendlyName)) return;
+
+        Path parent = this.installDir != null ? this.installDir.getParent() : null;
+        if (parent == null) {
+            this.friendlyName = newFriendlyName;
+            return;
+        }
+
+        String oldName = this.friendlyName;
+        Path oldAlias = parent.resolve(oldName + " - Link");
+        Path newAlias = parent.resolve(newFriendlyName + " - Link");
+
+        try {
+            try {
+                Files.deleteIfExists(oldAlias);
+            } catch (Exception e) {
+                log.warn("Failed to delete old symbolic link '{}' for '{}'.", oldAlias, oldName, e);
+            }
+
+            try {
+                // Ensure any stale newAlias is removed before re-creating
+                Files.deleteIfExists(newAlias);
+            } catch (Exception ignored) {}
+
+            try {
+                Files.createSymbolicLink(newAlias, this.installDir);
+            } catch (IOException e) {
+                log.warn("Failed to create symbolic link for '{}' at '{}'.", newFriendlyName, newAlias, e);
+            }
+        } catch (Exception e) {
+            log.warn("Symlink refresh failed during name change from '{}' to '{}'.", oldName, newFriendlyName, e);
+        }
+
+        this.friendlyName = newFriendlyName;
+    }
+
     public void setState(GameServerState state) {
 
         if (this.state == GameServerState.DELETING) {

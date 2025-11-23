@@ -33,6 +33,24 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
             log.info("I am '{}' in team {}!", packet.getNodeSettings().getName(), packet.getTeamName());
 
             log.info("Loading '{}' game servers...", packet.getGameServers().size());
+
+            // First, reconcile display name changes for already known servers to keep symlinks tidy
+            try {
+                packet.getGameServers().forEach(gameServer -> {
+                    GameServer existing = GameServer.getServerById(gameServer.getId());
+                    if (existing != null) {
+                        String newName = gameServer.getDisplayName();
+                        if (newName != null && !newName.equals(existing.getFriendlyName())) {
+                            log.info("Detected name change on login: '{}' -> '{}' (id={}).", existing.getFriendlyName(), newName, gameServer.getId());
+                            existing.changeFriendlyName(newName);
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                log.warn("Failed while applying server name changes during login ack.", e);
+            }
+
+            // Recreate in-memory instances to reflect backend state
             GameServer.abandonAll();
             packet.getGameServers().forEach(gameServer -> {
                 try {
