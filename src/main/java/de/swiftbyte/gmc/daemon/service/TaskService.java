@@ -55,7 +55,7 @@ public class TaskService {
 
         TASKS.forEach((_, taskRun) -> {
             if(CONSUMERS.get(taskRun.task.getType()).isCancellable(taskRun.payload)) {
-                cancelTask(taskRun.task.getId(), false);
+                cancelTask(taskRun.task.getId());
             }
         });
 
@@ -77,12 +77,26 @@ public class TaskService {
 
     public static boolean createTask(NodeTask.Type type, Object payload, String nodeId, HashMap<String, Object> context, String...affectedIds) {
 
-        int maxTasks = CONSUMERS.get(type).maxConcurrentTasks();
-        if(maxTasks > 0 && CONSUMERS.keySet().stream().filter(it -> it == type).count() >= maxTasks + 1) {
-            log.debug("Max count of concurrent tasks exceeded for type {}. Skipping creation...", type);
+        NodeTaskConsumer consumer = CONSUMERS.get(type);
+        if (consumer == null) {
+            log.warn("No consumer registered for task type {}. Skipping creation.", type);
             return false;
         }
 
+        int maxTasks = consumer.maxConcurrentTasks();
+        if (maxTasks > 0) {
+            long runningOfType = TASKS.values().stream()
+                    .map(tr -> tr.task)
+                    .filter(t -> t.getType() == type)
+                    .filter(t -> t.getState() == NodeTask.State.RUNNING)
+                    .count();
+            if (runningOfType >= maxTasks) {
+                log.debug("Max concurrent tasks for type {} reached ({}). Skipping creation.", type, maxTasks);
+                return false;
+            }
+        }
+
+        // Build task
         NodeTask task = new NodeTask();
         task.setId(UUID.randomUUID().toString());
         task.setType(type);
@@ -90,61 +104,67 @@ public class TaskService {
         task.setState(NodeTask.State.PENDING);
         task.setNodeId(nodeId);
         task.setContext(context);
-        task.setTargetIds(Arrays.asList(affectedIds));
-        task.setCancellable(CONSUMERS.get(type).isCancellable(payload));
+        task.setTargetIds(Arrays.asList(affectedIds == null ? new String[]{} : affectedIds));
+        task.setCancellable(consumer.isCancellable(payload));
 
+        String targetsStr = Arrays.toString(affectedIds == null ? new String[]{} : affectedIds);
         log.debug("Creating task: id={}, type={}, nodeId={}, targets={}, initialCancellable={}",
-                task.getId(), type, nodeId, Arrays.toString(affectedIds), task.isCancellable());
+                task.getId(), type, nodeId, targetsStr, task.isCancellable());
 
+        // Publish creation
         NodeTaskCreatePacket packet = new NodeTaskCreatePacket();
         packet.setNodeTask(task);
         StompHandler.send("/app/node/task-create", packet);
-        log.debug("Task create packet sent: id={}", task.getId());
 
-        Future<?> future = executor.submit(() -> {
-            try {
-                task.setState(NodeTask.State.RUNNING);
-                sendUpdatePacket(task);
-                log.debug("Task started: id={}, type={}", task.getId(), task.getType());
+        // Place a placeholder run entry first to allow immediate soft-cancel
+        TASKS.put(task.getId(), new TaskRun(null, task, payload));
 
-                CONSUMERS.get(type).run(task, payload);
+        // Submit execution
+        Future<?> future = executor.submit(() -> runTask(task, payload, consumer));
 
-                // If consumer didn't set terminal state, mark as succeeded by default
-                if (task.getState() == null || task.getState() == NodeTask.State.RUNNING || task.getState() == NodeTask.State.PENDING) {
-                    task.setState(NodeTask.State.SUCCEEDED);
-                }
-                if (task.getFinishedAt() == null) {
-                    task.setFinishedAt(Instant.now());
-                }
-                NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
-                completePacket.setNodeTask(task);
-                StompHandler.send("/app/node/task-complete", completePacket);
-                log.debug("Task completed: id={}, type={}, finalState={}", task.getId(), task.getType(), task.getState());
-
-            } catch (Exception e) {
-                log.error("An unhandled exception occurred while executing task {}", type, e);
-                task.setState(NodeTask.State.FAILED);
-                task.setErrorMessage(e.getMessage());
-                task.setFinishedAt(Instant.now());
-                NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
-                completePacket.setNodeTask(task);
-                StompHandler.send("/app/node/task-complete", completePacket);
-                log.debug("Task failed: id={}, type={}", task.getId(), task.getType());
-            }
-
-            TASKS.remove(task.getId());
-            LAST_PROGRESS.remove(task.getId());
-        });
-
+        // Update entry with real future
         TASKS.put(task.getId(), new TaskRun(future, task, payload));
         return true;
     }
 
-    public static boolean cancelTask(String taskId) {
-        return cancelTask(taskId, false);
+    private static void runTask(NodeTask task, Object payload, NodeTaskConsumer consumer) {
+        try {
+            task.setState(NodeTask.State.RUNNING);
+            sendUpdatePacket(task);
+            log.debug("Task started: id={}, type={}", task.getId(), task.getType());
+
+            consumer.run(task, payload);
+
+            // If consumer didn't set a terminal state, default to SUCCEEDED
+            if (task.getState() == null || task.getState() == NodeTask.State.RUNNING || task.getState() == NodeTask.State.PENDING) {
+                task.setState(NodeTask.State.SUCCEEDED);
+            }
+            if (task.getFinishedAt() == null) {
+                task.setFinishedAt(Instant.now());
+            }
+
+            NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
+            completePacket.setNodeTask(task);
+            StompHandler.send("/app/node/task-complete", completePacket);
+            log.debug("Task completed: id={}, type={}, finalState={}", task.getId(), task.getType(), task.getState());
+
+        } catch (Exception e) {
+            log.error("An unhandled exception occurred while executing task {}", task.getType(), e);
+            task.setState(NodeTask.State.FAILED);
+            task.setErrorMessage(e.getMessage());
+            task.setFinishedAt(Instant.now());
+            NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
+            completePacket.setNodeTask(task);
+            StompHandler.send("/app/node/task-complete", completePacket);
+            log.debug("Task failed: id={}, type={}", task.getId(), task.getType());
+        }
+
+        TASKS.remove(task.getId());
+        LAST_PROGRESS.remove(task.getId());
     }
 
-    public static boolean cancelTask(String taskId, boolean force) {
+
+    public static boolean cancelTask(String taskId) {
 
         if(!TASKS.containsKey(taskId)) {
             log.warn("Tried to cancel non-existing task {}", taskId);
@@ -153,30 +173,15 @@ public class TaskService {
 
         TaskRun taskRun = TASKS.get(taskId);
 
-        if(!taskRun.task.isCancellable() && !force) {
-            // Soft-cancel: inform consumer to stop at next safe checkpoint
-            try {
-                CONSUMERS.get(taskRun.task.getType()).cancel(taskRun.task);
-                log.debug("Accepted late cancellation for task {} (soft cancel)", taskId);
-                return true;
-            } catch (Exception e) {
-                log.warn("Late cancellation not supported by consumer for task {}", taskId);
-                return false;
-            }
+        // Always perform soft-cancel: let the consumer stop itself. No immediate completion here.
+        try {
+            CONSUMERS.get(taskRun.task.getType()).cancel(taskRun.task);
+            log.debug("Cancel requested for task {}", taskId);
+            return true;
+        } catch (Exception e) {
+            log.warn("Cancellation not supported by consumer for task {}", taskId);
+            return false;
         }
-
-        taskRun.future.cancel(true);
-        TASKS.remove(taskId);
-
-        CONSUMERS.get(taskRun.task.getType()).cancel(taskRun.task);
-        taskRun.task.setState(NodeTask.State.CANCELED);
-        taskRun.task.setFinishedAt(Instant.now());
-        NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
-        completePacket.setNodeTask(taskRun.task);
-        StompHandler.send("/app/node/task-complete", completePacket);
-        log.debug("Task canceled: id={}, type={}", taskRun.task.getId(), taskRun.task.getType());
-
-        return true;
     }
 
     private static void sendUpdatePacket(NodeTask task) {

@@ -1,7 +1,6 @@
 package de.swiftbyte.gmc.daemon.tasks.consumers;
 
 import de.swiftbyte.gmc.common.model.NodeTask;
-import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
@@ -10,7 +9,6 @@ import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import de.swiftbyte.gmc.daemon.utils.TimedMessageUtils;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,6 +36,7 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
         boolean shouldBeCancellable = minutesLeft > 1;
         if (task.isCancellable() != shouldBeCancellable) {
             task.setCancellable(shouldBeCancellable);
+            // Only TaskService sends update/complete packets; consumer avoids emitting updates on cancel
             TaskService.updateTask(task);
         }
 
@@ -56,6 +55,7 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
             while (minutesLeft > 0) {
                 if (Thread.currentThread().isInterrupted() || cancelFlag.get()) {
                     log.debug("Timed restart for server {} canceled during countdown", p.serverId());
+                    task.setState(NodeTask.State.CANCELED);
                     return;
                 }
                 sleepOneMinuteInterruptibly();
@@ -72,8 +72,8 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
             // Final cancellation check just before executing the action
             if (Thread.currentThread().isInterrupted() || cancelFlag.get()) {
                 log.debug("Timed restart for server {} canceled right before execution", p.serverId());
+                // Consumer sets state, TaskService sends completion
                 task.setState(NodeTask.State.CANCELED);
-                TaskService.updateTask(task);
                 return;
             }
 
@@ -123,6 +123,8 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
         }
         return false;
     }
+
+    
 
     public record TimedRestartPayload(String serverId, int delayMinutes, String message) {}
 }

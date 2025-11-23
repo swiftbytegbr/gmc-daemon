@@ -38,6 +38,7 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
         boolean shouldBeCancellable = minutesLeft > 1;
         if (task.isCancellable() != shouldBeCancellable) {
             task.setCancellable(shouldBeCancellable);
+            // Only TaskService sends update/complete packets; consumer avoids emitting updates on cancel
             TaskService.updateTask(task);
         }
 
@@ -56,6 +57,7 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
             while (minutesLeft > 0) {
                 if (Thread.currentThread().isInterrupted() || cancelFlag.get()) {
                     log.debug("Timed shutdown for server {} canceled during countdown", p.serverId());
+                    task.setState(NodeTask.State.CANCELED);
                     return;
                 }
                 sleepOneMinuteInterruptibly();
@@ -72,8 +74,8 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
             // Final cancellation check just before executing the action
             if (Thread.currentThread().isInterrupted() || cancelFlag.get()) {
                 log.debug("Timed shutdown for server {} canceled right before execution", p.serverId());
+                // Consumer sets state, TaskService sends completion
                 task.setState(NodeTask.State.CANCELED);
-                TaskService.updateTask(task);
                 return;
             }
 
@@ -123,6 +125,8 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
         }
         return false;
     }
+
+    
 
     public record TimedShutdownPayload(String serverId, int delayMinutes, boolean forceStop, String message) {}
 }
