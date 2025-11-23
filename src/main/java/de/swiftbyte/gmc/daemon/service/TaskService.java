@@ -54,7 +54,8 @@ public class TaskService {
     public static void shutdownTaskService() {
 
         TASKS.forEach((_, taskRun) -> {
-            if(CONSUMERS.get(taskRun.task.getType()).isCancellable(taskRun.payload)) {
+            // Only attempt to cancel if the task is currently marked cancellable
+            if (taskRun.task.isCancellable()) {
                 cancelTask(taskRun.task.getId());
             }
         });
@@ -139,24 +140,43 @@ public class TaskService {
             if (task.getState() == null || task.getState() == NodeTask.State.RUNNING || task.getState() == NodeTask.State.PENDING) {
                 task.setState(NodeTask.State.SUCCEEDED);
             }
+
+            // If someone (e.g., hard cancel) already finalized the task, skip sending completion
             if (task.getFinishedAt() == null) {
                 task.setFinishedAt(Instant.now());
+                NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
+                completePacket.setNodeTask(task);
+                StompHandler.send("/app/node/task-complete", completePacket);
+                log.debug("Task completed: id={}, type={}, finalState={}", task.getId(), task.getType(), task.getState());
+            } else {
+                log.debug("Task {} already finalized (state={}), skipping completion send.", task.getId(), task.getState());
             }
 
-            NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
-            completePacket.setNodeTask(task);
-            StompHandler.send("/app/node/task-complete", completePacket);
-            log.debug("Task completed: id={}, type={}, finalState={}", task.getId(), task.getType(), task.getState());
-
         } catch (Exception e) {
-            log.error("An unhandled exception occurred while executing task {}", task.getType(), e);
-            task.setState(NodeTask.State.FAILED);
-            task.setErrorMessage(e.getMessage());
-            task.setFinishedAt(Instant.now());
-            NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
-            completePacket.setNodeTask(task);
-            StompHandler.send("/app/node/task-complete", completePacket);
-            log.debug("Task failed: id={}, type={}", task.getId(), task.getType());
+            // If the task was already finalized (e.g., via hard cancel), do not send another completion
+            if (task.getFinishedAt() != null) {
+                log.debug("Task {} threw after finalization; skipping completion (state={}).", task.getId(), task.getState());
+            } else {
+                boolean interrupted = Thread.currentThread().isInterrupted() || (e instanceof InterruptedException);
+                if (interrupted) {
+                    task.setState(NodeTask.State.CANCELED);
+                    task.setErrorMessage(null);
+                    task.setFinishedAt(Instant.now());
+                    NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
+                    completePacket.setNodeTask(task);
+                    StompHandler.send("/app/node/task-complete", completePacket);
+                    log.debug("Task canceled via interruption: id={}, type={}", task.getId(), task.getType());
+                } else {
+                    log.error("An unhandled exception occurred while executing task {}", task.getType(), e);
+                    task.setState(NodeTask.State.FAILED);
+                    task.setErrorMessage(e.getMessage());
+                    task.setFinishedAt(Instant.now());
+                    NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
+                    completePacket.setNodeTask(task);
+                    StompHandler.send("/app/node/task-complete", completePacket);
+                    log.debug("Task failed: id={}, type={}", task.getId(), task.getType());
+                }
+            }
         }
 
         TASKS.remove(task.getId());
@@ -166,20 +186,29 @@ public class TaskService {
 
     public static boolean cancelTask(String taskId) {
 
-        if(!TASKS.containsKey(taskId)) {
+        TaskRun taskRun = TASKS.get(taskId);
+        if (taskRun == null) {
             log.warn("Tried to cancel non-existing task {}", taskId);
             return false;
         }
 
-        TaskRun taskRun = TASKS.get(taskId);
+        NodeTask task = taskRun.task;
 
-        // Always perform soft-cancel: let the consumer stop itself. No immediate completion here.
+        // Only perform hard-cancel if task is currently cancellable
+        if (!task.isCancellable()) {
+            log.warn("Skip cancellation for task {}: task is no longer cancellable.", taskId);
+            return false;
+        }
+
         try {
-            CONSUMERS.get(taskRun.task.getType()).cancel(taskRun.task);
-            log.debug("Cancel requested for task {}", taskId);
+            // Interrupt the running task thread only; let runTask handle completion
+            if (taskRun.future != null) {
+                taskRun.future.cancel(true);
+            }
+            log.debug("Interrupt requested for task {}", taskId);
             return true;
         } catch (Exception e) {
-            log.warn("Cancellation not supported by consumer for task {}", taskId);
+            log.warn("Failed to interrupt task {} due to exception.", taskId, e);
             return false;
         }
     }

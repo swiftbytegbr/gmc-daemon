@@ -11,14 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
-
-    private static final ConcurrentHashMap<String, AtomicBoolean> CANCEL_FLAGS = new ConcurrentHashMap<>();
 
     @Override
     public void run(NodeTask task, Object payload) {
@@ -42,8 +38,6 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
             TaskService.updateTask(task);
         }
 
-        AtomicBoolean cancelFlag = new AtomicBoolean(false);
-        CANCEL_FLAGS.put(task.getId(), cancelFlag);
         try {
             MapSettingsAdapter gmc = new MapSettingsAdapter(server.getSettings().getGmcSettings());
             String baseMessage = CommonUtils.isNullOrEmpty(p.message())
@@ -55,7 +49,7 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
             }
 
             while (minutesLeft > 0) {
-                if (Thread.currentThread().isInterrupted() || cancelFlag.get()) {
+                if (Thread.currentThread().isInterrupted()) {
                     log.debug("Timed shutdown for server {} canceled during countdown", p.serverId());
                     task.setState(NodeTask.State.CANCELED);
                     return;
@@ -72,7 +66,7 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
             }
 
             // Final cancellation check just before executing the action
-            if (Thread.currentThread().isInterrupted() || cancelFlag.get()) {
+            if (Thread.currentThread().isInterrupted()) {
                 log.debug("Timed shutdown for server {} canceled right before execution", p.serverId());
                 // Consumer sets state, TaskService sends completion
                 task.setState(NodeTask.State.CANCELED);
@@ -83,7 +77,7 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
             server.stop(false, p.forceStop()).complete();
 
         } finally {
-            CANCEL_FLAGS.remove(task.getId());
+            // no-op
         }
     }
 
@@ -106,16 +100,6 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
         String msg = template.replace("{minutes}", String.valueOf(minutesLeft));
         log.debug("Sending timed shutdown message for server {}: {}", server.getFriendlyName(), msg);
         server.sendRconCommand("serverchat " + msg);
-    }
-
-    
-
-    @Override
-    public void cancel(NodeTask task) {
-        AtomicBoolean flag = CANCEL_FLAGS.get(task.getId());
-        if (flag != null) {
-            flag.set(true);
-        }
     }
 
     @Override

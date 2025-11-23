@@ -9,14 +9,10 @@ import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import de.swiftbyte.gmc.daemon.utils.TimedMessageUtils;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 public class TimedRestartTaskConsumer implements NodeTaskConsumer {
-
-    private static final ConcurrentHashMap<String, AtomicBoolean> CANCEL_FLAGS = new ConcurrentHashMap<>();
 
     @Override
     public void run(NodeTask task, Object payload) {
@@ -40,8 +36,6 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
             TaskService.updateTask(task);
         }
 
-        AtomicBoolean cancelFlag = new AtomicBoolean(false);
-        CANCEL_FLAGS.put(task.getId(), cancelFlag);
         try {
             MapSettingsAdapter gmc = new MapSettingsAdapter(server.getSettings().getGmcSettings());
             String baseMessage = CommonUtils.isNullOrEmpty(p.message())
@@ -53,7 +47,7 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
             }
 
             while (minutesLeft > 0) {
-                if (Thread.currentThread().isInterrupted() || cancelFlag.get()) {
+                if (Thread.currentThread().isInterrupted()) {
                     log.debug("Timed restart for server {} canceled during countdown", p.serverId());
                     task.setState(NodeTask.State.CANCELED);
                     return;
@@ -70,7 +64,7 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
             }
 
             // Final cancellation check just before executing the action
-            if (Thread.currentThread().isInterrupted() || cancelFlag.get()) {
+            if (Thread.currentThread().isInterrupted()) {
                 log.debug("Timed restart for server {} canceled right before execution", p.serverId());
                 // Consumer sets state, TaskService sends completion
                 task.setState(NodeTask.State.CANCELED);
@@ -81,7 +75,7 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
             server.restart().complete();
 
         } finally {
-            CANCEL_FLAGS.remove(task.getId());
+            // no-op
         }
     }
 
@@ -104,16 +98,6 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
         String msg = template.replace("{minutes}", String.valueOf(minutesLeft));
         log.debug("Sending timed restart message for server {}: {}", server.getFriendlyName(), msg);
         server.sendRconCommand("serverchat " + msg);
-    }
-
-    
-
-    @Override
-    public void cancel(NodeTask task) {
-        AtomicBoolean flag = CANCEL_FLAGS.get(task.getId());
-        if (flag != null) {
-            flag.set(true);
-        }
     }
 
     @Override
