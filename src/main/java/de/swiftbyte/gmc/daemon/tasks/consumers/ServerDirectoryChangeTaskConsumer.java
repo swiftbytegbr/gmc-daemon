@@ -12,6 +12,7 @@ import de.swiftbyte.gmc.daemon.utils.NodeUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.io.File;
 import java.io.IOException;
 import org.apache.commons.io.FileUtils;
@@ -63,6 +64,10 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
             // Update server's install dir only after source was deleted
             Path newAbs = destInstallDir.toAbsolutePath().normalize();
             server.setInstallDir(newAbs);
+
+            // Refresh display-name symlink
+            refreshDisplayNameSymlink(server, currentInstallDirInitial.getParent(), p.newParentDir(), newAbs);
+
             NodeUtils.cacheInformation(Node.INSTANCE);
 
             log.info("SERVER_DIRECTORY_CHANGE task finished successfully for '{}'. New path: {}", server.getFriendlyName(), newAbs);
@@ -86,6 +91,30 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         } finally {
             // Ensure state is returned to OFFLINE after operation
             try { server.setState(GameServerState.OFFLINE); } catch (Exception ignored) {}
+        }
+    }
+
+    private void refreshDisplayNameSymlink(GameServer server, Path oldParentDir, Path newParentDir, Path newInstallDir) {
+        try {
+            Path oldAlias = oldParentDir.resolve(server.getFriendlyName() + " - Link");
+            try {
+                Files.deleteIfExists(oldAlias);
+            } catch (Exception e) {
+                log.warn("Failed to delete old symbolic link '{}' for '{}'.", oldAlias, server.getFriendlyName(), e);
+            }
+
+            Path newAlias = newParentDir.resolve(server.getFriendlyName() + " - Link");
+            try {
+                Files.deleteIfExists(newAlias);
+            } catch (Exception ignored) {}
+
+            try {
+                Files.createSymbolicLink(newAlias, newInstallDir);
+            } catch (IOException e) {
+                log.warn("Failed to create symbolic link for '{}' at '{}'.", server.getFriendlyName(), newAlias, e);
+            }
+        } catch (Exception e) {
+            log.warn("Symlink refresh failed during server directory change for '{}'.", server.getFriendlyName(), e);
         }
     }
 
