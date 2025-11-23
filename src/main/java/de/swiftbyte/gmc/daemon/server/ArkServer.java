@@ -47,6 +47,10 @@ public abstract class ArkServer extends GameServer {
 
     public AsyncAction<Boolean> install() {
         return () -> {
+            if (state == GameServerState.CREATING) {
+                log.warn("Server '{}' is busy (CREATING). Install/update aborted.", friendlyName);
+                return false;
+            }
             setState(GameServerState.CREATING);
 
             MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
@@ -112,6 +116,10 @@ public abstract class ArkServer extends GameServer {
     @Override
     public AsyncAction<Boolean> delete() {
         return () -> {
+            if (state == GameServerState.CREATING) {
+                log.warn("Server '{}' is busy (CREATING). Delete aborted.", friendlyName);
+                return false;
+            }
             try {
                 if (state != GameServerState.OFFLINE && state != GameServerState.CREATING) {
                     stop(false).complete();
@@ -153,6 +161,10 @@ public abstract class ArkServer extends GameServer {
     public AsyncAction<Boolean> start() {
 
         return () -> {
+            if (state == GameServerState.CREATING) {
+                log.warn("Server '{}' is busy (CREATING). Start aborted.", friendlyName);
+                return false;
+            }
             ServerUtils.killServerProcess(PID);
 
             super.setState(GameServerState.INITIALIZING);
@@ -195,6 +207,10 @@ public abstract class ArkServer extends GameServer {
     @Override
     public AsyncAction<Boolean> stop(boolean isRestart, boolean isKill) {
         return () -> {
+            if (state == GameServerState.CREATING) {
+                log.warn("Server '{}' is busy (CREATING). Stop aborted.", friendlyName);
+                return false;
+            }
             if (isKill) {
                 log.debug("Killing server '{}'", friendlyName);
                 super.setState(GameServerState.STOPPING);
@@ -261,6 +277,10 @@ public abstract class ArkServer extends GameServer {
 
     public AsyncAction<Boolean> restart() {
         return () -> {
+            if (state == GameServerState.CREATING) {
+                log.warn("Server '{}' is busy (CREATING). Restart aborted.", friendlyName);
+                return false;
+            }
             MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
             String restartMessage = gmcSettings.get("RestartMessage", null);
             if (!CommonUtils.isNullOrEmpty(restartMessage)) {
@@ -340,6 +360,10 @@ public abstract class ArkServer extends GameServer {
     @Override
     public String sendRconCommand(String command) {
         try {
+            if (state == GameServerState.CREATING) {
+                log.warn("Server '{}' is busy (CREATING). RCON '{}' ignored.", friendlyName, command);
+                return null;
+            }
             if (rconPort == 0 || CommonUtils.isNullOrEmpty(rconPassword)) {
                 return null;
             }

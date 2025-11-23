@@ -10,6 +10,7 @@ import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.BackupDirectoryChangeTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.TimedRestartTaskConsumer;
+import de.swiftbyte.gmc.daemon.tasks.consumers.ServerDirectoryChangeTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.RollbackTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.TimedShutdownTaskConsumer;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class TaskService {
 
     private static final HashMap<NodeTask.Type, NodeTaskConsumer> CONSUMERS = new HashMap<>();
     private static final ConcurrentHashMap<String, TaskRun> TASKS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Integer> LAST_PROGRESS = new ConcurrentHashMap<>();
 
     private static ExecutorService executor = null;
 
@@ -42,6 +44,7 @@ public class TaskService {
         registerConsumer(NodeTask.Type.BACKUP, new BackupTaskConsumer());
         registerConsumer(NodeTask.Type.ROLLBACK, new RollbackTaskConsumer());
         registerConsumer(NodeTask.Type.BACKUP_DIRECTORY_CHANGE, new BackupDirectoryChangeTaskConsumer());
+        registerConsumer(NodeTask.Type.SERVER_DIRECTORY_CHANGE, new ServerDirectoryChangeTaskConsumer());
 
         registerConsumer(NodeTask.Type.TIMED_SHUTDOWN, new TimedShutdownTaskConsumer());
         registerConsumer(NodeTask.Type.TIMED_RESTART, new TimedRestartTaskConsumer());
@@ -130,6 +133,7 @@ public class TaskService {
             }
 
             TASKS.remove(task.getId());
+            LAST_PROGRESS.remove(task.getId());
         });
 
         TASKS.put(task.getId(), new TaskRun(future, task, payload));
@@ -167,8 +171,6 @@ public class TaskService {
         CONSUMERS.get(taskRun.task.getType()).cancel(taskRun.task);
         taskRun.task.setState(NodeTask.State.CANCELED);
         taskRun.task.setFinishedAt(Instant.now());
-        // Inform backend about cancellation and completion (so it can remove stored task)
-        sendUpdatePacket(taskRun.task);
         NodeTaskCompletePacket completePacket = new NodeTaskCompletePacket();
         completePacket.setNodeTask(taskRun.task);
         StompHandler.send("/app/node/task-complete", completePacket);
@@ -187,6 +189,24 @@ public class TaskService {
 
     public static void updateTask(NodeTask task) {
         sendUpdatePacket(task);
+    }
+
+    public static void updateTaskProgress(NodeTask task, int percent) {
+        if (task == null) return;
+        if (task.getType() != NodeTask.Type.SERVER_DIRECTORY_CHANGE) return;
+
+        int clamped = Math.max(0, Math.min(100, percent));
+        Integer last = LAST_PROGRESS.get(task.getId());
+        boolean initial = last == null;
+        boolean threshold = !initial && Math.abs(clamped - last) > 5;
+        boolean force = clamped == 100 || clamped == 0;
+
+        if (initial || threshold || force) {
+            task.setProgressPercentage(clamped);
+            LAST_PROGRESS.put(task.getId(), clamped);
+            sendUpdatePacket(task);
+            log.debug("Task progress update: id={}, type={}, progress={}%, lastSent={}", task.getId(), task.getType(), clamped, last);
+        }
     }
 
 

@@ -53,6 +53,7 @@ public abstract class GameServer {
     @Getter
     protected int currentOnlinePlayers = 0;
 
+
     public abstract String getGameId();
 
     public GameServer(String id, @NotNull Path installDir, String friendlyName, SettingProfile settings) {
@@ -67,7 +68,8 @@ public abstract class GameServer {
         GAME_SERVERS.put(id, this);
         updateScheduler = Application.getExecutor().scheduleWithFixedDelay(() -> {
             try {
-                this.update();
+                // Skip update cycle while the server is in CREATING state (used to block operations during moves)
+                if (this.state != GameServerState.CREATING) this.update();
             } catch (Exception e) {
                 log.error("Unhandled exception in server '{}'.", friendlyName, e);
             }
@@ -114,6 +116,10 @@ public abstract class GameServer {
 
     public abstract void allowFirewallPorts();
 
+    public void setInstallDir(Path newInstallDir) {
+        this.installDir = newInstallDir.toAbsolutePath().normalize();
+    }
+
     public void setState(GameServerState state) {
 
         if (this.state == GameServerState.DELETING) {
@@ -139,6 +145,10 @@ public abstract class GameServer {
     }
 
     public void setSettings(SettingProfile settings) {
+        if (this.state == GameServerState.CREATING) {
+            log.warn("Server '{}' is busy (CREATING). Settings change ignored.", friendlyName);
+            return;
+        }
         if (Node.INSTANCE.isManageFirewallAutomatically()) {
             FirewallService.removePort(friendlyName);
         }

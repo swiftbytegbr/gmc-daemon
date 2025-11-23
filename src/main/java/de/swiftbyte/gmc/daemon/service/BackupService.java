@@ -9,6 +9,7 @@ import de.swiftbyte.gmc.common.entity.Backup;
 import de.swiftbyte.gmc.common.packet.from.daemon.server.ServerBackupResponsePacket;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
+import de.swiftbyte.gmc.common.entity.GameServerState;
 import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
@@ -16,6 +17,7 @@ import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.NodeUtils;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
+import de.swiftbyte.gmc.daemon.utils.DirectoryMoveUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
@@ -105,6 +107,10 @@ public class BackupService {
                         log.debug("Auto backup skipped (backups suspended).");
                         return;
                     }
+                    if (server.getState() == GameServerState.CREATING) {
+                        log.debug("Auto backup skipped for '{}' (server is in CREATING state).", server.getFriendlyName());
+                        return;
+                    }
                     log.debug("Starting auto backup...");
                     // Schedule backup as a non-cancellable task via TaskService
 
@@ -153,6 +159,11 @@ public class BackupService {
 
         if (server == null) {
             throw new IllegalArgumentException("Cannot create backup: server not found");
+        }
+
+        if (server.getState() == GameServerState.CREATING) {
+            log.warn("Backups are currently blocked. Server '{}' is busy (CREATING).", server.getFriendlyName());
+            return;
         }
 
         if (backupsSuspended) {
@@ -388,43 +399,7 @@ public class BackupService {
 
         log.info("Moving backups from '{}' to '{}'...", oldBackupsDir.getAbsolutePath(), newBackupsDir.getAbsolutePath());
 
-        if (!oldBackupsDir.exists()) {
-            log.info("Old backups directory does not exist. Nothing to move.");
-            return;
-        }
-
-        if (!newBackupsDir.exists()) {
-            if (!newBackupsDir.mkdirs()) {
-                throw new IOException("Failed to create new backups directory: " + newBackupsDir.getAbsolutePath());
-            }
-        }
-
-        File[] entries = oldBackupsDir.listFiles();
-        if (entries == null) return;
-
-        for (File entry : entries) {
-            File dest = new File(newBackupsDir, entry.getName());
-            if (entry.isDirectory()) {
-                if (dest.exists()) {
-                    // merge
-                    FileUtils.copyDirectory(entry, dest);
-                    FileUtils.deleteDirectory(entry);
-                } else {
-                    FileUtils.moveDirectory(entry, dest);
-                }
-            } else {
-                if (dest.exists()) {
-                    FileUtils.forceDelete(dest);
-                }
-                FileUtils.moveFile(entry, dest);
-            }
-        }
-
-        // Try to remove old empty backups dir
-        try {
-            FileUtils.deleteDirectory(oldBackupsDir);
-        } catch (Exception ignored) {
-        }
+        DirectoryMoveUtils.moveDirectoryContents(oldBackupsDirPath, newBackupsDirPath);
 
         log.info("Backups move completed.");
     }
