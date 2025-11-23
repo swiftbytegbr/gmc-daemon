@@ -136,9 +136,14 @@ public abstract class ArkServer extends GameServer {
                 }
                 super.setState(GameServerState.DELETING);
 
-                //Delete alias
-                Path aliasPath = this.installDir.getParent().resolve(friendlyName + " - Link");
-                Files.delete(aliasPath);
+                try {
+                    //Delete alias
+                    Path aliasPath = this.installDir.getParent().resolve(friendlyName + " - Link");
+                    Files.delete(aliasPath);
+                } catch (IOException e) {
+                    log.warn("Failed to delete symbolic link for '{}'.", friendlyName, e);
+                }
+
 
                 Thread.sleep(5000);
                 FileUtils.deleteDirectory(installDir.toFile());
