@@ -23,5 +23,4 @@ public class BackupTaskConsumer implements NodeTaskConsumer {
     }
 
     public record BackupTaskPayload(boolean isAutoUpdate, String name) {}
-    public record RollbackTaskPayload(String backupId, boolean rollbackPlayers) {}
 }
