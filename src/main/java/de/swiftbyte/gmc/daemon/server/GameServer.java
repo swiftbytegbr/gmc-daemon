@@ -77,9 +77,9 @@ public abstract class GameServer {
 
         BackupService.updateAutoBackupSettings(serverId);
 
-        //Generate server aliases
+        //Generate server aliases when server is installed on alias is not present
         Path aliasPath = this.installDir.getParent().resolve(friendlyName + " - Link");
-        if(Files.exists(aliasPath)) return;
+        if(!Files.exists(this.installDir) || Files.exists(aliasPath)) return;
 
         try {
             Files.createSymbolicLink(aliasPath, this.installDir);

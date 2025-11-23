@@ -76,6 +76,16 @@ public abstract class ArkServer extends GameServer {
 
                     allowFirewallPorts();
 
+                    //Create server install dir alias when not already existing
+                    Path aliasPath = this.installDir.getParent().resolve(friendlyName + " - Link");
+                    if(!Files.exists(aliasPath)) {
+                        try {
+                            Files.createSymbolicLink(aliasPath, this.installDir);
+                        } catch (IOException e) {
+                            log.warn("Failed to create symbolic link for '{}'.", friendlyName, e);
+                        }
+                    }
+
                     setState(GameServerState.OFFLINE);
                 } else {
                     log.error("Server installation returned error code {}.", process.exitValue());
@@ -125,6 +135,11 @@ public abstract class ArkServer extends GameServer {
                     stop(false).complete();
                 }
                 super.setState(GameServerState.DELETING);
+
+                //Delete alias
+                Path aliasPath = this.installDir.getParent().resolve(friendlyName + " - Link");
+                Files.delete(aliasPath);
+
                 Thread.sleep(5000);
                 FileUtils.deleteDirectory(installDir.toFile());
                 FirewallService.removePort(friendlyName);
