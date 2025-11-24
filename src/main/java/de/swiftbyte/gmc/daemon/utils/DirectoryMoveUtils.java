@@ -32,7 +32,9 @@ public class DirectoryMoveUtils {
         }
 
         File[] entries = srcDir.listFiles();
-        if (entries == null) return;
+        if (entries == null) {
+            return;
+        }
 
         for (File entry : entries) {
             File dest = new File(dstDir, entry.getName());
@@ -55,7 +57,8 @@ public class DirectoryMoveUtils {
         // Try to remove old empty dir
         try {
             FileUtils.deleteDirectory(srcDir);
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {
+        }
     }
 
     /**

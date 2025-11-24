@@ -78,7 +78,7 @@ public abstract class ArkServer extends GameServer {
 
                     //Create server install dir alias when not already existing
                     Path aliasPath = this.installDir.getParent().resolve(friendlyName + " - Link");
-                    if(!Files.exists(aliasPath)) {
+                    if (!Files.exists(aliasPath)) {
                         try {
                             Files.createSymbolicLink(aliasPath, this.installDir);
                         } catch (IOException e) {
@@ -305,7 +305,10 @@ public abstract class ArkServer extends GameServer {
             String restartMessage = gmcSettings.get("RestartMessage", null);
             if (!CommonUtils.isNullOrEmpty(restartMessage)) {
                 sendRconCommand("serverchat " + restartMessage);
-                try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                }
             }
             return (stop(true).complete() && start().complete());
         };

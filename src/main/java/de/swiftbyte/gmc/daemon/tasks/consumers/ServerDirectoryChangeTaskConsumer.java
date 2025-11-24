@@ -5,17 +5,17 @@ import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.packet.from.daemon.server.ServerChangeDirectoryFailedPacket;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.GameServer;
+import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
-import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.utils.NodeUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 
-import java.nio.file.Path;
-import java.nio.file.Files;
 import java.io.File;
 import java.io.IOException;
-import org.apache.commons.io.FileUtils;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Slf4j
 public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
@@ -92,7 +92,10 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
             throw new RuntimeException("Failed to move server directory: " + e.getMessage(), e);
         } finally {
             // Ensure state is returned to OFFLINE after operation
-            try { server.setState(GameServerState.OFFLINE); } catch (Exception ignored) {}
+            try {
+                server.setState(GameServerState.OFFLINE);
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -108,7 +111,8 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
             Path newAlias = newParentDir.resolve(server.getFriendlyName() + " - Link");
             try {
                 Files.deleteIfExists(newAlias);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             try {
                 Files.createSymbolicLink(newAlias, newInstallDir);
@@ -144,17 +148,24 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
     private long calculateTotalBytes(File dir) {
         long sum = 0;
         File[] children = dir.listFiles();
-        if (children == null) return 0;
+        if (children == null) {
+            return 0;
+        }
         for (File child : children) {
-            if (child.isDirectory()) sum += calculateTotalBytes(child);
-            else sum += child.length();
+            if (child.isDirectory()) {
+                sum += calculateTotalBytes(child);
+            } else {
+                sum += child.length();
+            }
         }
         return sum;
     }
 
     private void copyRecursive(File src, File dst, NodeTask task, Progress progress) throws IOException {
         File[] children = src.listFiles();
-        if (children == null) return;
+        if (children == null) {
+            return;
+        }
         for (File child : children) {
             File destChild = new File(dst, child.getName());
             if (child.isDirectory()) {
@@ -205,7 +216,8 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
     private void setProgress(NodeTask task, int percent) {
         try {
             TaskService.updateTaskProgress(task, Math.max(0, Math.min(100, percent)));
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     private static class Progress {
@@ -213,16 +225,23 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         volatile long processed;
         final int base;
         final int weight;
+
         Progress(long total, int base, int weight) {
             this.total = total;
             this.processed = 0;
             this.base = base;
             this.weight = weight;
         }
-        void addBytes(long n) { this.processed += n; }
+
+        void addBytes(long n) {
+            this.processed += n;
+        }
+
         int getPercent() {
-            if (total <= 0) return base + weight;
-            int scaled = (int)Math.round(Math.min(1.0, (processed * 1.0) / total) * weight);
+            if (total <= 0) {
+                return base + weight;
+            }
+            int scaled = (int) Math.round(Math.min(1.0, (processed * 1.0) / total) * weight);
             return Math.min(100, base + scaled);
         }
     }
@@ -236,5 +255,6 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         log.info("ServerChangeDirectoryFailedPacket sent for server {} (previousDirectory={}, error={}).", p.serverId(), p.oldParentDir(), error);
     }
 
-    public record ServerDirectoryChangeTaskPayload(String serverId, Path oldParentDir, Path newParentDir) {}
+    public record ServerDirectoryChangeTaskPayload(String serverId, Path oldParentDir, Path newParentDir) {
+    }
 }

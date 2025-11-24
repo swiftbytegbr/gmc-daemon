@@ -1,7 +1,5 @@
 package de.swiftbyte.gmc.daemon.commands;
 
-import de.swiftbyte.gmc.common.model.SettingProfile;
-import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.shell.command.annotation.Command;

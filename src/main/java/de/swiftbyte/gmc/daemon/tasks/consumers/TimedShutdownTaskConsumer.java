@@ -5,11 +5,10 @@ import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
-import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import de.swiftbyte.gmc.daemon.utils.TimedMessageUtils;
+import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -19,7 +18,7 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
     @Override
     public void run(NodeTask task, Object payload) {
 
-        if(!(payload instanceof TimedShutdownPayload p)) {
+        if (!(payload instanceof TimedShutdownPayload p)) {
             throw new IllegalArgumentException("Expected TimedShutdownPayload");
         }
 
@@ -86,7 +85,9 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
         long end = System.currentTimeMillis() + millis;
         while (true) {
             long remaining = end - System.currentTimeMillis();
-            if (remaining <= 0) break;
+            if (remaining <= 0) {
+                break;
+            }
             try {
                 Thread.sleep(Math.min(remaining, 1000));
             } catch (InterruptedException e) {
@@ -110,7 +111,7 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
         return false;
     }
 
-    
 
-    public record TimedShutdownPayload(String serverId, int delayMinutes, boolean forceStop, String message) {}
+    public record TimedShutdownPayload(String serverId, int delayMinutes, boolean forceStop, String message) {
+    }
 }

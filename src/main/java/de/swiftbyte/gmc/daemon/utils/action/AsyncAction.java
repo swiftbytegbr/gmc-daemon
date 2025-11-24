@@ -22,10 +22,15 @@ public interface AsyncAction<T> {
     default void queue(Consumer<? super T> success, Consumer<? super Throwable> failure) {
         CompletableFuture<T> future = CompletableFuture.supplyAsync(this::complete, executor);
 
-        if(success != null) future.thenAccept(success);
+        if (success != null) {
+            future.thenAccept(success);
+        }
         future.exceptionally(ex -> {
-            if(failure != null) failure.accept(ex);
-            else LoggerFactory.getLogger(getClass()).error("An unknown error occurred while executing.", ex);
+            if (failure != null) {
+                failure.accept(ex);
+            } else {
+                LoggerFactory.getLogger(getClass()).error("An unknown error occurred while executing.", ex);
+            }
             return null;
         });
     }

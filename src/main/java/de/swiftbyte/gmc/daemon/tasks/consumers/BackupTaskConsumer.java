@@ -22,5 +22,6 @@ public class BackupTaskConsumer implements NodeTaskConsumer {
         throw new IllegalArgumentException("Unsupported payload for BackupTaskConsumer: " + (payload == null ? "null" : payload.getClass()));
     }
 
-    public record BackupTaskPayload(boolean isAutoUpdate, String name) {}
+    public record BackupTaskPayload(boolean isAutoUpdate, String name) {
+    }
 }

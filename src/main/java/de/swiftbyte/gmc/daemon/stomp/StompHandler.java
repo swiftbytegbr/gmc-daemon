@@ -34,10 +34,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
 
 @Slf4j
 public class StompHandler {
@@ -53,7 +52,9 @@ public class StompHandler {
     private static boolean hasInterruptedCause(Throwable t) {
         Throwable c = t;
         while (c != null) {
-            if (c instanceof InterruptedException) return true;
+            if (c instanceof InterruptedException) {
+                return true;
+            }
             c = c.getCause();
         }
         return false;
@@ -72,7 +73,7 @@ public class StompHandler {
         container.setDefaultMaxTextMessageBufferSize(MAX_MESSAGE_BUFFER_SIZE_BYTES);
         stompClient = new WebSocketStompClient(new StandardWebSocketClient(container));
         stompClient.setTaskScheduler(threadPoolTaskScheduler);
-        stompClient.setDefaultHeartbeat(new long[] {10_000, 10_000});
+        stompClient.setDefaultHeartbeat(new long[]{10_000, 10_000});
         stompClient.setInboundMessageSizeLimit(MAX_MESSAGE_BUFFER_SIZE_BYTES);
         WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
         headers.add("Node-Id", Node.INSTANCE.getNodeId());
@@ -153,17 +154,17 @@ public class StompHandler {
     }
 
     public static void disconnect() {
-        if(session != null && session.isConnected()) {
+        if (session != null && session.isConnected()) {
             session.disconnect();
             session = null;
         }
 
-        if(stompClient != null && stompClient.isRunning()) {
+        if (stompClient != null && stompClient.isRunning()) {
             stompClient.stop();
             stompClient = null;
         }
 
-        if(threadPoolTaskScheduler != null && threadPoolTaskScheduler.isRunning()) {
+        if (threadPoolTaskScheduler != null && threadPoolTaskScheduler.isRunning()) {
             threadPoolTaskScheduler.shutdown();
             threadPoolTaskScheduler = null;
         }
@@ -245,7 +246,7 @@ public class StompHandler {
         @Override
         public void handleTransportError(StompSession session, Throwable e) {
 
-            if(e instanceof ConnectionLostException) {
+            if (e instanceof ConnectionLostException) {
                 log.error("The daemon lost connection to the backend. Please check the internet connection or the current backend status.");
                 Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
                 return;

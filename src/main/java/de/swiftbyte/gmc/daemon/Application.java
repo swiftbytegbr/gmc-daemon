@@ -84,7 +84,7 @@ public class Application {
             return;
         }
         log.debug("Shutting down...");
-        if(executorService != null) {
+        if (executorService != null) {
             executorService.shutdown();
         }
         node.shutdown();

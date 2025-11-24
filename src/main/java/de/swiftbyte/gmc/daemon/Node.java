@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.swiftbyte.gmc.common.entity.NodeSettings;
-import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.entity.ResourceUsage;
+import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeHeartbeatPacket;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeLogoutPacket;
 import de.swiftbyte.gmc.daemon.cache.CacheModel;
@@ -14,7 +14,13 @@ import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.tasks.consumers.BackupDirectoryChangeTaskConsumer;
-import de.swiftbyte.gmc.daemon.utils.*;
+import de.swiftbyte.gmc.daemon.utils.CommonUtils;
+import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
+import de.swiftbyte.gmc.daemon.utils.ConnectionState;
+import de.swiftbyte.gmc.daemon.utils.NodeSettingsUtils;
+import de.swiftbyte.gmc.daemon.utils.NodeUtils;
+import de.swiftbyte.gmc.daemon.utils.PathValidationUtils;
+import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -118,7 +124,9 @@ public class Node {
                 this.defaultServerDirectory = Path.of(PathValidationUtils.canonicalizeOrAbsolute(cacheModel.getDefaultServerDirectory())).normalize();
             }
 
-            if(cacheModel.getBackupPath() != null) backupPath = Path.of(cacheModel.getBackupPath()).normalize();
+            if (cacheModel.getBackupPath() != null) {
+                backupPath = Path.of(cacheModel.getBackupPath()).normalize();
+            }
             isAutoUpdateEnabled = cacheModel.isAutoUpdateEnabled();
             manageFirewallAutomatically = cacheModel.isManageFirewallAutomatically();
 
@@ -345,8 +353,6 @@ public class Node {
             }
         }
     }
-
-    
 
 
     public void delete() {

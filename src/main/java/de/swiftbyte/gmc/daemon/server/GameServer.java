@@ -13,7 +13,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -69,7 +68,9 @@ public abstract class GameServer {
         updateScheduler = Application.getExecutor().scheduleWithFixedDelay(() -> {
             try {
                 // Skip update cycle while the server is in CREATING state (used to block operations during moves)
-                if (this.state != GameServerState.CREATING) this.update();
+                if (this.state != GameServerState.CREATING) {
+                    this.update();
+                }
             } catch (Exception e) {
                 log.error("Unhandled exception in server '{}'.", friendlyName, e);
             }
@@ -79,7 +80,9 @@ public abstract class GameServer {
 
         //Generate server aliases when server is installed on alias is not present
         Path aliasPath = this.installDir.getParent().resolve(friendlyName + " - Link");
-        if(!Files.exists(this.installDir) || Files.exists(aliasPath)) return;
+        if (!Files.exists(this.installDir) || Files.exists(aliasPath)) {
+            return;
+        }
 
         try {
             Files.createSymbolicLink(aliasPath, this.installDir);
@@ -123,12 +126,14 @@ public abstract class GameServer {
     /**
      * Updates the server's friendly name and refreshes the symbolic link under the parent directory
      * from the old display name to the new one.
-     *
+     * <p>
      * The symlink format follows the convention used elsewhere in the daemon:
-     *   "<DisplayName> - Link" -> <installDir>
+     * "<DisplayName> - Link" -> <installDir>
      */
     public void changeFriendlyName(@NotNull String newFriendlyName) {
-        if (newFriendlyName.equals(this.friendlyName)) return;
+        if (newFriendlyName.equals(this.friendlyName)) {
+            return;
+        }
 
         Path parent = this.installDir != null ? this.installDir.getParent() : null;
         if (parent == null) {
@@ -150,7 +155,8 @@ public abstract class GameServer {
             try {
                 // Ensure any stale newAlias is removed before re-creating
                 Files.deleteIfExists(newAlias);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             try {
                 Files.createSymbolicLink(newAlias, this.installDir);

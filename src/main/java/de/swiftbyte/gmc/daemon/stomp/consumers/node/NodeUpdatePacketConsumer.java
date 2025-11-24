@@ -16,7 +16,7 @@ public class NodeUpdatePacketConsumer implements StompPacketConsumer<NodeUpdateP
 
         if (packet.isAutoUpdate()) {
 
-            if(!Application.getVersion().equals(packet.getVersion())) {
+            if (!Application.getVersion().equals(packet.getVersion())) {
                 log.debug("Daemon got notified of new update but is already on the newest version...");
                 return;
             }

@@ -25,7 +25,9 @@ public class CommonUtils {
 
     public static boolean isNullOrEmpty(Object obj) {
 
-        if(obj == null) return true;
+        if (obj == null) {
+            return true;
+        }
 
         return obj.toString().isEmpty();
     }
