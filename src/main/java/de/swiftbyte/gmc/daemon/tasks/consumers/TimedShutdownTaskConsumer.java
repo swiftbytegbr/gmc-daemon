@@ -30,13 +30,8 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
         }
 
         int minutesLeft = Math.max(0, p.delayMinutes());
-
-        boolean shouldBeCancellable = minutesLeft > 1;
-        if (task.isCancellable() != shouldBeCancellable) {
-            task.setCancellable(shouldBeCancellable);
-            // Only TaskService sends update/complete packets; consumer avoids emitting updates on cancel
-            TaskService.updateTask(task);
-        }
+        task.setCancellable(true);
+        TaskService.updateTask(task);
 
         try {
             MapSettingsAdapter gmc = new MapSettingsAdapter(server.getSettings().getGmcSettings());
@@ -56,10 +51,6 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
                 }
                 sleepOneMinuteInterruptibly();
                 minutesLeft--;
-                if (minutesLeft == 1 && task.isCancellable()) {
-                    task.setCancellable(false);
-                    TaskService.updateTask(task);
-                }
                 if (!CommonUtils.isNullOrEmpty(baseMessage) && minutesLeft > 0 && !milestones.isEmpty() && milestones.contains(minutesLeft)) {
                     sendMessage(server, baseMessage, minutesLeft);
                 }
@@ -74,7 +65,7 @@ public class TimedShutdownTaskConsumer implements NodeTaskConsumer {
             }
 
             log.info("Executing timed shutdown for server {} (force: {})", p.serverId(), p.forceStop());
-            server.stop(false, p.forceStop()).complete();
+            server.stop(false, p.forceStop()).queue();
 
         } finally {
             // no-op
