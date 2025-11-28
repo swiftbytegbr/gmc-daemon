@@ -4,6 +4,7 @@ import de.swiftbyte.gmc.common.entity.GameServerState;
 import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.from.backend.server.ServerDeletePacket;
 import de.swiftbyte.gmc.daemon.Node;
+import de.swiftbyte.gmc.daemon.service.AutoRestartService;
 import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.service.FirewallService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
@@ -136,6 +137,7 @@ public abstract class ArkServer extends GameServer {
                 }
                 super.setState(GameServerState.DELETING);
 
+                AutoRestartService.cancelAutoRestart(serverId);
                 try {
                     //Delete alias
                     Path aliasPath = this.installDir.getParent().resolve(friendlyName + " - Link");
@@ -170,6 +172,7 @@ public abstract class ArkServer extends GameServer {
     @Override
     public AsyncAction<Boolean> abandon() {
         return () -> {
+            AutoRestartService.cancelAutoRestart(serverId);
             GameServer.removeServerById(serverId);
             updateScheduler.cancel(false);
             NodeUtils.cacheInformation(Node.INSTANCE);

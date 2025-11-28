@@ -129,6 +129,13 @@
             <version>6.9.1</version>
         </dependency>
 
+        <!-- Cron -->
+        <dependency>
+            <groupId>com.cronutils</groupId>
+            <artifactId>cron-utils</artifactId>
+            <version>9.2.1</version>
+        </dependency>
+
         <!-- ZeroTurnaround ZIP -->
         <dependency>
             <groupId>org.zeroturnaround</groupId>

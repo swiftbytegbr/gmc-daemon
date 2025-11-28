@@ -5,6 +5,7 @@ import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.from.daemon.server.ServerStatePacket;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
+import de.swiftbyte.gmc.daemon.service.AutoRestartService;
 import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.service.FirewallService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
@@ -77,6 +78,7 @@ public abstract class GameServer {
         }, 0, 10, TimeUnit.SECONDS);
 
         BackupService.updateAutoBackupSettings(serverId);
+        AutoRestartService.updateAutoRestartSettings(serverId);
 
         //Generate server aliases when server is installed on alias is not present
         Path aliasPath = this.installDir.getParent().resolve(friendlyName + " - Link");
@@ -205,6 +207,7 @@ public abstract class GameServer {
         this.settings = settings;
         allowFirewallPorts();
         BackupService.updateAutoBackupSettings(serverId);
+        AutoRestartService.updateAutoRestartSettings(serverId);
     }
 
     protected static void removeServerById(String id) {
