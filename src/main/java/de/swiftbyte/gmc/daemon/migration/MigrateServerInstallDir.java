@@ -2,8 +2,6 @@ package de.swiftbyte.gmc.daemon.migration;
 
 import de.swiftbyte.gmc.daemon.cache.CacheModel;
 import de.swiftbyte.gmc.daemon.cache.GameServerCacheModel;
-import de.swiftbyte.gmc.daemon.server.AsaServer;
-import de.swiftbyte.gmc.daemon.server.AseServer;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,7 +39,7 @@ public class MigrateServerInstallDir implements MigrationScript {
                 Path installDir = Path.of(gameServerCacheModel.getInstallDir());
                 Path serverDir = installDir.getParent();
                 File gameServerFolder = installDir.toFile();
-                if(!gameServerFolder.renameTo(serverDir.resolve(id).toFile())) {
+                if (!gameServerFolder.renameTo(serverDir.resolve(id).toFile())) {
                     log.error("Failed to rename game server folder {} to {}", gameServerFolder, serverDir);
                 } else {
                     log.info("[{}] - SUCCESS", id);
@@ -51,7 +49,7 @@ public class MigrateServerInstallDir implements MigrationScript {
             log.info("Folder name migration was successful");
 
             log.info("Starting deletion of cache files...");
-            if(!cacheFile.delete()) {
+            if (!cacheFile.delete()) {
                 log.error("Failed to delete cache file {}", cacheFile);
             } else {
                 log.info("[cache.json] - SUCCESS");

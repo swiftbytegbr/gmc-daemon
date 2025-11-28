@@ -5,8 +5,8 @@ import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
-import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import de.swiftbyte.gmc.daemon.utils.TimedMessageUtils;
+import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
@@ -17,7 +17,7 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
     @Override
     public void run(NodeTask task, Object payload) {
 
-        if(!(payload instanceof TimedRestartPayload p)) {
+        if (!(payload instanceof TimedRestartPayload p)) {
             throw new IllegalArgumentException("Expected TimedRestartPayload");
         }
 
@@ -76,7 +76,9 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
         long end = System.currentTimeMillis() + millis;
         while (true) {
             long remaining = end - System.currentTimeMillis();
-            if (remaining <= 0) break;
+            if (remaining <= 0) {
+                break;
+            }
             try {
                 Thread.sleep(Math.min(remaining, 1000));
             } catch (InterruptedException e) {
@@ -100,7 +102,7 @@ public class TimedRestartTaskConsumer implements NodeTaskConsumer {
         return false;
     }
 
-    
 
-    public record TimedRestartPayload(String serverId, int delayMinutes, String message) {}
+    public record TimedRestartPayload(String serverId, int delayMinutes, String message) {
+    }
 }

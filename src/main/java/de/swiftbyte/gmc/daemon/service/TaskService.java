@@ -4,14 +4,13 @@ import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeTaskCompletePacket;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeTaskCreatePacket;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeTaskUpdatePacket;
-import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
-import de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.BackupDirectoryChangeTaskConsumer;
-import de.swiftbyte.gmc.daemon.tasks.consumers.TimedRestartTaskConsumer;
-import de.swiftbyte.gmc.daemon.tasks.consumers.ServerDirectoryChangeTaskConsumer;
+import de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.RollbackTaskConsumer;
+import de.swiftbyte.gmc.daemon.tasks.consumers.ServerDirectoryChangeTaskConsumer;
+import de.swiftbyte.gmc.daemon.tasks.consumers.TimedRestartTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.TimedShutdownTaskConsumer;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,9 +18,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -60,7 +57,7 @@ public class TaskService {
             }
         });
 
-        if(executor != null) {
+        if (executor != null) {
             executor.shutdownNow();
             executor = null;
         }
@@ -68,15 +65,15 @@ public class TaskService {
         CONSUMERS.clear();
     }
 
-    public static boolean createTask(NodeTask.Type type, String nodeId, String...targetIds) {
+    public static boolean createTask(NodeTask.Type type, String nodeId, String... targetIds) {
         return createTask(type, null, nodeId, targetIds);
     }
 
-    public static boolean createTask(NodeTask.Type type, Object payload, String nodeId, String...affectedIds) {
+    public static boolean createTask(NodeTask.Type type, Object payload, String nodeId, String... affectedIds) {
         return createTask(type, payload, nodeId, null, affectedIds);
     }
 
-    public static boolean createTask(NodeTask.Type type, Object payload, String nodeId, HashMap<String, Object> context, String...affectedIds) {
+    public static boolean createTask(NodeTask.Type type, Object payload, String nodeId, HashMap<String, Object> context, String... affectedIds) {
 
         NodeTaskConsumer consumer = CONSUMERS.get(type);
         if (consumer == null) {
@@ -226,8 +223,12 @@ public class TaskService {
     }
 
     public static void updateTaskProgress(NodeTask task, int percent) {
-        if (task == null) return;
-        if (task.getType() != NodeTask.Type.SERVER_DIRECTORY_CHANGE) return;
+        if (task == null) {
+            return;
+        }
+        if (task.getType() != NodeTask.Type.SERVER_DIRECTORY_CHANGE) {
+            return;
+        }
 
         int clamped = Math.max(0, Math.min(100, percent));
         Integer last = LAST_PROGRESS.get(task.getId());
@@ -252,5 +253,6 @@ public class TaskService {
             Future<?> future,
             NodeTask task,
             Object payload
-    ) {}
+    ) {
+    }
 }

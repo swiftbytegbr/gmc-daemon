@@ -6,18 +6,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.swiftbyte.gmc.common.entity.Backup;
+import de.swiftbyte.gmc.common.entity.GameServerState;
 import de.swiftbyte.gmc.common.packet.from.daemon.server.ServerBackupResponsePacket;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
-import de.swiftbyte.gmc.common.entity.GameServerState;
 import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
-import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
+import de.swiftbyte.gmc.daemon.utils.DirectoryMoveUtils;
 import de.swiftbyte.gmc.daemon.utils.NodeUtils;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
-import de.swiftbyte.gmc.daemon.utils.DirectoryMoveUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
@@ -379,7 +378,10 @@ public class BackupService {
         backupsSuspended = true;
         if (backupSchedulers != null) {
             backupSchedulers.values().forEach(s -> {
-                try { s.cancel(false); } catch (Exception ignored) {}
+                try {
+                    s.cancel(false);
+                } catch (Exception ignored) {
+                }
             });
             backupSchedulers.clear();
         }

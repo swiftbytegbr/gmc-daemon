@@ -8,11 +8,14 @@ import java.util.stream.Collectors;
 
 public final class TimedMessageUtils {
 
-    private TimedMessageUtils() {}
+    private TimedMessageUtils() {
+    }
 
     public static List<Integer> getMessageMilestoneList(MapSettingsAdapter gmcSettings) {
         String csv = gmcSettings.get("DelayedMessageMilestones", null);
-        if (CommonUtils.isNullOrEmpty(csv)) return List.of();
+        if (CommonUtils.isNullOrEmpty(csv)) {
+            return List.of();
+        }
         try {
             return Arrays.stream(csv.split(","))
                     .map(String::trim)

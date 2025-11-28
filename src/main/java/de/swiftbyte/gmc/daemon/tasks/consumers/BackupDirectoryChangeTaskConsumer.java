@@ -30,7 +30,10 @@ public class BackupDirectoryChangeTaskConsumer implements NodeTaskConsumer {
             NodeUtils.cacheInformation(Node.INSTANCE);
             log.info("BACKUP_DIRECTORY_CHANGE task finished successfully.");
         } catch (Exception e) {
-            try { Node.INSTANCE.setBackupPath(oldBackupPath); } catch (Exception ignored) {}
+            try {
+                Node.INSTANCE.setBackupPath(oldBackupPath);
+            } catch (Exception ignored) {
+            }
             // Inform backend to rollback settings
             try {
                 NodeSettings rollback = new NodeSettings();
@@ -43,7 +46,8 @@ public class BackupDirectoryChangeTaskConsumer implements NodeTaskConsumer {
                     if (Node.INSTANCE.getDefaultServerDirectory() != null) {
                         rollback.setDefaultServerDirectory(Node.INSTANCE.getDefaultServerDirectory().toString());
                     }
-                } catch (Exception ignored) { }
+                } catch (Exception ignored) {
+                }
                 // Revert backups dir to the previous value
                 rollback.setServerBackupsDirectory(oldBackupPath.toString());
 
@@ -60,5 +64,6 @@ public class BackupDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         }
     }
 
-    public record BackupDirectoryChangeTaskPayload(Path oldBackupPath, Path newBackupPath) {}
+    public record BackupDirectoryChangeTaskPayload(Path oldBackupPath, Path newBackupPath) {
+    }
 }

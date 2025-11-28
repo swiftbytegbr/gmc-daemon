@@ -10,7 +10,8 @@ import java.nio.file.Path;
 @Slf4j
 public final class NodeSettingsUtils {
 
-    private NodeSettingsUtils() {}
+    private NodeSettingsUtils() {
+    }
 
     // Validates incoming defaultServerDirectory; if null/invalid, backfill to currentDefaultDir (or absolute ./servers) and sync once.
     public static String validateOrBackfillDefaultServerDirectory(NodeSettings nodeSettings, Path currentDefaultDir) {

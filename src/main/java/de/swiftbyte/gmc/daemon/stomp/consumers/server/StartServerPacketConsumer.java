@@ -17,8 +17,11 @@ public class StartServerPacketConsumer implements StompPacketConsumer<ServerStar
 
         if (server != null) {
             server.start().queue((success) -> {
-                if(success) log.info("Started server with id {} successfully.", packet.getServerId());
-                else log.error("Starting server with id {} failed.", packet.getServerId());
+                if (success) {
+                    log.info("Started server with id {} successfully.", packet.getServerId());
+                } else {
+                    log.error("Starting server with id {} failed.", packet.getServerId());
+                }
             });
         } else {
             log.error("Server with id {} not found!", packet.getServerId());

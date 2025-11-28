@@ -1,6 +1,5 @@
 package de.swiftbyte.gmc.daemon.stomp.consumers.node;
 
-import de.swiftbyte.gmc.common.packet.from.backend.node.NodeDeletePacket;
 import de.swiftbyte.gmc.common.packet.from.backend.node.NodeTaskCancelPacket;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
@@ -16,7 +15,7 @@ public class NodeTaskCancelConsumer implements StompPacketConsumer<NodeTaskCance
 
         log.debug("Received task cancel packet: {}", packet);
 
-        if(TaskService.cancelTask(packet.getNodeTaskId())) {
+        if (TaskService.cancelTask(packet.getNodeTaskId())) {
             log.info("Task cancelled task with id: {}", packet.getNodeTaskId());
         } else {
             log.warn("Task cancellation failed task with id: {}", packet.getNodeTaskId());

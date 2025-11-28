@@ -2,7 +2,6 @@ package de.swiftbyte.gmc.daemon.utils.settings;
 
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public record MapSettingsAdapter(Map<String, Object> settings) {

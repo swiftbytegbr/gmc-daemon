@@ -17,5 +17,6 @@ public class RollbackTaskConsumer implements NodeTaskConsumer {
         throw new IllegalArgumentException("Expected RollbackTaskPayload for RollbackTaskConsumer");
     }
 
-    public record RollbackTaskPayload(String backupId, boolean rollbackPlayers) {}
+    public record RollbackTaskPayload(String backupId, boolean rollbackPlayers) {
+    }
 }

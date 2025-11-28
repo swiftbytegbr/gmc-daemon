@@ -1,13 +1,13 @@
 package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 
+import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.packet.from.backend.server.ServerRestartPacket;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.TaskService;
-import de.swiftbyte.gmc.daemon.tasks.consumers.TimedRestartTaskConsumer.TimedRestartPayload;
-import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
+import de.swiftbyte.gmc.daemon.tasks.consumers.TimedRestartTaskConsumer.TimedRestartPayload;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
@@ -50,8 +50,11 @@ public class RestartServerPacketConsumer implements StompPacketConsumer<ServerRe
         GameServer server = GameServer.getServerById(packet.getServerId());
         if (server != null) {
             server.restart().queue(success -> {
-                if(success) log.info("Restarted server with id {} successfully.", packet.getServerId());
-                else log.error("Restarting server with id {} failed.", packet.getServerId());
+                if (success) {
+                    log.info("Restarted server with id {} successfully.", packet.getServerId());
+                } else {
+                    log.error("Restarting server with id {} failed.", packet.getServerId());
+                }
             });
         } else {
             log.error("Server with id {} not found!", packet.getServerId());
