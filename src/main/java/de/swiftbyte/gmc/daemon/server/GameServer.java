@@ -61,7 +61,7 @@ public abstract class GameServer {
         this.serverId = id;
         this.friendlyName = friendlyName;
         this.installDir = installDir.toAbsolutePath().normalize();
-        this.settings = settings;
+        setSettings(settings);
 
         setState(GameServerState.OFFLINE);
 
@@ -137,6 +137,11 @@ public abstract class GameServer {
             return;
         }
 
+        //Remove Firewall rules and recreate them after the name change
+        if(Node.INSTANCE.isManageFirewallAutomatically()) {
+            FirewallService.removePort(friendlyName);
+        }
+
         Path parent = this.installDir != null ? this.installDir.getParent() : null;
         if (parent == null) {
             this.friendlyName = newFriendlyName;
@@ -170,6 +175,9 @@ public abstract class GameServer {
         }
 
         this.friendlyName = newFriendlyName;
+
+        //Set settings to initialize setting firewall rules
+        setSettings(settings);
     }
 
     public void setState(GameServerState state) {

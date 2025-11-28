@@ -26,24 +26,24 @@ public class FirewallService {
         List<String> commandTcp = List.of(
                 "powershell",
                 "New-NetFirewallRule",
-                "-DisplayName", ruleName,
+                "-DisplayName", "\""+ruleName+"\"",
                 "-Direction", "Inbound",
                 "-LocalPort", portsString,
                 "-Protocol", "TCP",
                 "-Action", "Allow",
-                "-Program", executable,
-                "-Group", "GameManagerCloud Server Port"
+                "-Program", "\""+executable+"\"",
+                "-Group", "\"GameManagerCloud Server Port\""
         );
 
         List<String> commandUdp = List.of(
                 "powershell",
                 "New-NetFirewallRule",
-                "-DisplayName", ruleName,
+                "-DisplayName", "\""+ruleName+"\"",
                 "-Direction", "Inbound",
                 "-LocalPort", portsString,
                 "-Protocol", "UDP",
                 "-Action", "Allow",
-                "-Program", executable,
+                "-Program", "\""+executable+"\"",
                 "-Group", "GameManagerCloud Server Port"
         );
 
@@ -77,7 +77,7 @@ public class FirewallService {
                 "powershell",
                 "Remove-NetFirewallRule",
                 "-DisplayName",
-                ruleName
+                "\""+ruleName+"\""
         );
 
         try {
