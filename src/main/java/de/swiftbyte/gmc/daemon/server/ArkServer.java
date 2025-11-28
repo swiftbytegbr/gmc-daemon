@@ -282,6 +282,7 @@ public abstract class ArkServer extends GameServer {
                     ServerUtils.killServerProcess(PID);
                 }
                 sendRconCommand("doexit");
+                currentOnlinePlayers = 0;
             }
 
             synchronized (this) {
