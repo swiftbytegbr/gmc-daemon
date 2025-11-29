@@ -45,7 +45,17 @@ public abstract class ArkServer extends GameServer {
     @Override
     public void setSettings(SettingProfile settings) {
         super.setSettings(settings);
-        writeStartupBatch();
+        // Only write startup batch if install directory exists.
+        // During initial creation, installDir may not exist yet and writing would fail.
+        try {
+            if (installDir != null && Files.exists(installDir)) {
+                writeStartupBatch();
+            } else {
+                log.debug("Skipping startup batch write for '{}' because install directory does not exist yet.", friendlyName);
+            }
+        } catch (Exception e) {
+            log.error("Failed while attempting to write startup batch for '{}' during settings update.", friendlyName, e);
+        }
     }
 
     public AsyncAction<Boolean> install() {
