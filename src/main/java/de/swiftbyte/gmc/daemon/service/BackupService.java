@@ -84,6 +84,11 @@ public class BackupService {
 
         GameServer server = GameServer.getServerById(serverId);
 
+        if (server == null) {
+            log.debug("No server found for id '{}'. Skipping auto backup setup...", serverId);
+            return;
+        }
+
         if (server.getSettings().getGmcSettings() == null) {
             log.debug("No GMC settings found for server '{}'. Skipping auto backup setup...", server.getFriendlyName());
             return;

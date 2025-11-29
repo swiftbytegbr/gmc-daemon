@@ -61,11 +61,13 @@ public abstract class GameServer {
         this.serverId = id;
         this.friendlyName = friendlyName;
         this.installDir = installDir.toAbsolutePath().normalize();
+
+        // Register first so downstream lookups (e.g., in setSettings -> BackupService) can resolve
+        GAME_SERVERS.put(id, this);
+
         setSettings(settings);
 
         setState(GameServerState.OFFLINE);
-
-        GAME_SERVERS.put(id, this);
         updateScheduler = Application.getExecutor().scheduleWithFixedDelay(() -> {
             try {
                 // Skip update cycle while the server is in CREATING state (used to block operations during moves)
@@ -77,8 +79,7 @@ public abstract class GameServer {
             }
         }, 0, 10, TimeUnit.SECONDS);
 
-        BackupService.updateAutoBackupSettings(serverId);
-        AutoRestartService.updateAutoRestartSettings(serverId);
+        // setSettings already triggers backup and auto-restart scheduling
 
         //Generate server aliases when server is installed on alias is not present
         Path aliasPath = this.installDir.getParent().resolve(friendlyName + " - Link");
