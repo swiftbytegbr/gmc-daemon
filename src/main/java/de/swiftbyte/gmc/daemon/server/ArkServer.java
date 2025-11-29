@@ -59,6 +59,16 @@ public abstract class ArkServer extends GameServer {
             MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
             boolean isPreaquaticaBeta = gmcSettings.getBoolean("EnablePreaquaticaBeta", false);
 
+            // Ensure install directory exists and is creatable before invoking SteamCMD.
+            // If this fails, signal failure so the caller (creation flow) can delete the server.
+            try {
+                Files.createDirectories(installDir);
+            } catch (Exception e) {
+                log.error("Failed to create server install directory '{}' for '{}'.", installDir, friendlyName, e);
+                setState(GameServerState.OFFLINE);
+                return false;
+            }
+
             String steamCmdPath = CommonUtils.convertPathSeparator(NodeUtils.getSteamCmdPath().toAbsolutePath());
             String installDirectory = CommonUtils.convertPathSeparator(installDir.toAbsolutePath());
 
