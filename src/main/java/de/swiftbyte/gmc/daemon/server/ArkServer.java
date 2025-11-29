@@ -38,6 +38,8 @@ public abstract class ArkServer extends GameServer {
 
     public ArkServer(String id, @NotNull Path installDir, String friendlyName, SettingProfile settings) {
         super(id, installDir, friendlyName, settings);
+        // After base init (which may load cached settings), apply backend settings to trigger deltas
+        setSettings(settings);
     }
 
     @Override

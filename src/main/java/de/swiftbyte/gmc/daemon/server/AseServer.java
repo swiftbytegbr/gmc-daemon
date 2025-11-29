@@ -56,6 +56,11 @@ public class AseServer extends ArkServer {
         SettingProfile oldSettings = getSettings();
         super.setSettings(settings);
 
+        // Skip change detection if GMC settings are missing
+        if (settings.getGmcSettings() == null || oldSettings.getGmcSettings() == null) {
+            return;
+        }
+
         MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
         MapSettingsAdapter oldGmcSettings = new MapSettingsAdapter(oldSettings.getGmcSettings());
 

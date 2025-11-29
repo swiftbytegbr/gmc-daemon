@@ -9,6 +9,7 @@ import de.swiftbyte.gmc.daemon.service.AutoRestartService;
 import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.service.FirewallService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
+import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import de.swiftbyte.gmc.daemon.utils.action.AsyncAction;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -65,7 +66,12 @@ public abstract class GameServer {
         // Register first so downstream lookups (e.g., in setSettings -> BackupService) can resolve
         GAME_SERVERS.put(id, this);
 
-        setSettings(settings);
+        // Initialize baseline settings from cache when available to support delta detection
+        SettingProfile cached = ServerUtils.getCachedGameServerSettings(id);
+        SettingProfile baseline = cached != null ? cached : settings;
+
+        // Initialize settings without invoking subclass overrides during construction
+        initSettings(baseline);
 
         setState(GameServerState.OFFLINE);
         updateScheduler = Application.getExecutor().scheduleWithFixedDelay(() -> {
@@ -92,6 +98,17 @@ public abstract class GameServer {
         } catch (IOException e) {
             log.warn("Failed to create symbolic link for '{}'.", friendlyName, e);
         }
+    }
+
+    // Internal initializer to avoid virtual dispatch during construction
+    private void initSettings(SettingProfile settings) {
+        if (Node.INSTANCE.isManageFirewallAutomatically()) {
+            FirewallService.removePort(friendlyName);
+        }
+        this.settings = settings;
+        allowFirewallPorts();
+        BackupService.updateAutoBackupSettings(serverId);
+        AutoRestartService.updateAutoRestartSettings(serverId);
     }
 
     public abstract AsyncAction<Boolean> install();

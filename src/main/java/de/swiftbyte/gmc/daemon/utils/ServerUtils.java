@@ -164,6 +164,29 @@ public class ServerUtils {
         return null;
     }
 
+    public static SettingProfile getCachedGameServerSettings(String id) {
+
+        File cacheFile = new File("./cache.json");
+
+        if (!cacheFile.exists()) {
+            log.debug("No cache file found. Skipping...");
+            return null;
+        }
+
+        try {
+            CacheModel cacheModel = CommonUtils.getObjectReader().readValue(cacheFile, CacheModel.class);
+            HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
+
+            GameServerCacheModel cached = gameServerCacheModelHashMap != null ? gameServerCacheModelHashMap.get(id) : null;
+            if (cached != null) {
+                return cached.getSettings();
+            }
+        } catch (IOException e) {
+            log.error("An unknown error occurred while getting cached settings.", e);
+        }
+        return null;
+    }
+
     public static void writeIniFiles(GameServer server, Path installDir) {
         IniConverter iniConverter = new IniConverter();
 
