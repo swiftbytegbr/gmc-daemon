@@ -262,8 +262,8 @@ public class Node {
 
         if (getConnectionState() == ConnectionState.RECONNECTING) {
             log.info("Reconnecting to backend...");
+            // Re-establish STOMP connection only; keep TaskService running to avoid interrupting tasks
             StompHandler.initialiseStomp();
-            TaskService.initializeTaskService();
         } else {
             log.info("Connecting to backend...");
             setConnectionState(ConnectionState.CONNECTING);

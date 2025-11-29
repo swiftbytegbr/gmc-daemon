@@ -245,6 +245,28 @@ public class TaskService {
         }
     }
 
+    /**
+     * Re-announce all currently running tasks to the backend after a reconnect.
+     * Sends a create packet followed by an immediate update with the current state/progress.
+     */
+    public static void announceActiveTasks() {
+        TASKS.values().forEach(taskRun -> {
+            NodeTask task = taskRun.task;
+            try {
+                NodeTaskCreatePacket create = new NodeTaskCreatePacket();
+                create.setNodeTask(task);
+                StompHandler.send("/app/node/task-create", create);
+
+                // Follow with an update so backend sees the current state/progress immediately
+                sendUpdatePacket(task);
+                log.info("Re-announced active task: id={}, type={}, state={}, progress={}%, cancellable={}",
+                        task.getId(), task.getType(), task.getState(), task.getProgressPercentage(), task.isCancellable());
+            } catch (Exception e) {
+                log.warn("Failed to re-announce task {} on reconnect.", task.getId(), e);
+            }
+        });
+    }
+
 
     private static void registerConsumer(NodeTask.Type type, NodeTaskConsumer consumer) {
         CONSUMERS.put(type, consumer);

@@ -8,6 +8,7 @@ import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.AseServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
+import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
@@ -76,6 +77,13 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
             Node.INSTANCE.updateSettings(packet.getNodeSettings());
 
             Node.INSTANCE.setConnectionState(ConnectionState.CONNECTED);
+
+            // If we reconnected while tasks were running, re-announce them to the backend
+            try {
+                TaskService.announceActiveTasks();
+            } catch (Exception e) {
+                log.warn("Failed to re-announce active tasks after login ack.", e);
+            }
 
             if (Node.INSTANCE.isFirstStart()) {
                 log.info("""
