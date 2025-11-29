@@ -46,7 +46,7 @@ public final class NodeSettingsUtils {
                 NodeSettingsPacket packet = new NodeSettingsPacket();
                 packet.setNodeSettings(nodeSettings);
                 StompHandler.send("/app/node/settings", packet);
-                log.info("Backfilled serverBackupsDirectory to '{}' (invalid or empty).", fallback);
+                log.warn("Corrected serverBackupsDirectory in backend to '{}' (invalid or empty).", fallback);
             }
             return fallback;
         }
