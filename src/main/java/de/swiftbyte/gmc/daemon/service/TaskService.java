@@ -234,7 +234,8 @@ public class TaskService {
         Integer last = LAST_PROGRESS.get(task.getId());
         boolean initial = last == null;
         boolean threshold = !initial && Math.abs(clamped - last) > 5;
-        boolean force = clamped == 100 || clamped == 0;
+        // Only force-send at 100% if the last sent value wasn't already 100.
+        boolean force = clamped == 100 && (last == null || last != 100);
 
         if (initial || threshold || force) {
             task.setProgressPercentage(clamped);
