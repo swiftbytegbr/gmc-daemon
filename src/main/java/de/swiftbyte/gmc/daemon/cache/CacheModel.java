@@ -18,10 +18,10 @@ public class CacheModel {
     private String nodeName;
     private String teamName;
     private String serverPath;
+    private String defaultServerDirectory;
+    private String backupPath;
     private boolean manageFirewallAutomatically;
     private boolean isAutoUpdateEnabled;
-    private String serverStopMessage;
-    private String serverRestartMessage;
 
     private HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap;
 }

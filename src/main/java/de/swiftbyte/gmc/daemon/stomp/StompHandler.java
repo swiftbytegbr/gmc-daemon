@@ -9,17 +9,21 @@ import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeLoginPacket;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
+import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.simp.stomp.ConnectionLostException;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
@@ -31,6 +35,8 @@ import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Slf4j
 public class StompHandler {
@@ -38,13 +44,36 @@ public class StompHandler {
     // 2MB
     private static final int MAX_MESSAGE_BUFFER_SIZE_BYTES = 1024 * 1024 * 2;
 
+    private static ThreadPoolTaskScheduler threadPoolTaskScheduler;
+    private static WebSocketStompClient stompClient;
     private static StompSession session;
+    private static ExecutorService sendExecutor; // single-threaded sender
+
+    private static boolean hasInterruptedCause(Throwable t) {
+        Throwable c = t;
+        while (c != null) {
+            if (c instanceof InterruptedException) {
+                return true;
+            }
+            c = c.getCause();
+        }
+        return false;
+    }
 
     public static boolean initialiseStomp() {
 
+        disconnect();
+
+        threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
+        threadPoolTaskScheduler.setPoolSize(ConfigUtils.getInt("override-stomp-pool-size", 32));
+        threadPoolTaskScheduler.setThreadNamePrefix("stomp-");
+        threadPoolTaskScheduler.initialize();
+
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
         container.setDefaultMaxTextMessageBufferSize(MAX_MESSAGE_BUFFER_SIZE_BYTES);
-        WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient(container));
+        stompClient = new WebSocketStompClient(new StandardWebSocketClient(container));
+        stompClient.setTaskScheduler(threadPoolTaskScheduler);
+        stompClient.setDefaultHeartbeat(new long[]{10_000, 10_000});
         stompClient.setInboundMessageSizeLimit(MAX_MESSAGE_BUFFER_SIZE_BYTES);
         WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
         headers.add("Node-Id", Node.INSTANCE.getNodeId());
@@ -58,6 +87,7 @@ public class StompHandler {
         try {
             log.debug("Connecting WebSocket to {}", Application.getWebsocketUrl());
             session = stompClient.connectAsync(Application.getWebsocketUrl(), headers, new StompSessionHandler()).get();
+            ensureSender();
             scanForPacketListeners();
         } catch (InterruptedException | ExecutionException e) {
 
@@ -66,33 +96,78 @@ public class StompHandler {
                 return false;
             }
 
-            log.error("Failed to establish connection to backend. Is the backend running?");
+            log.error("Failed to establish connection to backend. Please check your connection and the status of the backend.");
             log.debug("Error: ", e);
             return false;
         }
         return true;
     }
 
-    public synchronized static void send(String destination, Object payload) {
+    private static synchronized void ensureSender() {
+        if (sendExecutor == null) {
+            sendExecutor = Executors.newSingleThreadExecutor(r -> {
+                Thread t = new Thread(r, "stomp-sender");
+                t.setDaemon(true);
+                return t;
+            });
+        }
+    }
+
+    public static void send(String destination, Object payload) {
+        ensureSender();
+        sendExecutor.execute(() -> doSend(destination, payload));
+    }
+
+    public static void sendNonCritical(String destination, Object payload) {
+        // For now, same as send; could apply drop/merge policy later
+        send(destination, payload);
+    }
+
+    private static void doSend(String destination, Object payload) {
         if (session == null) {
             if (Node.INSTANCE.getConnectionState() != ConnectionState.RECONNECTING) {
                 log.error("Failed to send packet to {} because the session is null.", destination);
+                Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
             }
             return;
         }
 
         if (!session.isConnected()) {
-            log.error("Failed to send packet to {} because the session is not connected. Is the backend running?", destination);
+            log.error("Failed to send packet to {} because the session is not connected.", destination);
             Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
             return;
         }
 
-        session.send(destination, payload);
+        try {
+            session.send(destination, payload);
+        } catch (MessageDeliveryException e) {
+            if (hasInterruptedCause(e)) {
+                log.debug("Send to {} aborted due to interrupt; not marking connection lost.", destination);
+                return;
+            }
+            log.error("Failed to deliver packet to {}.", destination, e);
+            Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
+        } catch (Exception e) {
+            log.error("Failed to send packet to {}.", destination, e);
+            Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
+        }
     }
 
     public static void disconnect() {
-        session.disconnect();
-        session = null;
+        if (session != null && session.isConnected()) {
+            session.disconnect();
+            session = null;
+        }
+
+        if (stompClient != null && stompClient.isRunning()) {
+            stompClient.stop();
+            stompClient = null;
+        }
+
+        if (threadPoolTaskScheduler != null && threadPoolTaskScheduler.isRunning()) {
+            threadPoolTaskScheduler.shutdown();
+            threadPoolTaskScheduler = null;
+        }
     }
 
     private static void scanForPacketListeners() {
@@ -116,7 +191,8 @@ public class StompHandler {
                 }
 
                 for (String path : annotation.path()) {
-                    session.subscribe(path, new StompFrameHandler() {
+                    ensureSender();
+                    sendExecutor.execute(() -> session.subscribe(path, new StompFrameHandler() {
                         @Override
                         public Type getPayloadType(StompHeaders headers) {
                             return annotation.packetClass();
@@ -124,9 +200,9 @@ public class StompHandler {
 
                         @Override
                         public void handleFrame(StompHeaders headers, Object payload) {
-                            new Thread(() -> packetConsumer.onReceive(payload)).start();
+                            packetConsumer.onReceive(payload);
                         }
-                    });
+                    }));
                 }
 
             } else {
@@ -163,30 +239,26 @@ public class StompHandler {
 
             log.debug("Sending login packet: {} to /node/login", loginPacket);
 
-            session.send("/app/node/login", loginPacket);
+            // Enqueue login send on dedicated sender thread
+            StompHandler.send("/app/node/login", loginPacket);
         }
 
         @Override
         public void handleTransportError(StompSession session, Throwable e) {
-            if (!session.isConnected()) {
-                log.error("Failed to send packet to backend because the session is not connected. Is the backend running?");
+
+            if (e instanceof ConnectionLostException) {
+                log.error("The daemon lost connection to the backend. Please check the internet connection or the current backend status.");
                 Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
-            } else {
-                log.error("An error occurred while communicating with the backend.", e);
+                return;
             }
+
+            log.error("An error occurred while communicating with the backend.", e);
         }
 
         @Override
         public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload, Throwable exception) {
             super.handleException(session, command, headers, payload, exception);
             log.error("An unknown error occurred.", exception);
-        }
-
-        @Override
-        public void handleFrame(StompHeaders headers, Object payload) {
-            log.info("Received message: {}", payload);
-            headers.keySet().forEach(key -> log.info("{}: {}", key, headers.get(key)));
-            super.handleFrame(headers, payload);
         }
     }
 }

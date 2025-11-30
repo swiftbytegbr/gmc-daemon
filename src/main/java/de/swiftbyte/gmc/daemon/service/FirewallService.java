@@ -21,15 +21,38 @@ public class FirewallService {
 
         log.debug("Adding firewall rule for ports {}.", portsString);
 
-        String commandTcp = String.format("powershell New-NetFirewallRule -DisplayName \\\"%s\\\" -Direction Inbound -LocalPort %s -Protocol TCP -Action Allow -Program \\\"%s\\\" -Group \\\"GameManagerCloud Server Port\\\"", ruleName, portsString, CommonUtils.convertPathSeparator(executablePath.toAbsolutePath()));
-        String commandUdp = String.format("powershell New-NetFirewallRule -DisplayName \\\"%s\\\" -Direction Inbound -LocalPort %s -Protocol UDP -Action Allow -Program \\\"%s\\\" -Group \\\"GameManagerCloud Server Port\\\"", ruleName, portsString, CommonUtils.convertPathSeparator(executablePath.toAbsolutePath()));
+        String executable = CommonUtils.convertPathSeparator(executablePath.toAbsolutePath());
+
+        List<String> commandTcp = List.of(
+                "powershell",
+                "New-NetFirewallRule",
+                "-DisplayName", "\""+ruleName+"\"",
+                "-Direction", "Inbound",
+                "-LocalPort", portsString,
+                "-Protocol", "TCP",
+                "-Action", "Allow",
+                "-Program", "\""+executable+"\"",
+                "-Group", "\"GameManagerCloud Server Port\""
+        );
+
+        List<String> commandUdp = List.of(
+                "powershell",
+                "New-NetFirewallRule",
+                "-DisplayName", "\""+ruleName+"\"",
+                "-Direction", "Inbound",
+                "-LocalPort", portsString,
+                "-Protocol", "UDP",
+                "-Action", "Allow",
+                "-Program", "\""+executable+"\"",
+                "-Group", "GameManagerCloud Server Port"
+        );
 
         try {
-            log.debug("Using tcp command: {}", commandTcp);
-            Process tcpProcess = Runtime.getRuntime().exec(commandTcp);
+            log.debug("Using tcp command: {}", String.join(" ", commandTcp));
+            Process tcpProcess = new ProcessBuilder(commandTcp).start();
 
-            log.debug("Using udp command: {}", commandUdp);
-            Process udpProcess = Runtime.getRuntime().exec(commandUdp);
+            log.debug("Using udp command: {}", String.join(" ", commandUdp));
+            Process udpProcess = new ProcessBuilder(commandUdp).start();
 
             tcpProcess.waitFor();
             udpProcess.waitFor();
@@ -50,17 +73,22 @@ public class FirewallService {
 
         log.debug("Removing firewall rule {}.", ruleName);
 
-        String command = String.format("powershell Remove-NetFirewallRule -DisplayName \\\"%s\\\"", ruleName);
+        List<String> command = List.of(
+                "powershell",
+                "Remove-NetFirewallRule",
+                "-DisplayName",
+                "\""+ruleName+"\""
+        );
 
         try {
-            Process process = Runtime.getRuntime().exec(command);
+            Process process = new ProcessBuilder(command).start();
             process.waitFor();
 
             if (process.exitValue() != 0) {
                 log.warn("Removing firewall rule returned non-zero exit value.");
             }
 
-            Process process2 = Runtime.getRuntime().exec(command);
+            Process process2 = new ProcessBuilder(command).start();
             process2.waitFor();
 
         } catch (IOException | InterruptedException e) {

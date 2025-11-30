@@ -4,13 +4,7 @@ import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 
 import java.util.LinkedHashMap;
 
-public class INISettingsAdapter {
-
-    private final LinkedHashMap<String, LinkedHashMap<String, Object>> settings;
-
-    public INISettingsAdapter(LinkedHashMap<String, LinkedHashMap<String, Object>> settings) {
-        this.settings = settings;
-    }
+public record INISettingsAdapter(LinkedHashMap<String, LinkedHashMap<String, Object>> settings) {
 
     public String get(String category, String key) {
         if (!settings.containsKey(category)) {
@@ -68,6 +62,6 @@ public class INISettingsAdapter {
         if (!settings.containsKey(category)) {
             return false;
         }
-        return has(category, key) && !CommonUtils.isNullOrEmpty(settings.get(category).get(key).toString());
+        return has(category, key) && !CommonUtils.isNullOrEmpty(settings.get(category).get(key));
     }
 }

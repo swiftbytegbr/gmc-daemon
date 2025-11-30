@@ -16,8 +16,13 @@ public class DeleteServerPacketConsumer implements StompPacketConsumer<ServerDel
         GameServer server = GameServer.getServerById(packet.getServerId());
 
         if (server != null) {
-            server.delete().complete();
-            log.info("Deleted server with id {} successfully.", packet.getServerId());
+            server.delete().queue(success -> {
+                if (success) {
+                    log.info("Deleted server with id {} successfully.", packet.getServerId());
+                } else {
+                    log.error("Deleting server with id {} failed.", packet.getServerId());
+                }
+            });
         } else {
             log.error("Server with id {} not found!", packet.getServerId());
         }

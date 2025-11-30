@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.swiftbyte.gmc.common.entity.Backup;
+import de.swiftbyte.gmc.common.entity.GameServerState;
 import de.swiftbyte.gmc.common.packet.from.daemon.server.ServerBackupResponsePacket;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
@@ -13,6 +14,7 @@ import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
+import de.swiftbyte.gmc.daemon.utils.DirectoryMoveUtils;
 import de.swiftbyte.gmc.daemon.utils.NodeUtils;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ import org.zeroturnaround.zip.ZipUtil;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -42,6 +45,7 @@ public class BackupService {
 
     private static HashMap<String, Backup> backups = new HashMap<>();
     private static HashMap<String, ScheduledFuture<?>> backupSchedulers;
+    private static volatile boolean backupsSuspended = false;
 
     public static void initialiseBackupService() {
 
@@ -80,6 +84,11 @@ public class BackupService {
 
         GameServer server = GameServer.getServerById(serverId);
 
+        if (server == null) {
+            log.debug("No server found for id '{}'. Skipping auto backup setup...", serverId);
+            return;
+        }
+
         if (server.getSettings().getGmcSettings() == null) {
             log.debug("No GMC settings found for server '{}'. Skipping auto backup setup...", server.getFriendlyName());
             return;
@@ -89,7 +98,7 @@ public class BackupService {
 
         int autoBackupInterval = settings.getInt("AutoBackupInterval", 30);
 
-        if (settings.getBoolean("AutoBackupEnabled", false) && autoBackupInterval > 0) {
+        if (!backupsSuspended && settings.getBoolean("AutoBackupEnabled", false) && autoBackupInterval > 0) {
             log.debug("Starting backup scheduler...");
 
             long delay = autoBackupInterval - (System.currentTimeMillis() / 60000) % autoBackupInterval;
@@ -97,8 +106,31 @@ public class BackupService {
             log.debug("Starting auto backup in {} minutes.", delay);
 
             backupSchedulers.put(serverId, Application.getExecutor().scheduleAtFixedRate(() -> {
-                log.debug("Starting auto backup...");
-                BackupService.backupServer(serverId, true);
+                try {
+                    if (backupsSuspended) {
+                        log.debug("Auto backup skipped (backups suspended).");
+                        return;
+                    }
+                    if (server.getState() == GameServerState.CREATING) {
+                        log.debug("Auto backup skipped for '{}' (server is in CREATING state).", server.getFriendlyName());
+                        return;
+                    }
+                    log.debug("Starting auto backup...");
+                    // Schedule backup as a non-cancellable task via TaskService
+
+                    HashMap<String, Object> context = new HashMap<>();
+                    context.put("backupName", "Auto Backup");
+
+                    TaskService.createTask(
+                            de.swiftbyte.gmc.common.model.NodeTask.Type.BACKUP,
+                            new de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer.BackupTaskPayload(true, null),
+                            Node.INSTANCE.getNodeId(),
+                            context,
+                            serverId
+                    );
+                } catch (Exception e) {
+                    log.error("Unhandled exception during auto backup for server '{}'.", server.getFriendlyName(), e);
+                }
             }, delay, autoBackupInterval, TimeUnit.MINUTES));
 
         }
@@ -130,7 +162,16 @@ public class BackupService {
     public static void backupServer(GameServer server, boolean autoBackup, String name) {
 
         if (server == null) {
-            log.error("Could not backup server because server id was not found!");
+            throw new IllegalArgumentException("Cannot create backup: server not found");
+        }
+
+        if (server.getState() == GameServerState.CREATING) {
+            log.warn("Backups are currently blocked. Server '{}' is busy (CREATING).", server.getFriendlyName());
+            return;
+        }
+
+        if (backupsSuspended) {
+            log.warn("Backups are currently suspended. Skipping backup for server '{}'.", server.getFriendlyName());
             return;
         }
 
@@ -157,8 +198,8 @@ public class BackupService {
         }
         backup.setAutoBackup(autoBackup);
 
-        File tempBackupLocation = new File(NodeUtils.TMP_PATH + server.getServerId() + "/" + backup.getBackupId());
-        File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
+        File tempBackupLocation = Path.of(NodeUtils.TMP_PATH, server.getServerId(), backup.getBackupId()).toFile();
+        File backupLocation = Path.of(Node.INSTANCE.getBackupPath(), server.getServerId(), backup.getName() + ".zip").toFile();
 
         //TODO find a better way to handle different save locations for different game servers then hardcoding it here
         File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks" + (server instanceof AsaServer ? "/" + server.getSettings().getMap() : ""));
@@ -174,8 +215,7 @@ public class BackupService {
         }
 
         if (!saveLocation.exists()) {
-            log.error("Could not backup server because save location does not exist!");
-            return;
+            throw new IllegalStateException("Save location does not exist: " + saveLocation.getAbsolutePath());
         }
 
         log.debug("Copying save files to temporary backup location...");
@@ -206,7 +246,7 @@ public class BackupService {
 
             saveBackupCache();
         } catch (IOException e) {
-            log.error("An unknown error occurred while backing up server '{}'.", server.getFriendlyName(), e);
+            throw new RuntimeException("Backup failed for server '" + server.getFriendlyName() + "': " + e.getMessage(), e);
         }
     }
 
@@ -227,7 +267,7 @@ public class BackupService {
         }
 
         log.debug("Deleting backup '{}'...", backup.getName());
-        File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + GameServer.getServerById(backup.getServerId()).getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
+        File backupLocation = Path.of(Node.INSTANCE.getBackupPath(), server.getServerId(), backup.getName() + ".zip").toFile();
         if (!backupLocation.exists()) {
             log.error("Could not delete backup because backup location does not exist!");
             backups.remove(backupId);
@@ -247,6 +287,10 @@ public class BackupService {
 
 
     public static void deleteAllExpiredBackups() {
+        if (backupsSuspended) {
+            log.debug("Skipping expired backup cleanup; backups suspended.");
+            return;
+        }
         List<Backup> expiredBackups = backups.values().stream().filter(backup -> backup.getExpiresAt().isBefore(Instant.now())).toList();
 
         expiredBackups.forEach(backup -> {
@@ -261,49 +305,55 @@ public class BackupService {
 
         Backup backup = backups.get(backupId);
         if (backup == null) {
-            log.error("Could not find backup because backup id was not found!");
-            return;
+            throw new IllegalArgumentException("Backup not found: " + backupId);
         }
 
         GameServer server = GameServer.getServerById(backup.getServerId());
         if (server == null) {
-            log.error("Could not delete backup because server id was not found!");
-            return;
+            throw new IllegalStateException("Server not found for backup: " + backup.getServerId());
         }
 
         server.stop(false).complete();
 
-        File backupLocation = new File(Node.INSTANCE.getServerPath() + "/backups/" + server.getFriendlyName().toLowerCase().replace(" ", "-") + "/" + backup.getName() + ".zip");
+        File backupLocation = Path.of(Node.INSTANCE.getBackupPath(), server.getServerId(), backup.getName() + ".zip").toFile();
 
         //TODO find a better way to handle different save locations for different game servers then hardcoding it here
         File saveLocation = new File(server.getInstallDir() + "/ShooterGame/Saved/SavedArks" + (server instanceof AsaServer ? "/" + server.getSettings().getMap() : ""));
 
         if (!backupLocation.exists()) {
-            log.error("Could not rollback backup because backup location does not exist!");
-            return;
+            throw new IllegalStateException("Backup file does not exist: " + backupLocation.getAbsolutePath());
         }
 
         if (!saveLocation.exists()) {
-            log.error("Could not rollback backup because server save location does not exist!");
-            return;
+            throw new IllegalStateException("Server save location does not exist: " + saveLocation.getAbsolutePath());
         }
 
-        if (playerData) {
-            File[] playerDataFiles = saveLocation.listFiles();
-
-            for (File playerDataFile : playerDataFiles) {
-                playerDataFile.delete();
+        try {
+            if (playerData) {
+                File[] playerDataFiles = saveLocation.listFiles();
+                if (playerDataFiles != null) {
+                    for (File playerDataFile : playerDataFiles) {
+                        if (!playerDataFile.delete()) {
+                            // Non-fatal: try to continue and let Zip overwrite
+                        }
+                    }
+                }
+                ZipUtil.unpack(backupLocation, saveLocation);
+            } else {
+                ZipUtil.unpackEntry(backupLocation, server.getSettings().getMap() + ".ark", new File(saveLocation + "/" + server.getSettings().getMap() + ".ark"));
             }
-
-            ZipUtil.unpack(backupLocation, saveLocation);
-        } else {
-            ZipUtil.unpackEntry(backupLocation, server.getSettings().getMap() + ".ark", new File(saveLocation + "/" + server.getSettings().getMap() + ".ark"));
+        } catch (Exception e) {
+            throw new RuntimeException("Rollback failed for backup '" + backupId + "': " + e.getMessage(), e);
         }
 
     }
 
     public static void backupAllServers(boolean autoBackup) {
 
+        if (backupsSuspended) {
+            log.debug("Skipping backupAllServers; backups suspended.");
+            return;
+        }
         GameServer.getAllServers().forEach((server) -> backupServer(server, autoBackup));
 
     }
@@ -326,5 +376,38 @@ public class BackupService {
 
     public static void deleteAllBackupsByServer(GameServer server) {
         getBackupsByServer(server).forEach(backup -> deleteBackup(backup.getBackupId()));
+    }
+
+    public static void suspendBackups() {
+        log.info("Suspending backups and auto-backup schedulers...");
+        backupsSuspended = true;
+        if (backupSchedulers != null) {
+            backupSchedulers.values().forEach(s -> {
+                try {
+                    s.cancel(false);
+                } catch (Exception ignored) {
+                }
+            });
+            backupSchedulers.clear();
+        }
+    }
+
+    public static void resumeBackups() {
+        log.info("Resuming backups and restoring auto-backup schedulers...");
+        backupsSuspended = false;
+        // Recreate auto-backup schedulers for all servers based on their settings
+        GameServer.getAllServers().forEach(server -> updateAutoBackupSettings(server.getServerId()));
+    }
+
+    public static void moveBackupsDirectory(Path oldBackupsDirPath, Path newBackupsDirPath) throws IOException {
+        // Treat inputs as backup base directories
+        File oldBackupsDir = oldBackupsDirPath.toFile();
+        File newBackupsDir = newBackupsDirPath.toFile();
+
+        log.info("Moving backups from '{}' to '{}'...", oldBackupsDir.getAbsolutePath(), newBackupsDir.getAbsolutePath());
+
+        DirectoryMoveUtils.moveDirectoryContents(oldBackupsDirPath, newBackupsDirPath);
+
+        log.info("Backups move completed.");
     }
 }

@@ -1,8 +1,13 @@
 package de.swiftbyte.gmc.daemon.commands;
 
 import de.swiftbyte.gmc.common.entity.Backup;
+import de.swiftbyte.gmc.common.model.NodeTask;
+import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.BackupService;
+import de.swiftbyte.gmc.daemon.service.TaskService;
+import de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer;
+import de.swiftbyte.gmc.daemon.tasks.consumers.RollbackTaskConsumer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
@@ -18,15 +23,18 @@ public class BackupManagementCommands {
 
         GameServer server = GameServer.getServerById(serverId);
 
-        if (server != null) {
-
-            BackupService.backupServer(server, false, backupName);
-
-        } else {
+        if (server == null) {
             return "Server with id " + serverId + " not found!";
         }
 
-        return "Backup created!";
+        boolean created = TaskService.createTask(
+                NodeTask.Type.BACKUP,
+                new BackupTaskConsumer.BackupTaskPayload(false, backupName),
+                Node.INSTANCE.getNodeId(),
+                serverId
+        );
+
+        return created ? "Backup task scheduled." : "Backup task could not be scheduled.";
     }
 
     @Command(command = "backup rollback", description = "Rollback a backup.", group = "Backup Management")
@@ -34,15 +42,17 @@ public class BackupManagementCommands {
 
         Backup backup = BackupService.getBackupById(backupId);
 
-        if (backup != null) {
-
-            BackupService.rollbackBackup(backup.getBackupId(), playerData);
-
-        } else {
+        if (backup == null) {
             return "Backup with id " + backupId + " not found!";
         }
 
-        return "Backup rollback complete!";
+        boolean created = TaskService.createTask(
+                NodeTask.Type.ROLLBACK,
+                new RollbackTaskConsumer.RollbackTaskPayload(backup.getBackupId(), playerData),
+                Node.INSTANCE.getNodeId()
+        );
+
+        return created ? "Rollback task scheduled." : "Rollback task could not be scheduled.";
     }
 
     @Command(command = "backup list", description = "List all backups.", group = "Backup Management")

@@ -8,11 +8,13 @@ import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.AseServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
+import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 
@@ -23,48 +25,84 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
     @Override
     public void onReceive(NodeLoginAckPacket packet) {
 
-        Node.INSTANCE.setTeamName(packet.getTeamName());
+        try {
 
-        log.info("Backend running in profile '{}' with version '{}'.", packet.getBackendProfile(), packet.getBackendVersion());
-        log.info("I am '{}' in team {}!", packet.getNodeSettings().getName(), packet.getTeamName());
+            Node.INSTANCE.setTeamName(packet.getTeamName());
 
-        log.info("Loading '{}' game servers...", packet.getGameServers().size());
-        GameServer.abandonAll();
-        packet.getGameServers().forEach(gameServer -> {
-            log.debug("Loading game server '{}' as type {}...", gameServer.getDisplayName(), gameServer.getType());
+            log.info("Backend running in profile '{}' with version '{}'.", packet.getBackendProfile(), packet.getBackendVersion());
+            log.info("I am '{}' in team {}!", packet.getNodeSettings().getName(), packet.getTeamName());
 
-            String serverInstallDir = ServerUtils.getCachedServerInstallDir(gameServer.getId());
+            log.info("Loading '{}' game servers...", packet.getGameServers().size());
 
-            SettingProfile settings = ServerUtils.getSettingProfile(gameServer.getSettingProfileId());
-            if (settings == null) {
-                log.error("Setting profile '{}' not found for game server '{}'. Using default setting profile.", gameServer.getSettingProfileId(), gameServer.getDisplayName());
-                settings = new SettingProfile();
-                //TODO handle
-                return;
+            // First, reconcile display name changes for already known servers to keep symlinks tidy
+            try {
+                packet.getGameServers().forEach(gameServer -> {
+                    GameServer existing = GameServer.getServerById(gameServer.getId());
+                    if (existing != null) {
+                        String newName = gameServer.getDisplayName();
+                        if (newName != null && !newName.equals(existing.getFriendlyName())) {
+                            log.info("Detected name change on login: '{}' -> '{}' (id={}).", existing.getFriendlyName(), newName, gameServer.getId());
+                            existing.changeFriendlyName(newName);
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                log.warn("Failed while applying server name changes during login ack.", e);
             }
 
-            createGameServer(gameServer, settings, serverInstallDir);
-        });
+            // Recreate in-memory instances to reflect backend state
+            GameServer.abandonAll();
+            packet.getGameServers().forEach(gameServer -> {
+                try {
+                    log.debug("Loading game server '{}' as type {}...", gameServer.getDisplayName(), gameServer.getType());
 
-        Node.INSTANCE.updateSettings(packet.getNodeSettings());
+                    if (gameServer.getServerDirectory() == null) {
+                        throw new RuntimeException("Server installation directory could not be found.");
+                    }
 
-        Node.INSTANCE.setConnectionState(ConnectionState.CONNECTED);
+                    Path serverInstallDir = Path.of(gameServer.getServerDirectory(), gameServer.getId());
 
-        if (Node.INSTANCE.isFirstStart()) {
-            log.info("""
-                    
-                    Congratulations — you have connected the daemon to your team!
-                    
-                    The daemon will continue to run on your server. Every time you perform an action in the web app, commands are sent to the daemon. It then executes these commands. If GMC ever needs to perform maintenance, you can manage the server using commands via the console.
-                    
-                    You are now finished here and can switch back to app.gamemanager.cloud.""");
-            Node.INSTANCE.setFirstStart(false);
+                    SettingProfile settings = ServerUtils.getSettingProfile(gameServer.getSettingProfileId());
+                    if (settings == null) {
+                        log.error("Setting profile '{}' not found for game server '{}'. Canceling server initialization.", gameServer.getSettingProfileId(), gameServer.getDisplayName());
+                        return;
+                    }
+
+                    createGameServer(gameServer, settings, serverInstallDir);
+                } catch (Exception e) {
+                    log.error("An unhandled exception occurred while initializing game server '{}'.", gameServer.getDisplayName(), e);
+                }
+            });
+
+            Node.INSTANCE.updateSettings(packet.getNodeSettings());
+
+            Node.INSTANCE.setConnectionState(ConnectionState.CONNECTED);
+
+            // If we reconnected while tasks were running, re-announce them to the backend
+            try {
+                TaskService.announceActiveTasks();
+            } catch (Exception e) {
+                log.warn("Failed to re-announce active tasks after login ack.", e);
+            }
+
+            if (Node.INSTANCE.isFirstStart()) {
+                log.info("""
+                        
+                        Congratulations — you have connected the daemon to your team!
+                        
+                        The daemon will continue to run on your server. Every time you perform an action in the web app, commands are sent to the daemon. It then executes these commands. If GMC ever needs to perform maintenance, you can manage the server using commands via the console.
+                        
+                        You are now finished here and can switch back to app.gamemanager.cloud.""");
+                Node.INSTANCE.setFirstStart(false);
+            }
+
+        } catch (Exception e) {
+            log.error("An unknown error occurred while trying to start the daemon.", e);
+            Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
         }
-
     }
 
-    private void createGameServer(GameServerDto gameServer, SettingProfile settings, String serverInstallDir) {
-        Path installDir = serverInstallDir != null ? Path.of(serverInstallDir) : null;
+    private void createGameServer(GameServerDto gameServer, SettingProfile settings, @NotNull Path serverInstallDir) {
 
         if (gameServer.getType() == null) {
             log.error("Game server type is null for game server '{}'. Using ARK_ASCENDED to continue!", gameServer.getDisplayName());
@@ -73,9 +111,9 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
 
         switch (gameServer.getType()) {
             case ARK_ASCENDED ->
-                    new AsaServer(gameServer.getId(), gameServer.getDisplayName(), installDir, settings, false);
+                    new AsaServer(gameServer.getId(), gameServer.getDisplayName(), serverInstallDir, settings, false);
             case ARK_EVOLVED ->
-                    new AseServer(gameServer.getId(), gameServer.getDisplayName(), installDir, settings, false);
+                    new AseServer(gameServer.getId(), gameServer.getDisplayName(), serverInstallDir, settings, false);
             default -> log.error("Unknown game server type '{}'.", gameServer.getType());
         }
     }

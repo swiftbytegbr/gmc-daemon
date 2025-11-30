@@ -2,18 +2,24 @@ package de.swiftbyte.gmc.daemon;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.swiftbyte.gmc.common.entity.NodeSettings;
 import de.swiftbyte.gmc.common.entity.ResourceUsage;
+import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeHeartbeatPacket;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeLogoutPacket;
 import de.swiftbyte.gmc.daemon.cache.CacheModel;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.BackupService;
+import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
+import de.swiftbyte.gmc.daemon.tasks.consumers.BackupDirectoryChangeTaskConsumer;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
+import de.swiftbyte.gmc.daemon.utils.NodeSettingsUtils;
 import de.swiftbyte.gmc.daemon.utils.NodeUtils;
+import de.swiftbyte.gmc.daemon.utils.PathValidationUtils;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -34,15 +40,18 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Getter
 @Slf4j
-public class Node extends Thread {
+public class Node {
 
     public static Node INSTANCE;
 
     private volatile ConnectionState connectionState;
+
+    private ScheduledExecutorService heartbeatExecutor;
 
     @Setter
     private String nodeName;
@@ -50,11 +59,15 @@ public class Node extends Thread {
     private String teamName;
 
     private String serverPath;
+
+    // Track current valid default server directory for rollback
+    private Path defaultServerDirectory;
+
+    @Setter
+    private Path backupPath;
     private boolean manageFirewallAutomatically;
 
     private boolean isAutoUpdateEnabled;
-    private String serverStopMessage;
-    private String serverRestartMessage;
 
     private String secret;
     private String nodeId;
@@ -75,10 +88,17 @@ public class Node extends Thread {
         this.teamName = "gmc";
 
         setServerPath("./servers");
+        // Default backups to absolute ./backups until settings provide a path
+        this.backupPath = Path.of(PathValidationUtils.canonicalizeOrAbsolute("./backups"));
+        // Initialize current valid default dir to canonical ./servers
+        this.defaultServerDirectory = Path.of(PathValidationUtils.canonicalizeOrAbsolute("./servers"));
 
         getCachedNodeInformation();
         BackupService.initialiseBackupService();
         NodeUtils.checkInstallation();
+
+        heartbeatExecutor = Executors.newSingleThreadScheduledExecutor();
+        heartbeatExecutor.scheduleWithFixedDelay(updateRunnable, 0, 10, TimeUnit.SECONDS);
     }
 
     private void getCachedNodeInformation() {
@@ -100,11 +120,15 @@ public class Node extends Thread {
             nodeName = cacheModel.getNodeName();
             teamName = cacheModel.getTeamName();
             setServerPath(cacheModel.getServerPath());
+            if (cacheModel.getDefaultServerDirectory() != null) {
+                this.defaultServerDirectory = Path.of(PathValidationUtils.canonicalizeOrAbsolute(cacheModel.getDefaultServerDirectory())).normalize();
+            }
+
+            if (cacheModel.getBackupPath() != null) {
+                backupPath = Path.of(cacheModel.getBackupPath()).normalize();
+            }
             isAutoUpdateEnabled = cacheModel.isAutoUpdateEnabled();
             manageFirewallAutomatically = cacheModel.isManageFirewallAutomatically();
-
-            serverStopMessage = cacheModel.getServerStopMessage();
-            serverRestartMessage = cacheModel.getServerRestartMessage();
 
             log.debug("Got cached information.");
 
@@ -117,6 +141,7 @@ public class Node extends Thread {
         if (getConnectionState() == ConnectionState.DELETING) {
             return;
         }
+        shutdownHeartbeatExecutor();
         NodeLogoutPacket logoutPacket = new NodeLogoutPacket();
         logoutPacket.setReason("Terminated by user");
         log.debug("Sending shutdown packet...");
@@ -183,7 +208,19 @@ public class Node extends Thread {
 
         OkHttpClient client = new OkHttpClient();
 
-        String json = "{\"inviteToken\": \"" + token + "\"}";
+        String defaultServerDirectory = PathValidationUtils.canonicalizeOrAbsolute("./servers");
+        ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        ObjectNode jsonNode = mapper.createObjectNode();
+        jsonNode.put("inviteToken", String.valueOf(token));
+        jsonNode.put("defaultServerDirectory", defaultServerDirectory);
+        String json;
+        try {
+            json = mapper.writeValueAsString(jsonNode);
+        } catch (Exception e) {
+            log.error("Failed to create registration payload.", e);
+            setConnectionState(ConnectionState.NOT_JOINED);
+            return;
+        }
         RequestBody body = RequestBody.create(json, MediaType.get("application/json; charset=utf-8"));
 
         Request request = new Request.Builder()
@@ -201,9 +238,9 @@ public class Node extends Thread {
             }
 
             ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(response.body().string());
-            nodeId = jsonNode.get("nodeId").asText();
-            secret = jsonNode.get("nodeSecret").asText();
+            JsonNode responseJson = objectMapper.readTree(response.body().string());
+            nodeId = responseJson.get("nodeId").asText();
+            secret = responseJson.get("nodeSecret").asText();
 
         } catch (IOException e) {
             log.error("An unknown error occurred.", e);
@@ -225,6 +262,7 @@ public class Node extends Thread {
 
         if (getConnectionState() == ConnectionState.RECONNECTING) {
             log.info("Reconnecting to backend...");
+            // Re-establish STOMP connection only; keep TaskService running to avoid interrupting tasks
             StompHandler.initialiseStomp();
         } else {
             log.info("Connecting to backend...");
@@ -233,6 +271,7 @@ public class Node extends Thread {
                 setConnectionState(ConnectionState.RECONNECTING);
                 ServerUtils.getCachedServerInformation();
             }
+            TaskService.initializeTaskService();
         }
     }
 
@@ -274,19 +313,47 @@ public class Node extends Thread {
         log.debug("Updating settings...");
         nodeName = nodeSettings.getName();
 
-        if (!CommonUtils.isNullOrEmpty(nodeSettings.getServerPath())) {
-            setServerPath(nodeSettings.getServerPath());
-        } else {
-            setServerPath("./servers");
-        }
+        // Validate/backfill default server directory (sets to absolute ./servers if null/invalid)
+        String effectiveDefaultDir = NodeSettingsUtils.validateOrBackfillDefaultServerDirectory(nodeSettings, this.defaultServerDirectory);
+        this.defaultServerDirectory = Path.of(PathValidationUtils.canonicalizeOrAbsolute(effectiveDefaultDir));
+
+        // Apply server path from settings (default to ./servers)
+        String incomingServerPath = !CommonUtils.isNullOrEmpty(nodeSettings.getServerPath()) ? nodeSettings.getServerPath() : "./servers";
+        String newServerPath = Path.of(incomingServerPath).normalize().toString();
+        setServerPath(newServerPath);
+
+        // Resolve and validate backup paths
+        Path currentBackupPath = this.backupPath;
+        String effectiveBackupDir = NodeSettingsUtils.validateOrBackfillServerBackupsDirectory(nodeSettings, currentBackupPath);
+        Path newBackupPath = Path.of(effectiveBackupDir).normalize();
+        // Always update local cache value from settings resolution (covers cache->backend and backend->cache sync)
+        this.backupPath = newBackupPath;
 
         isAutoUpdateEnabled = nodeSettings.isEnableAutoUpdate();
-        serverStopMessage = nodeSettings.getStopMessage();
-        serverRestartMessage = nodeSettings.getRestartMessage();
+        // Deprecated: stop/restart messages now come from GMC settings per server
         manageFirewallAutomatically = nodeSettings.isManageFirewallAutomatically();
 
+        // Persist updated backup path to cache so cache gets backfilled from backend when previously null
         NodeUtils.cacheInformation(this);
+
+        // Move backups only when backup directory actually changes
+        if (!currentBackupPath.equals(newBackupPath)) {
+            log.info("Backup path changed from '{}' to '{}'. Scheduling backups move task...", currentBackupPath, newBackupPath);
+            try {
+                boolean created = TaskService.createTask(
+                        NodeTask.Type.BACKUP_DIRECTORY_CHANGE,
+                        new BackupDirectoryChangeTaskConsumer.BackupDirectoryChangeTaskPayload(currentBackupPath, newBackupPath),
+                        this.nodeId
+                );
+                if (!created) {
+                    log.warn("Failed to create backups move task. Backups may remain in old directory.");
+                }
+            } catch (Exception e) {
+                log.error("Error while scheduling backups move task.", e);
+            }
+        }
     }
+
 
     public void delete() {
 
@@ -332,31 +399,37 @@ public class Node extends Thread {
         System.exit(0);
     }
 
-    @Override
-    public void run() {
-        super.run();
-        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(updateRunnable, 0, 10, TimeUnit.SECONDS);
-    }
-
     long lastUpdate = System.currentTimeMillis();
     private final Runnable updateRunnable = () -> {
-        if ((System.currentTimeMillis() - lastUpdate) / 1000 > 15) {
-            log.warn("Last heartbeat was more than 15 seconds ago. Catching up...");
-        }
-        lastUpdate = System.currentTimeMillis();
-        if (getConnectionState() == ConnectionState.CONNECTED) {
+        try {
+            if ((System.currentTimeMillis() - lastUpdate) / 1000 > 15) {
+                log.warn("Last heartbeat was more than 15 seconds ago. Catching up...");
+            }
+            lastUpdate = System.currentTimeMillis();
+            if (getConnectionState() == ConnectionState.CONNECTED) {
 
-            NodeUtils.cacheInformation(this);
+                NodeUtils.cacheInformation(this);
 
-            NodeHeartbeatPacket heartbeatPacket = getNodeHeartbeatPacket();
+                NodeHeartbeatPacket heartbeatPacket = getNodeHeartbeatPacket();
 
-            StompHandler.send("/app/node/heartbeat", heartbeatPacket);
+                StompHandler.sendNonCritical("/app/node/heartbeat", heartbeatPacket);
 
-            BackupService.deleteAllExpiredBackups();
-        } else if (getConnectionState() == ConnectionState.RECONNECTING) {
-            connect();
+                BackupService.deleteAllExpiredBackups();
+            } else if (getConnectionState() == ConnectionState.RECONNECTING) {
+                connect();
+            }
+        } catch (Exception e) {
+            log.error("Unhandled exception in heartbeat executor.", e);
         }
     };
+
+    private void shutdownHeartbeatExecutor() {
+        if (heartbeatExecutor == null) {
+            return;
+        }
+        heartbeatExecutor.shutdown();
+        heartbeatExecutor = null;
+    }
 
     private static NodeHeartbeatPacket getNodeHeartbeatPacket() {
         SystemInfo systemInfo = new SystemInfo();
@@ -384,7 +457,7 @@ public class Node extends Thread {
     }
 
     public synchronized void setConnectionState(ConnectionState connectionState) {
-        log.debug("Connection state changed from {} to {}", this.connectionState, connectionState.name());
+        log.debug("Connection state changed from {} to {}", this.connectionState, connectionState);
         this.connectionState = connectionState;
     }
 
@@ -395,4 +468,11 @@ public class Node extends Thread {
     public void setServerPath(String serverPath) {
         this.serverPath = Path.of(serverPath).normalize().toString();
     }
+
+    public String getBackupPath() {
+        return backupPath != null
+                ? backupPath.normalize().toString()
+                : PathValidationUtils.canonicalizeOrAbsolute("./backups");
+    }
+
 }

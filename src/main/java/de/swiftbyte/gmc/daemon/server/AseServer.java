@@ -9,6 +9,7 @@ import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import de.swiftbyte.gmc.daemon.utils.settings.INISettingsAdapter;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -29,33 +30,9 @@ public class AseServer extends ArkServer {
         return STEAM_CMD_ID;
     }
 
-    public AseServer(String id, String friendlyName, SettingProfile settings, boolean overrideAutoStart) {
+    public AseServer(String id, String friendlyName, @NotNull Path installDir, SettingProfile settings, boolean overrideAutoStart) {
 
-        super(id, friendlyName, settings);
-
-        INISettingsAdapter iniSettingsAdapter = new INISettingsAdapter(settings.getGameUserSettings());
-        MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
-
-        rconPassword = iniSettingsAdapter.get("ServerSettings", "ServerAdminPassword", "gmc-rp-" + UUID.randomUUID());
-        rconPort = iniSettingsAdapter.getInt("ServerSettings", "RCONPort", 27020);
-
-        if (!overrideAutoStart) {
-            PID = CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/ArkAscendedServer.exe"));
-            if (PID == null && gmcSettings.getBoolean("StartOnBoot", false)) {
-                start().queue();
-            } else if (PID != null) {
-                log.debug("Server '{}' with PID {} is already running. Setting state to ONLINE.", PID, friendlyName);
-                super.setState(GameServerState.ONLINE);
-            }
-        }
-    }
-
-    public AseServer(String id, String friendlyName, Path installDir, SettingProfile settings, boolean overrideAutoStart) {
-
-        super(id, friendlyName, settings);
-        if (installDir != null) {
-            this.installDir = installDir;
-        }
+        super(id, installDir, friendlyName, settings);
 
         INISettingsAdapter iniSettingsAdapter = new INISettingsAdapter(settings.getGameUserSettings());
         MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
@@ -78,6 +55,11 @@ public class AseServer extends ArkServer {
     public void setSettings(SettingProfile settings) {
         SettingProfile oldSettings = getSettings();
         super.setSettings(settings);
+
+        // Skip change detection if GMC settings are missing
+        if (settings.getGmcSettings() == null || oldSettings.getGmcSettings() == null) {
+            return;
+        }
 
         MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
         MapSettingsAdapter oldGmcSettings = new MapSettingsAdapter(oldSettings.getGmcSettings());

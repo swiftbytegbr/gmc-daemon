@@ -23,8 +23,13 @@ import java.util.Optional;
 @Slf4j
 public class CommonUtils {
 
-    public static boolean isNullOrEmpty(String string) {
-        return string == null || string.isEmpty();
+    public static boolean isNullOrEmpty(Object obj) {
+
+        if (obj == null) {
+            return true;
+        }
+
+        return obj.toString().isEmpty();
     }
 
     public static String convertPathSeparator(String path) {
@@ -44,7 +49,7 @@ public class CommonUtils {
 
     public static String getProcessPID(String command) {
         Optional<ProcessHandle> processHandle = ProcessHandle.allProcesses()
-                .filter(ph -> ph.info().command().isPresent() && ph.info().command().get().contains(command))
+                .filter(ph -> ph.info().command().isPresent()).filter(ph -> ph.info().command().get().contains(command))
                 .findFirst();
 
         return processHandle.map(handle -> String.valueOf(handle.pid())).orElse(null);
