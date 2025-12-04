@@ -1,13 +1,13 @@
 package de.swiftbyte.gmc.daemon.utils;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 
-@Slf4j
+@CustomLog
 public class DirectoryMoveUtils {
 
     /**

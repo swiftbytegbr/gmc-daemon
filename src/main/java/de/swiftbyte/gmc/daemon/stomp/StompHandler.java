@@ -13,7 +13,9 @@ import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
+import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.reflections.Reflections;
 import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
@@ -38,7 +40,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Slf4j
+@CustomLog
 public class StompHandler {
 
     // 2MB

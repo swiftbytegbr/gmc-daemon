@@ -5,9 +5,9 @@ import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
-@Slf4j
+@CustomLog
 @StompPacketInfo(path = {"/user/queue/node/update", "/topic/node/update"}, packetClass = NodeUpdatePacket.class)
 public class NodeUpdatePacketConsumer implements StompPacketConsumer<NodeUpdatePacket> {
 

@@ -17,7 +17,7 @@ import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.DirectoryMoveUtils;
 import de.swiftbyte.gmc.daemon.utils.NodeUtils;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
@@ -40,7 +40,7 @@ import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-@Slf4j
+@CustomLog
 public class BackupService {
 
     private static HashMap<String, Backup> backups = new HashMap<>();

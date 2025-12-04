@@ -8,7 +8,7 @@ import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import de.swiftbyte.gmc.daemon.utils.settings.INISettingsAdapter;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileWriter;
@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@Slf4j
+@CustomLog
 public class AseServer extends ArkServer {
 
     private static final String STEAM_CMD_ID = "376030";

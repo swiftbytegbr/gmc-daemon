@@ -6,9 +6,9 @@ import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.FirewallService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
-@Slf4j
+@CustomLog
 @StompPacketInfo(path = "/user/queue/server/name-change", packetClass = ServerNameChangePacket.class)
 public class NameChangePacketConsumer implements StompPacketConsumer<ServerNameChangePacket> {
 

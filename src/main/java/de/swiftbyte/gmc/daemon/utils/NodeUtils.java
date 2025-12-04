@@ -11,7 +11,7 @@ import de.swiftbyte.gmc.daemon.cache.CacheModel;
 import de.swiftbyte.gmc.daemon.cache.GameServerCacheModel;
 import de.swiftbyte.gmc.daemon.server.AseServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.commons.io.FileUtils;
 import org.springframework.shell.component.context.ComponentContext;
 import org.springframework.shell.component.flow.ComponentFlow;
@@ -26,7 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 
-@Slf4j
+@CustomLog
 public class NodeUtils {
 
     public static final String TMP_PATH = "tmp/",

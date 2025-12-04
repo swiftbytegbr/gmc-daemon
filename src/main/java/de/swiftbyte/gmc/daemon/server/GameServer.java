@@ -12,7 +12,7 @@ import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import de.swiftbyte.gmc.daemon.utils.action.AsyncAction;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-@Slf4j
+@CustomLog
 public abstract class GameServer {
 
     private static final ConcurrentHashMap<String, GameServer> GAME_SERVERS = new ConcurrentHashMap<>();

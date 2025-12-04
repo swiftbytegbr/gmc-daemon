@@ -2,12 +2,12 @@ package de.swiftbyte.gmc.daemon.commands;
 
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 
 @Command
-@Slf4j
+@CustomLog
 public class JoinTeamCommand {
 
     @Command(command = "join", description = "Invite this daemon to a team. Only available when not already joined.", group = "Daemon Management", hidden = true)

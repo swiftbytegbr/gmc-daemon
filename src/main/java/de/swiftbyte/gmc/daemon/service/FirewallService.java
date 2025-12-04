@@ -1,14 +1,14 @@
 package de.swiftbyte.gmc.daemon.service;
 
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Slf4j
+@CustomLog
 public class FirewallService {
 
     public static void allowPort(String serverName, Path executablePath, List<Integer> ports) {

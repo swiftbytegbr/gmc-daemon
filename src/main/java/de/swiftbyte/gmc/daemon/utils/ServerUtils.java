@@ -9,7 +9,7 @@ import de.swiftbyte.gmc.daemon.cache.GameServerCacheModel;
 import de.swiftbyte.gmc.daemon.server.AsaServer;
 import de.swiftbyte.gmc.daemon.server.AseServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@Slf4j
+@CustomLog
 public class ServerUtils {
 
     public static String generateServerArgs(List<String> argsType1, String additionalArgsType1, List<String> argsType2, String additionalArgsType2, List<String> requiredArgs1, List<String> requiredArgs2) {

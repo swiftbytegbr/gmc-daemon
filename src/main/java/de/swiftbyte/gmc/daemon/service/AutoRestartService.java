@@ -9,7 +9,7 @@ import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 import static com.cronutils.model.CronType.QUARTZ;
 import static com.cronutils.model.CronType.UNIX;
 
-@Slf4j
+@CustomLog
 public class AutoRestartService {
 
     private static final CronParser UNIX_CRON = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(UNIX));

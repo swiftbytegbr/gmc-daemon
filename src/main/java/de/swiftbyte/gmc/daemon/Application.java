@@ -7,7 +7,7 @@ import de.swiftbyte.gmc.daemon.migration.MigrationScript;
 import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.jline.terminal.Terminal;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,7 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
         }
 )
 @CommandScan
-@Slf4j
+@CustomLog
 public class Application {
 
 

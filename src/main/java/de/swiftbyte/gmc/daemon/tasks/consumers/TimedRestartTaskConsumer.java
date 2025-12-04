@@ -7,11 +7,11 @@ import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.TimedMessageUtils;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 import java.util.concurrent.TimeUnit;
 
-@Slf4j
+@CustomLog
 public class TimedRestartTaskConsumer implements NodeTaskConsumer {
 
     @Override

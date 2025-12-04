@@ -4,13 +4,13 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.slf4j.LoggerFactory;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 
 @Command
-@Slf4j
+@CustomLog
 public class DaemonManagementCommand {
 
     @Command(command = "stop daemon", alias = {"exit daemon"}, description = "Stop the daemon.", group = "Daemon Management")

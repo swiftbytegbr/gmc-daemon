@@ -8,11 +8,11 @@ import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
 import de.swiftbyte.gmc.daemon.utils.NodeUtils;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 import java.nio.file.Path;
 
-@Slf4j
+@CustomLog
 public class BackupDirectoryChangeTaskConsumer implements NodeTaskConsumer {
 
     @Override

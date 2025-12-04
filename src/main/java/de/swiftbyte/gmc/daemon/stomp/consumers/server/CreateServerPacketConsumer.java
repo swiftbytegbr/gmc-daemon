@@ -11,11 +11,11 @@ import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 import java.nio.file.Path;
 
-@Slf4j
+@CustomLog
 @StompPacketInfo(path = "/user/queue/server/create", packetClass = ServerCreatePacket.class)
 public class CreateServerPacketConsumer implements StompPacketConsumer<ServerCreatePacket> {
 

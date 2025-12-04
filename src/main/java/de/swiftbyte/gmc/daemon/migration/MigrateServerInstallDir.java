@@ -3,7 +3,7 @@ package de.swiftbyte.gmc.daemon.migration;
 import de.swiftbyte.gmc.daemon.cache.CacheModel;
 import de.swiftbyte.gmc.daemon.cache.GameServerCacheModel;
 import de.swiftbyte.gmc.daemon.utils.CommonUtils;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,7 +15,7 @@ import java.util.HashMap;
  * This script will migrate the old server directory name to our new system based on the server id.
  * In addition, after that, the cache file will be cleared.
  */
-@Slf4j
+@CustomLog
 public class MigrateServerInstallDir implements MigrationScript {
 
     @Override

@@ -8,14 +8,14 @@ import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.RollbackTaskConsumer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 
 import java.util.List;
 
 @Command
-@Slf4j
+@CustomLog
 public class BackupManagementCommands {
 
     @Command(command = "backup create", description = "Create a backup.", group = "Backup Management")

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.swiftbyte.gmc.common.entity.NodeData;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.commons.lang3.SystemUtils;
 import oshi.SystemInfo;
 
@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
-@Slf4j
+@CustomLog
 public class CommonUtils {
 
     public static boolean isNullOrEmpty(Object obj) {

@@ -1,13 +1,13 @@
 package de.swiftbyte.gmc.daemon.commands;
 
 import de.swiftbyte.gmc.daemon.server.GameServer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 
 @SuppressWarnings("ALL")
 @Command
-@Slf4j
+@CustomLog
 public class ServerManagementCommands {
 
     @Command(command = "server list", description = "List all servers.", group = "Daemon Management")

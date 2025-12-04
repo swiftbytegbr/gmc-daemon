@@ -14,7 +14,7 @@ import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import de.swiftbyte.gmc.daemon.utils.action.AsyncAction;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import xyz.astroark.Rcon;
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-@Slf4j
+@CustomLog
 public abstract class ArkServer extends GameServer {
 
     @Setter

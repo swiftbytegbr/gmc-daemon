@@ -4,9 +4,9 @@ import de.swiftbyte.gmc.common.packet.from.backend.server.ServerUpdatePacket;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
-@Slf4j
+@CustomLog
 @StompPacketInfo(path = "/user/queue/server/update", packetClass = ServerUpdatePacket.class)
 public class UpdateServerVersionPacketConsumer implements StompPacketConsumer<ServerUpdatePacket> {
 

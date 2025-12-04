@@ -4,9 +4,9 @@ import de.swiftbyte.gmc.common.packet.from.backend.node.NodeTaskCancelPacket;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
-@Slf4j
+@CustomLog
 @StompPacketInfo(path = "/user/queue/node/task-cancel", packetClass = NodeTaskCancelPacket.class)
 public class NodeTaskCancelConsumer implements StompPacketConsumer<NodeTaskCancelPacket> {
 

@@ -1,6 +1,6 @@
 package de.swiftbyte.gmc.daemon.utils;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -8,7 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Properties;
 
-@Slf4j
+@CustomLog
 public class ConfigUtils {
 
     private static final String CONFIG_NAME = "gmc.properties";

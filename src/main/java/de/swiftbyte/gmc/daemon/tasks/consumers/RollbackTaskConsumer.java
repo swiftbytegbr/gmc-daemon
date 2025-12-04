@@ -3,9 +3,9 @@ package de.swiftbyte.gmc.daemon.tasks.consumers;
 import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
-@Slf4j
+@CustomLog
 public class RollbackTaskConsumer implements NodeTaskConsumer {
 
     @Override

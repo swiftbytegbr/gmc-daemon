@@ -6,9 +6,9 @@ import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
-@Slf4j
+@CustomLog
 @StompPacketInfo(path = "/user/queue/backend/shutdown", packetClass = BackendShutdownPacket.class)
 public class BackendShutdownPacketConsumer implements StompPacketConsumer<BackendShutdownPacket> {
 

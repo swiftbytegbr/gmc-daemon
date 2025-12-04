@@ -8,11 +8,11 @@ import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 import java.util.HashMap;
 
-@Slf4j
+@CustomLog
 @StompPacketInfo(path = "/user/queue/server/backup", packetClass = ServerBackupPacket.class)
 public class BackupServerPacketConsumer implements StompPacketConsumer<ServerBackupPacket> {
 

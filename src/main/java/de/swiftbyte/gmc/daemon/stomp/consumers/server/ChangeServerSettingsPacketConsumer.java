@@ -8,9 +8,9 @@ import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
-@Slf4j
+@CustomLog
 @StompPacketInfo(path = "/user/queue/server/settings", packetClass = ServerSettingsPacket.class)
 public class ChangeServerSettingsPacketConsumer implements StompPacketConsumer<ServerSettingsPacket> {
 

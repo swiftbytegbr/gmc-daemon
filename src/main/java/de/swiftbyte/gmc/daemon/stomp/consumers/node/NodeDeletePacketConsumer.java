@@ -4,9 +4,9 @@ import de.swiftbyte.gmc.common.packet.from.backend.node.NodeDeletePacket;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
-@Slf4j
+@CustomLog
 @StompPacketInfo(path = "/user/queue/node/delete", packetClass = NodeDeletePacket.class)
 public class NodeDeletePacketConsumer implements StompPacketConsumer<NodeDeletePacket> {
 

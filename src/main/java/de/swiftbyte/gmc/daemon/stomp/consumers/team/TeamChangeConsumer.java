@@ -4,9 +4,9 @@ import de.swiftbyte.gmc.common.packet.from.backend.team.TeamChangePacket;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
-@Slf4j
+@CustomLog
 @StompPacketInfo(path = "/user/queue/team/change", packetClass = TeamChangePacket.class)
 public class TeamChangeConsumer implements StompPacketConsumer<TeamChangePacket> {
 

@@ -13,12 +13,12 @@ import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 
-@Slf4j
+@CustomLog
 @StompPacketInfo(path = "/user/queue/node/login", packetClass = NodeLoginAckPacket.class)
 public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckPacket> {
 

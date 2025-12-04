@@ -23,7 +23,7 @@ import de.swiftbyte.gmc.daemon.utils.PathValidationUtils;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -44,7 +44,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Getter
-@Slf4j
+@CustomLog
 public class Node {
 
     public static Node INSTANCE;

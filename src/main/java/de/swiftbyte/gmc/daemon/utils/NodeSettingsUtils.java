@@ -3,11 +3,11 @@ package de.swiftbyte.gmc.daemon.utils;
 import de.swiftbyte.gmc.common.entity.NodeSettings;
 import de.swiftbyte.gmc.common.packet.from.bidirectional.node.NodeSettingsPacket;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 import java.nio.file.Path;
 
-@Slf4j
+@CustomLog
 public final class NodeSettingsUtils {
 
     private NodeSettingsUtils() {

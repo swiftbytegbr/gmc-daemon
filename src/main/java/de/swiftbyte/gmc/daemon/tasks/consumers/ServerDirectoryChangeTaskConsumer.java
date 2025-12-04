@@ -9,7 +9,7 @@ import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
 import de.swiftbyte.gmc.daemon.utils.NodeUtils;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-@Slf4j
+@CustomLog
 public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
 
     @Override
