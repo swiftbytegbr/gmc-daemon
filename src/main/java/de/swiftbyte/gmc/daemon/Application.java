@@ -13,9 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
-import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.boot.mongodb.autoconfigure.MongoAutoConfiguration;
 import org.springframework.context.event.EventListener;
 import org.springframework.shell.command.annotation.CommandScan;
 import org.springframework.shell.component.flow.ComponentFlow;
@@ -28,7 +27,6 @@ import java.util.concurrent.ScheduledExecutorService;
 @SpringBootApplication(
         exclude = {
                 MongoAutoConfiguration.class,
-                MongoDataAutoConfiguration.class
         }
 )
 @CommandScan
