@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -26,30 +27,34 @@ public class FirewallService {
         List<String> commandTcp = List.of(
                 "powershell",
                 "New-NetFirewallRule",
-                "-DisplayName", "\""+ruleName+"\"",
+                "-DisplayName", "'"+ruleName+"'",
                 "-Direction", "Inbound",
                 "-LocalPort", portsString,
                 "-Protocol", "TCP",
                 "-Action", "Allow",
-                "-Program", "\""+executable+"\"",
-                "-Group", "\"GameManagerCloud Server Port\""
+                "-Program", "'"+executable+"'",
+                "-Group", "'GameManagerCloud Server Port'"
         );
 
         List<String> commandUdp = List.of(
                 "powershell",
                 "New-NetFirewallRule",
-                "-DisplayName", "\""+ruleName+"\"",
+                "-DisplayName", "'"+ruleName+"'",
                 "-Direction", "Inbound",
                 "-LocalPort", portsString,
                 "-Protocol", "UDP",
                 "-Action", "Allow",
-                "-Program", "\""+executable+"\"",
-                "-Group", "GameManagerCloud Server Port"
+                "-Program", "'"+executable+"'",
+                "-Group", "'GameManagerCloud Server Port'"
         );
 
         try {
             log.debug("Using tcp command: {}", String.join(" ", commandTcp));
-            Process tcpProcess = new ProcessBuilder(commandTcp).start();
+            Process tcpProcess = new ProcessBuilder(commandTcp).redirectErrorStream(true).start();
+            Scanner scanner = new Scanner(tcpProcess.getInputStream());
+            while (scanner.hasNextLine()) {
+                log.debug("Firewall: {}", scanner.nextLine());
+            }
 
             log.debug("Using udp command: {}", String.join(" ", commandUdp));
             Process udpProcess = new ProcessBuilder(commandUdp).start();
@@ -77,7 +82,7 @@ public class FirewallService {
                 "powershell",
                 "Remove-NetFirewallRule",
                 "-DisplayName",
-                "\""+ruleName+"\""
+                "'"+ruleName+"'"
         );
 
         try {
