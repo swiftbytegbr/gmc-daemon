@@ -192,9 +192,13 @@ public class ServerUtils {
 
         log.debug("Writing ini files for server {}...", server.getFriendlyName());
 
-        LinkedHashMap<String, Object> neededCategory = new LinkedHashMap<>();
-        neededCategory.put("Version", 5);
-        server.getSettings().getGameUserSettings().put("/Script/ShooterGame.ShooterGameUserSettings", neededCategory);
+        if(server.getSettings().getGameUserSettings().containsKey("/Script/ShooterGame.ShooterGameUserSettings")) {
+            server.getSettings().getGameUserSettings().get("/Script/ShooterGame.ShooterGameUserSettings").put("Version", 5);
+        } else {
+            LinkedHashMap<String, Object> neededCategory = new LinkedHashMap<>();
+            neededCategory.put("Version", 5);
+            server.getSettings().getGameUserSettings().put("/Script/ShooterGame.ShooterGameUserSettings", neededCategory);
+        }
 
         String gameUserSettings = iniConverter.convertFromMap(server.getSettings().getGameUserSettings());
         String gameSettings = iniConverter.convertFromMap(server.getSettings().getGameSettings());
