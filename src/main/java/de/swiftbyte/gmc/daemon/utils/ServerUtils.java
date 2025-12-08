@@ -13,6 +13,8 @@ import lombok.CustomLog;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,12 +26,16 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @CustomLog
-public class ServerUtils {
+public final class ServerUtils {
 
-    public static String generateServerArgs(List<String> argsType1, String additionalArgsType1, List<String> argsType2, String additionalArgsType2, List<String> requiredArgs1, List<String> requiredArgs2) {
+    public static @NonNull String generateServerArgs(@NonNull List<@NonNull String> argsType1,
+                                                     @Nullable String additionalArgsType1,
+                                                     @NonNull List<@NonNull String> argsType2,
+                                                     @Nullable String additionalArgsType2,
+                                                     @NonNull List<@NonNull String> requiredArgs1,
+                                                     @NonNull List<@NonNull String> requiredArgs2) {
 
         StringBuilder preArgs = new StringBuilder();
 
@@ -40,7 +46,7 @@ public class ServerUtils {
         argsType1.stream()
                 .filter(arg -> requiredArgs1.stream().noneMatch(requiredArg -> (arg.split("=")[0].equalsIgnoreCase(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
-                    if (CommonUtils.isNullOrEmpty(arg)) {
+                    if (Utils.isNullOrEmpty(arg)) {
                         return;
                     }
                     if (!arg.contains("?")) {
@@ -48,7 +54,7 @@ public class ServerUtils {
                     }
                     preArgs.append(arg);
                 });
-        if (!additionalArgsType1.isEmpty() && !additionalArgsType1.startsWith("?")) {
+        if (!Utils.isNullOrEmpty(additionalArgsType1) && !additionalArgsType1.startsWith("?")) {
             preArgs.append("?");
         }
         preArgs.append(additionalArgsType1);
@@ -58,7 +64,7 @@ public class ServerUtils {
         argsType2.stream()
                 .filter(arg -> requiredArgs2.stream().noneMatch(requiredArg -> (arg.split("=")[0].equalsIgnoreCase(requiredArg.split("=")[0]))))
                 .forEach(arg -> {
-                    if (CommonUtils.isNullOrEmpty(arg)) {
+                    if (Utils.isNullOrEmpty(arg)) {
                         return;
                     }
                     if (!arg.replace(" ", "").startsWith("-")) {
@@ -68,7 +74,7 @@ public class ServerUtils {
                     }
                     preArgs.append(arg);
                 });
-        if (!additionalArgsType2.isEmpty()) {
+        if (!Utils.isNullOrEmpty(additionalArgsType2)) {
             preArgs.append(" ");
         }
         preArgs.append(additionalArgsType2);
@@ -76,12 +82,13 @@ public class ServerUtils {
         return preArgs.toString();
     }
 
-    public static List<String> generateArgListFromMap(Map<String, Object> args, boolean writeOutBooleanFlags) {
+    public static @NonNull List<@NonNull String> generateArgListFromMap(@NonNull Map<@NonNull String, @Nullable Object> args, boolean writeOutBooleanFlags) {
         ArrayList<String> argList = new ArrayList<>();
         args.forEach((key, value) -> {
             if (value == null) {
                 return;
             }
+
             if (!writeOutBooleanFlags && value instanceof Boolean) {
                 if ((Boolean) value) {
                     argList.add(key);
@@ -93,108 +100,79 @@ public class ServerUtils {
         return argList;
     }
 
-    public static List<String> generateArgListFromMap(Map<String, Object> args) {
+    public static @NonNull List<@NonNull String> generateArgListFromMap(@NonNull Map<@NonNull String, Object> args) {
         return generateArgListFromMap(args, true);
     }
 
-    public static void killServerProcess(String PID) {
+    public static void loadCachedServerInformation() {
 
-        if (PID == null) {
-            return;
-        }
+        log.debug("Loading cached server information...");
 
-        Optional<ProcessHandle> handle = ProcessHandle.of(Long.parseLong(PID));
-        if (handle.isPresent()) {
-            log.debug("Server process running... Killing process...");
-            handle.get().destroy();
-        }
-    }
-
-    public static void getCachedServerInformation() {
-
-        log.debug("Getting cached server information...");
-
-        File cacheFile = new File("./cache.json");
+        File cacheFile = Path.of(NodeUtils.CACHE_FILE_PATH).toFile();
 
         if (!cacheFile.exists()) {
             log.debug("No cache file found. Skipping...");
             return;
         }
 
-        try {
-            CacheModel cacheModel = CommonUtils.getObjectReader().readValue(cacheFile, CacheModel.class);
-            HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
+        CacheModel cacheModel = Utils.getObjectReader(CacheModel.class).readValue(cacheFile);
+        HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
 
-            gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> {
-                switch (gameServerCacheModel.getGameType()) {
-                    case ARK_ASCENDED ->
-                            new AsaServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings(), false);
-                    case ARK_EVOLVED ->
-                            new AseServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings(), false);
-                }
-            });
-
-        } catch (IOException e) {
-            log.error("An unknown error occurred while getting cached information.", e);
+        if (gameServerCacheModelHashMap == null) {
+            log.warn("No cached game servers found!");
+            return;
         }
+
+        gameServerCacheModelHashMap.forEach((s, gscm) -> {
+            if (gscm.getGameType() == null || gscm.getFriendlyName() == null || gscm.getInstallDir() == null || gscm.getSettings() == null) {
+                return;
+            }
+            switch (gscm.getGameType()) {
+                case ARK_ASCENDED ->
+                        new AsaServer(s, gscm.getFriendlyName(), Path.of(gscm.getInstallDir()), gscm.getSettings(), false);
+                case ARK_EVOLVED ->
+                        new AseServer(s, gscm.getFriendlyName(), Path.of(gscm.getInstallDir()), gscm.getSettings(), false);
+            }
+        });
+
     }
 
-    public static String getCachedServerInstallDir(String id) {
+    public static @Nullable SettingProfile getCachedGameServerSettings(@NonNull String id) {
 
-        File cacheFile = new File("./cache.json");
+        File cacheFile = new File(NodeUtils.CACHE_FILE_PATH);
 
         if (!cacheFile.exists()) {
             log.debug("No cache file found. Skipping...");
             return null;
         }
 
-        try {
-            CacheModel cacheModel = CommonUtils.getObjectReader().readValue(cacheFile, CacheModel.class);
-            HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
+        CacheModel cacheModel = Utils.getObjectReader(CacheModel.class).readValue(cacheFile);
+        HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
 
-            for (Map.Entry<String, GameServerCacheModel> entry : gameServerCacheModelHashMap.entrySet()) {
-                if (entry.getKey().equals(id)) {
-                    return entry.getValue().getInstallDir();
-                }
-            }
-
-        } catch (IOException e) {
-            log.error("An unknown error occurred while getting cached information.", e);
+        GameServerCacheModel cached = gameServerCacheModelHashMap != null ? gameServerCacheModelHashMap.get(id) : null;
+        if (cached != null) {
+            return cached.getSettings();
         }
         return null;
     }
 
-    public static SettingProfile getCachedGameServerSettings(String id) {
+    public static void writeIniFiles(@NonNull GameServer server, @NonNull Path installDir) {
 
-        File cacheFile = new File("./cache.json");
-
-        if (!cacheFile.exists()) {
-            log.debug("No cache file found. Skipping...");
-            return null;
-        }
-
-        try {
-            CacheModel cacheModel = CommonUtils.getObjectReader().readValue(cacheFile, CacheModel.class);
-            HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
-
-            GameServerCacheModel cached = gameServerCacheModelHashMap != null ? gameServerCacheModelHashMap.get(id) : null;
-            if (cached != null) {
-                return cached.getSettings();
-            }
-        } catch (IOException e) {
-            log.error("An unknown error occurred while getting cached settings.", e);
-        }
-        return null;
-    }
-
-    public static void writeIniFiles(GameServer server, Path installDir) {
         IniConverter iniConverter = new IniConverter();
 
         log.debug("Writing ini files for server {}...", server.getFriendlyName());
 
-        LinkedHashMap<String, Object> neededCategory = new LinkedHashMap<>();
-        neededCategory.put("Version", 5);
-        server.getSettings().getGameUserSettings().put("/Script/ShooterGame.ShooterGameUserSettings", neededCategory);
+        final String NEEDED_SECTION_KEY = "/Script/ShooterGame.ShooterGameUserSettings";
+        LinkedHashMap<String, LinkedHashMap<String, Object>> gus = server.getSettings().getGameUserSettings();
+
+        if (gus.containsKey(NEEDED_SECTION_KEY)) {
+            gus.get(NEEDED_SECTION_KEY).put("Version", 5);
+        } else {
+            LinkedHashMap<String, Object> neededSection = new LinkedHashMap<>();
+            neededSection.put("Version", 5);
+
+            gus.put(NEEDED_SECTION_KEY, neededSection);
+        }
 
         String gameUserSettings = iniConverter.convertFromMap(server.getSettings().getGameUserSettings());
         String gameSettings = iniConverter.convertFromMap(server.getSettings().getGameSettings());
@@ -204,7 +182,7 @@ public class ServerUtils {
             if (!Files.exists(gusPath.getParent())) {
                 Files.createDirectories(gusPath.getParent());
             }
-            if (!CommonUtils.isNullOrEmpty(gameUserSettings)) {
+            if (!Utils.isNullOrEmpty(gameUserSettings)) {
                 Files.write(gusPath, gameUserSettings.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
             }
 
@@ -212,7 +190,7 @@ public class ServerUtils {
             if (!Files.exists(gameSettingsPath.getParent())) {
                 Files.createDirectories(gameSettingsPath.getParent());
             }
-            if (!CommonUtils.isNullOrEmpty(gameSettings)) {
+            if (!Utils.isNullOrEmpty(gameSettings)) {
                 Files.write(gameSettingsPath, gameSettings.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
             }
         } catch (IOException e) {
@@ -221,13 +199,19 @@ public class ServerUtils {
 
     }
 
-    public static SettingProfile getSettingProfile(String settingProfileId) {
+    public static @Nullable SettingProfile getSettingProfile(@NonNull String settingProfileId) {
+
+        Node node = Node.INSTANCE;
+
+        if (node == null) {
+            throw new IllegalStateException("Node is not initialized yet.");
+        }
 
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
                 .url(Application.getBackendUrl() + "/setting/profile/" + settingProfileId)
-                .addHeader("Node-Id", Node.INSTANCE.getNodeId())
-                .addHeader("Node-Secret", Node.INSTANCE.getSecret())
+                .addHeader("Node-Id", node.getNodeId())
+                .addHeader("Node-Secret", node.getSecret())
                 .get()
                 .build();
 
@@ -238,7 +222,7 @@ public class ServerUtils {
                 return null;
             }
 
-            return CommonUtils.getObjectReader().readValue(response.body().string(), SettingProfile.class);
+            return Utils.getObjectReader(SettingProfile.class).readValue(response.body().string());
         } catch (IOException e) {
             log.error("An unknown error occurred.", e);
             return null;

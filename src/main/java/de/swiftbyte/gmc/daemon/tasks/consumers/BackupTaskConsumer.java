@@ -5,16 +5,19 @@ import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @CustomLog
 public class BackupTaskConsumer implements NodeTaskConsumer {
 
     @Override
-    public void run(NodeTask task, Object payload) {
-        if (payload instanceof BackupTaskPayload p) {
+    public void run(@NonNull NodeTask task, @Nullable Object payload) {
+        if (payload instanceof BackupTaskPayload(boolean isAutoUpdate, String name)) {
             task.getTargetIds().forEach(serverId -> {
                 GameServer server = GameServer.getServerById(serverId);
-                BackupService.backupServer(server, p.isAutoUpdate(), p.name());
+                if(server == null) throw new IllegalArgumentException("Server id not found");
+                BackupService.backupServer(server, isAutoUpdate, name);
             });
             return;
         }
@@ -22,6 +25,6 @@ public class BackupTaskConsumer implements NodeTaskConsumer {
         throw new IllegalArgumentException("Unsupported payload for BackupTaskConsumer: " + (payload == null ? "null" : payload.getClass()));
     }
 
-    public record BackupTaskPayload(boolean isAutoUpdate, String name) {
+    public record BackupTaskPayload(boolean isAutoUpdate, @Nullable String name) {
     }
 }

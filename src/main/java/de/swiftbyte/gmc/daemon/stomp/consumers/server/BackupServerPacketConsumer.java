@@ -2,13 +2,13 @@ package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 
 import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.packet.from.backend.server.ServerBackupPacket;
-import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 
@@ -17,7 +17,7 @@ import java.util.HashMap;
 public class BackupServerPacketConsumer implements StompPacketConsumer<ServerBackupPacket> {
 
     @Override
-    public void onReceive(ServerBackupPacket packet) {
+    public void onReceive(@NonNull ServerBackupPacket packet) {
         log.info("Creating backup for server with id {}.", packet.getServerId());
         GameServer server = GameServer.getServerById(packet.getServerId());
 
@@ -30,7 +30,7 @@ public class BackupServerPacketConsumer implements StompPacketConsumer<ServerBac
             TaskService.createTask(
                     NodeTask.Type.BACKUP,
                     new BackupTaskConsumer.BackupTaskPayload(false, packet.getName()),
-                    Node.INSTANCE.getNodeId(),
+                    getNode().getNodeId(),
                     context,
                     packet.getServerId()
             );

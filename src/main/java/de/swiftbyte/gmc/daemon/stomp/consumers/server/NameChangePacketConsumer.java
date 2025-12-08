@@ -1,19 +1,18 @@
 package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 
 import de.swiftbyte.gmc.common.packet.from.backend.server.ServerNameChangePacket;
-import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.GameServer;
-import de.swiftbyte.gmc.daemon.service.FirewallService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 @CustomLog
 @StompPacketInfo(path = "/user/queue/server/name-change", packetClass = ServerNameChangePacket.class)
 public class NameChangePacketConsumer implements StompPacketConsumer<ServerNameChangePacket> {
 
     @Override
-    public void onReceive(ServerNameChangePacket packet) {
+    public void onReceive(@NonNull ServerNameChangePacket packet) {
         try {
             GameServer server = GameServer.getServerById(packet.getServerId());
             if (server == null) {
@@ -22,7 +21,7 @@ public class NameChangePacketConsumer implements StompPacketConsumer<ServerNameC
             }
 
             String newName = packet.getFriendlyName();
-            if (newName == null || newName.isBlank()) {
+            if (newName.isBlank()) {
                 log.warn("Received empty friendlyName for server '{}'. Ignoring.", packet.getServerId());
                 return;
             }

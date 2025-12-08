@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 
@@ -15,13 +17,13 @@ import java.util.HashMap;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CacheModel {
 
-    private String nodeName;
-    private String teamName;
-    private String serverPath;
-    private String defaultServerDirectory;
-    private String backupPath;
+    private @Nullable String nodeName;
+    private @Nullable String teamName;
+    private @Nullable String serverPath;
+    private @Nullable String defaultServerDirectory;
+    private @Nullable String backupPath;
     private boolean manageFirewallAutomatically;
     private boolean isAutoUpdateEnabled;
 
-    private HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap;
+    private @Nullable HashMap<@NonNull String, @Nullable GameServerCacheModel> gameServerCacheModelHashMap;
 }

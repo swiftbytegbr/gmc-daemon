@@ -4,6 +4,7 @@ import de.swiftbyte.gmc.common.entity.NodeSettings;
 import de.swiftbyte.gmc.common.packet.from.bidirectional.node.NodeSettingsPacket;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 import java.nio.file.Path;
 
@@ -14,17 +15,16 @@ public final class NodeSettingsUtils {
     }
 
     // Validates incoming defaultServerDirectory; if null/invalid, backfill to currentDefaultDir (or absolute ./servers) and sync once.
-    public static String validateOrBackfillDefaultServerDirectory(NodeSettings nodeSettings, Path currentDefaultDir) {
-        String incoming = nodeSettings.getDefaultServerDirectory();
+    public static @NonNull Path validateOrBackfillDefaultServerDirectory(@NonNull NodeSettings nodeSettings, @NonNull Path currentDefaultDir) {
 
-        boolean incomingValid = PathValidationUtils.isWritableDirectory(incoming);
-        if (!incomingValid) {
-            String fallback = (currentDefaultDir != null && PathValidationUtils.isWritableDirectory(currentDefaultDir.toString()))
-                    ? currentDefaultDir.toString()
-                    : PathValidationUtils.canonicalizeOrAbsolute("./servers");
+        Path incoming = PathUtils.getAbsolutPath(nodeSettings.getDefaultServerDirectory());
+
+        if (Utils.isNullOrEmpty(incoming) || !PathUtils.isWritableDirectory(incoming)) {
+
+            Path fallback = PathUtils.isWritableDirectory(currentDefaultDir) ? currentDefaultDir : PathUtils.getAbsolutPath("./servers");
 
             if (!fallback.equals(incoming)) {
-                nodeSettings.setDefaultServerDirectory(fallback);
+                nodeSettings.setDefaultServerDirectory(fallback.toString());
                 NodeSettingsPacket packet = new NodeSettingsPacket();
                 packet.setNodeSettings(nodeSettings);
                 StompHandler.send("/app/node/settings", packet);
@@ -33,16 +33,20 @@ public final class NodeSettingsUtils {
             return fallback;
         }
 
-        return PathValidationUtils.canonicalizeOrAbsolute(incoming);
+        return incoming;
     }
 
     // Validates incoming serverBackupsDirectory; if null/invalid, backfill to currentBackupPath and sync once.
-    public static String validateOrBackfillServerBackupsDirectory(NodeSettings nodeSettings, Path currentBackupPath) {
-        String incoming = nodeSettings.getServerBackupsDirectory();
-        if (CommonUtils.isNullOrEmpty(incoming) || !PathValidationUtils.isWritableDirectory(incoming)) {
-            String fallback = currentBackupPath.normalize().toString();
+    public static @NonNull Path validateOrBackfillServerBackupsDirectory(@NonNull NodeSettings nodeSettings, @NonNull Path currentBackupPath) {
+
+        Path incoming = PathUtils.getAbsolutPath(nodeSettings.getServerBackupsDirectory());
+
+        if (Utils.isNullOrEmpty(incoming) || !PathUtils.isWritableDirectory(incoming)) {
+
+            Path fallback = PathUtils.isWritableDirectory(currentBackupPath) ? currentBackupPath : PathUtils.getAbsolutPath("./backups");
+
             if (!fallback.equals(incoming)) {
-                nodeSettings.setServerBackupsDirectory(fallback);
+                nodeSettings.setServerBackupsDirectory(fallback.toString());
                 NodeSettingsPacket packet = new NodeSettingsPacket();
                 packet.setNodeSettings(nodeSettings);
                 StompHandler.send("/app/node/settings", packet);
@@ -50,6 +54,7 @@ public final class NodeSettingsUtils {
             }
             return fallback;
         }
-        return Path.of(incoming).normalize().toString();
+
+        return incoming;
     }
 }

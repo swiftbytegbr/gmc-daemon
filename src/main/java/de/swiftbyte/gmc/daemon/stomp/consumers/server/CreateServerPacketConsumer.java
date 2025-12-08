@@ -12,6 +12,7 @@ import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 import java.nio.file.Path;
 
@@ -20,7 +21,7 @@ import java.nio.file.Path;
 public class CreateServerPacketConsumer implements StompPacketConsumer<ServerCreatePacket> {
 
     @Override
-    public void onReceive(ServerCreatePacket packet) {
+    public void onReceive(@NonNull ServerCreatePacket packet) {
         log.info("Created server with id {} and name {}.", packet.getServerId(), packet.getServerName());
         if (packet.getGameType() == GameType.ARK_ASCENDED || packet.getGameType() == GameType.ARK_EVOLVED) {
 

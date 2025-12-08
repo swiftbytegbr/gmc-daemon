@@ -5,13 +5,14 @@ import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 @CustomLog
 @StompPacketInfo(path = "/user/queue/node/task-cancel", packetClass = NodeTaskCancelPacket.class)
 public class NodeTaskCancelConsumer implements StompPacketConsumer<NodeTaskCancelPacket> {
 
     @Override
-    public void onReceive(NodeTaskCancelPacket packet) {
+    public void onReceive(@NonNull NodeTaskCancelPacket packet) {
 
         log.debug("Received task cancel packet: {}", packet);
 

@@ -5,6 +5,7 @@ import ch.qos.logback.classic.LoggerContext;
 import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
 import lombok.CustomLog;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
@@ -35,12 +36,17 @@ public class DaemonManagementCommand {
     }
 
     @Command(command = "delete", alias = "logout", description = "Remove the connection between the backend and the daemon (Also called 'deletion'). WARNING: This can not be undone!", group = "Daemon Management")
-    public void deleteCommand(@Option(description = "Confirm the deletion") String confirm) {
+    public void deleteCommand(@Nullable @Option(description = "Confirm the deletion") String confirm) {
+
+        Node node = Node.INSTANCE;
+        if (node == null) {
+            throw new IllegalStateException("Not is not initialized yet!");
+        }
 
         if (confirm != null && confirm.equals("confirm")) {
 
             log.debug("User requested node deletion with confirmation flag.");
-            Node.INSTANCE.delete();
+            node.delete();
 
         } else {
 

@@ -1,6 +1,8 @@
 package de.swiftbyte.gmc.daemon.utils;
 
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -8,13 +10,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Properties;
 
+@SuppressWarnings("UnusedReturnValue")
 @CustomLog
-public class ConfigUtils {
+public final class ConfigUtils {
 
-    private static final String CONFIG_NAME = "gmc.properties";
-    private static final File CONFIG_FILE = new File(CONFIG_NAME);
+    private static final @NonNull String CONFIG_NAME = "gmc.properties";
+    private static final @NonNull File CONFIG_FILE = new File(CONFIG_NAME);
 
-    private static Properties properties;
+    private static @Nullable Properties properties;
 
     public static void initialiseConfigSystem() {
 
@@ -33,6 +36,7 @@ public class ConfigUtils {
                 properties = new Properties();
                 properties.load(new FileInputStream(CONFIG_FILE));
                 properties.store(new FileWriter(CONFIG_FILE), "Do not make any changes! If the file gets edited, it can lead to malfunctions, unexpected behavior and data loss.");
+
             } catch (IOException | SecurityException e) {
                 log.error("The configuration file could not be created due to an error.", e);
                 System.exit(1);
@@ -51,11 +55,10 @@ public class ConfigUtils {
         }
     }
 
-    public static boolean store(String key, String value) {
+    public static boolean store(@NonNull String key, @NonNull String value) {
 
-        if (key == null || value == null) {
-            log.error("Tried to store null value or key.");
-            return false;
+        if (properties == null) {
+            throw new IllegalStateException("The configuration file has not been initialised yet.");
         }
 
         properties.setProperty(key, value);
@@ -63,45 +66,49 @@ public class ConfigUtils {
             properties.store(new FileWriter(CONFIG_FILE), "Do not make any changes! If the file gets, edited it can lead to malfunctions, unexpected behavior and data loss.");
         } catch (IOException e) {
             log.error("An unknown error occurred while saving the value.", e);
+            return false;
         }
         return true;
     }
 
-    public static boolean store(String key, int value) {
+    public static boolean store(@NonNull String key, int value) {
         return store(key, String.valueOf(value));
     }
 
-    public static boolean store(String key, boolean value) {
+    public static boolean store(@NonNull String key, boolean value) {
         return store(key, String.valueOf(value));
     }
 
-    public static String get(String key, String defaultValue) {
+    public static @NonNull String get(@NonNull String key, @NonNull String defaultValue) {
 
-        if (key == null) {
-            log.error("Tried to get null key.");
-            return null;
+        if (properties == null) {
+            throw new IllegalStateException("The configuration file has not been initialised yet.");
         }
 
         return properties.getProperty(key, defaultValue);
     }
 
-    public static String get(String key) {
-        return get(key, null);
+    public static @Nullable String get(@NonNull String key) {
+
+        if (properties == null) {
+            throw new IllegalStateException("The configuration file has not been initialised yet.");
+        }
+
+        return properties.getProperty(key);
     }
 
-    public static int getInt(String key, int defaultValue) {
+    public static int getInt(@NonNull String key, int defaultValue) {
         return Integer.parseInt(get(key, String.valueOf(defaultValue)));
     }
 
-    public static int getInt(String key) {
+    public static int getInt(@NonNull String key) {
         return getInt(key, 0);
     }
 
-    public static void remove(String key) {
+    public static void remove(@NonNull String key) {
 
-        if (key == null) {
-            log.error("Tried to remove null key.");
-            return;
+        if (properties == null) {
+            throw new IllegalStateException("The configuration file has not been initialised yet.");
         }
 
         properties.remove(key);
@@ -112,11 +119,10 @@ public class ConfigUtils {
         }
     }
 
-    public static boolean hasKey(String key) {
+    public static boolean hasKey(@NonNull String key) {
 
-        if (key == null) {
-            log.error("Tried to check null key.");
-            return false;
+        if (properties == null) {
+            throw new IllegalStateException("The configuration file has not been initialised yet.");
         }
 
         return properties.containsKey(key);

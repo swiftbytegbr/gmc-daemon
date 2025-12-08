@@ -7,9 +7,11 @@ import com.cronutils.parser.CronParser;
 import de.swiftbyte.gmc.common.entity.GameServerState;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.server.GameServer;
-import de.swiftbyte.gmc.daemon.utils.CommonUtils;
+import de.swiftbyte.gmc.daemon.utils.Utils;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -25,12 +27,12 @@ import static com.cronutils.model.CronType.UNIX;
 @CustomLog
 public class AutoRestartService {
 
-    private static final CronParser UNIX_CRON = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(UNIX));
-    private static final CronParser QUARTZ_CRON = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(QUARTZ));
+    private static final @NonNull CronParser UNIX_CRON = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(UNIX));
+    private static final @NonNull CronParser QUARTZ_CRON = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(QUARTZ));
 
-    private static final ConcurrentHashMap<String, ScheduledFuture<?>> RESTART_SCHEDULES = new ConcurrentHashMap<>();
+    private static final @NonNull ConcurrentHashMap<@NonNull String, @NonNull ScheduledFuture<?>> RESTART_SCHEDULES = new ConcurrentHashMap<>();
 
-    public static void updateAutoRestartSettings(String serverId) {
+    public static void updateAutoRestartSettings(@NonNull String serverId) {
         cancelAutoRestart(serverId);
 
         GameServer server = GameServer.getServerById(serverId);
@@ -39,14 +41,9 @@ public class AutoRestartService {
             return;
         }
 
-        if (server.getSettings().getGmcSettings() == null) {
-            log.debug("No GMC settings found for server '{}'. Skipping auto restart setup...", server.getFriendlyName());
-            return;
-        }
-
         MapSettingsAdapter settings = new MapSettingsAdapter(server.getSettings().getGmcSettings());
-        String cronExpression = settings.get("RestartCron", null);
-        if (CommonUtils.isNullOrEmpty(cronExpression)) {
+        String cronExpression = settings.get("RestartCron");
+        if (Utils.isNullOrEmpty(cronExpression)) {
             log.debug("No RestartCron configured for server '{}'. Skipping auto restart setup...", server.getFriendlyName());
             return;
         }
@@ -60,14 +57,14 @@ public class AutoRestartService {
         scheduleNextRestart(server.getServerId(), server.getFriendlyName(), cronExpression, executionTime);
     }
 
-    public static void cancelAutoRestart(String serverId) {
+    public static void cancelAutoRestart(@NonNull String serverId) {
         ScheduledFuture<?> future = RESTART_SCHEDULES.remove(serverId);
         if (future != null) {
             future.cancel(false);
         }
     }
 
-    private static void scheduleNextRestart(String serverId, String serverName, String cronExpression, ExecutionTime executionTime) {
+    private static void scheduleNextRestart(@NonNull String serverId, @NonNull String serverName, @NonNull String cronExpression, @NonNull ExecutionTime executionTime) {
         Optional<Duration> nextExecution = executionTime.timeToNextExecution(ZonedDateTime.now());
         if (nextExecution.isEmpty()) {
             log.warn("Could not compute next execution time for auto restart of server '{}' (cron: '{}').", serverName, cronExpression);
@@ -107,7 +104,7 @@ public class AutoRestartService {
         log.debug("Scheduled next automatic restart for server '{}' in {} seconds (cron: '{}').", serverName, TimeUnit.MILLISECONDS.toSeconds(delayMillis), cronExpression);
     }
 
-    private static ExecutionTime parseCronExpression(String cronExpression) {
+    private static @Nullable ExecutionTime parseCronExpression(@NonNull String cronExpression) {
         String expr = cronExpression.trim();
         for (CronParser parser : List.of(QUARTZ_CRON, UNIX_CRON)) {
             try {

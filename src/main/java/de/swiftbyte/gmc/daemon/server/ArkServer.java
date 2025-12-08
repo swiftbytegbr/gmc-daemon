@@ -3,20 +3,23 @@ package de.swiftbyte.gmc.daemon.server;
 import de.swiftbyte.gmc.common.entity.GameServerState;
 import de.swiftbyte.gmc.common.model.SettingProfile;
 import de.swiftbyte.gmc.common.packet.from.backend.server.ServerDeletePacket;
-import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.service.AutoRestartService;
 import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.service.FirewallService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
-import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.NodeUtils;
+import de.swiftbyte.gmc.daemon.utils.PathUtils;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
+import de.swiftbyte.gmc.daemon.utils.SystemUtils;
+import de.swiftbyte.gmc.daemon.utils.Utils;
 import de.swiftbyte.gmc.daemon.utils.action.AsyncAction;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
-import lombok.Setter;
 import lombok.CustomLog;
+import lombok.Setter;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import xyz.astroark.Rcon;
 import xyz.astroark.exception.AuthenticationException;
 
@@ -43,12 +46,12 @@ public abstract class ArkServer extends GameServer {
     }
 
     @Override
-    public void setSettings(SettingProfile settings) {
+    public void setSettings(@NonNull SettingProfile settings) {
         super.setSettings(settings);
         // Only write startup batch if install directory exists.
         // During initial creation, installDir may not exist yet and writing would fail.
         try {
-            if (installDir != null && Files.exists(installDir)) {
+            if (Files.exists(installDir)) {
                 writeStartupBatch();
             } else {
                 log.debug("Skipping startup batch write for '{}' because install directory does not exist yet.", friendlyName);
@@ -58,7 +61,7 @@ public abstract class ArkServer extends GameServer {
         }
     }
 
-    public AsyncAction<Boolean> install() {
+    public @NonNull AsyncAction<@NonNull Boolean> install() {
         return () -> {
             if (state == GameServerState.CREATING) {
                 log.warn("Server '{}' is busy (CREATING). Install/update aborted.", friendlyName);
@@ -79,8 +82,8 @@ public abstract class ArkServer extends GameServer {
                 return false;
             }
 
-            String steamCmdPath = CommonUtils.convertPathSeparator(NodeUtils.getSteamCmdPath().toAbsolutePath());
-            String installDirectory = CommonUtils.convertPathSeparator(installDir.toAbsolutePath());
+            String steamCmdPath = PathUtils.convertPathSeparator(NodeUtils.getSteamCmdPath());
+            String installDirectory = PathUtils.convertPathSeparator(installDir);
 
             List<String> installCommand = getInstallCommand(steamCmdPath, installDirectory, isPreaquaticaBeta);
 
@@ -124,7 +127,7 @@ public abstract class ArkServer extends GameServer {
         };
     }
 
-    private List<String> getInstallCommand(String steamCmdPath, String installDirectory, boolean isPreaquaticaBeta) {
+    private @NonNull List<@NonNull String> getInstallCommand(@NonNull String steamCmdPath, @NonNull String installDirectory, boolean isPreaquaticaBeta) {
         List<String> installCommand = new ArrayList<>();
         installCommand.add("cmd");
         installCommand.add("/c");
@@ -136,7 +139,7 @@ public abstract class ArkServer extends GameServer {
         installCommand.add("+login");
         installCommand.add("anonymous");
         installCommand.add("+app_update");
-        installCommand.add(String.valueOf(getGameId()));
+        installCommand.add(getGameId());
         if (isPreaquaticaBeta) {
             installCommand.add("-beta");
             installCommand.add("preaquatica");
@@ -147,14 +150,15 @@ public abstract class ArkServer extends GameServer {
     }
 
     @Override
-    public AsyncAction<Boolean> delete() {
+    public @NonNull AsyncAction<@NonNull Boolean> delete() {
         return () -> {
+
             if (state == GameServerState.CREATING) {
                 log.warn("Server '{}' is busy (CREATING). Delete aborted.", friendlyName);
                 return false;
             }
             try {
-                if (state != GameServerState.OFFLINE && state != GameServerState.CREATING) {
+                if (state != GameServerState.OFFLINE) {
                     stop(false).complete();
                 }
                 super.setState(GameServerState.DELETING);
@@ -168,14 +172,12 @@ public abstract class ArkServer extends GameServer {
                     log.warn("Failed to delete symbolic link for '{}'.", friendlyName, e);
                 }
 
-
-                Thread.sleep(5000);
                 FileUtils.deleteDirectory(installDir.toFile());
                 FirewallService.removePort(friendlyName);
                 BackupService.deleteAllBackupsByServer(this);
                 GameServer.removeServerById(serverId);
                 updateScheduler.cancel(false);
-                NodeUtils.cacheInformation(Node.INSTANCE);
+                NodeUtils.cacheInformation(node);
 
                 ServerDeletePacket packet = new ServerDeletePacket();
                 packet.setServerId(serverId);
@@ -184,33 +186,36 @@ public abstract class ArkServer extends GameServer {
             } catch (IOException e) {
                 log.error("An unknown exception occurred while deleting the server '{}'.", friendlyName, e);
                 return false;
-            } catch (InterruptedException e) {
-                log.error("An unknown exception occurred while deleting the server '{}'.", friendlyName, e);
             }
             return true;
         };
     }
 
     @Override
-    public AsyncAction<Boolean> abandon() {
+    public @NonNull AsyncAction<@NonNull Boolean> abandon() {
         return () -> {
+
             AutoRestartService.cancelAutoRestart(serverId);
             GameServer.removeServerById(serverId);
             updateScheduler.cancel(false);
-            NodeUtils.cacheInformation(Node.INSTANCE);
+            NodeUtils.cacheInformation(node);
             return true;
         };
     }
 
     @Override
-    public AsyncAction<Boolean> start() {
+    public @NonNull AsyncAction<@NonNull Boolean> start() {
 
         return () -> {
             if (state == GameServerState.CREATING) {
                 log.warn("Server '{}' is busy (CREATING). Start aborted.", friendlyName);
                 return false;
             }
-            ServerUtils.killServerProcess(PID);
+
+            //Kill if a server process is already present
+            if (PID != null) {
+                SystemUtils.killSystemProcess(PID);
+            }
 
             super.setState(GameServerState.INITIALIZING);
 
@@ -224,21 +229,23 @@ public abstract class ArkServer extends GameServer {
                 writeStartupBatch();
                 ServerUtils.writeIniFiles(this, installDir);
                 try {
-                    String startupScript = CommonUtils.convertPathSeparator(installDir.resolve("start.bat").toString());
+                    String startupScript = PathUtils.convertPathSeparator(installDir.resolve("start.bat").toString());
                     List<String> startCommand = List.of("cmd", "/c", "start", "/min", "", startupScript);
                     log.debug("Starting server with command {}", String.join(" ", startCommand));
                     serverProcess = new ProcessBuilder(startCommand).start();
                     Scanner scanner = new Scanner(serverProcess.getInputStream());
                     while (scanner.hasNextLine()) {
+                        scanner.nextLine();
                     }
 
-                    MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
+                    //TODO maybe delete this part
+                    /*MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
 
                     if (gmcSettings.getBoolean("RestartOnCrash", false) && (state != GameServerState.OFFLINE && state != GameServerState.STOPPING)) {
                         super.setState(GameServerState.RESTARTING);
                     } else {
                         super.setState(GameServerState.OFFLINE);
-                    }
+                    }*/
 
                 } catch (IOException e) {
                     log.error("An unknown exception occurred while starting the server '{}'.", friendlyName, e);
@@ -250,7 +257,7 @@ public abstract class ArkServer extends GameServer {
     }
 
     @Override
-    public AsyncAction<Boolean> stop(boolean isRestart, boolean isKill) {
+    public @NonNull AsyncAction<@NonNull Boolean> stop(boolean isRestart, boolean isKill) {
         return () -> {
             if (state == GameServerState.CREATING) {
                 log.warn("Server '{}' is busy (CREATING). Stop aborted.", friendlyName);
@@ -263,18 +270,20 @@ public abstract class ArkServer extends GameServer {
                     log.error("Killing server '{}' failed. Reason: PID not found.", friendlyName);
                     return false;
                 }
-                ServerUtils.killServerProcess(PID);
+                SystemUtils.killSystemProcess(PID);
                 return true;
             }
+
             if (state == GameServerState.OFFLINE) {
                 return true;
             }
+
             super.setState(GameServerState.STOPPING);
 
             if (!isRestart) {
                 MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
-                String stopMessage = gmcSettings.get("StopMessage", null);
-                if (!CommonUtils.isNullOrEmpty(stopMessage)) {
+                String stopMessage = gmcSettings.get("StopMessage");
+                if (!Utils.isNullOrEmpty(stopMessage)) {
                     sendRconCommand("serverchat " + stopMessage);
                 } else {
                     sendRconCommand("serverchat server is stopping...");
@@ -292,17 +301,18 @@ public abstract class ArkServer extends GameServer {
                 Thread.sleep(1000);
                 sendRconCommand("serverchat STOP");
             } catch (InterruptedException e) {
-                log.warn("Failed to send stop message to server '{}'.", friendlyName);
+                Thread.currentThread().interrupt();
             }
             if (sendRconCommand("saveworld") == null) {
                 log.debug("No connection to server '{}'. Killing process...", friendlyName);
-                ServerUtils.killServerProcess(PID);
-            } else {
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException ignored) {
-                    ServerUtils.killServerProcess(PID);
+
+                if (PID != null) {
+                    SystemUtils.killSystemProcess(PID);
+                } else {
+                    log.debug("No server pid found. It is assumed that the server has already been terminated.");
                 }
+
+            } else {
                 sendRconCommand("doexit");
                 currentOnlinePlayers = 0;
             }
@@ -312,7 +322,7 @@ public abstract class ArkServer extends GameServer {
                     try {
                         this.wait(1000);
                     } catch (InterruptedException e) {
-                        log.error("An unknown exception occurred while stopping the server '{}'.", friendlyName, e);
+                        Thread.currentThread().interrupt();
                     }
                 }
                 log.debug("Server '{}' is offline.", friendlyName);
@@ -321,19 +331,20 @@ public abstract class ArkServer extends GameServer {
         };
     }
 
-    public AsyncAction<Boolean> restart() {
+    public @NonNull AsyncAction<@NonNull Boolean> restart() {
         return () -> {
             if (state == GameServerState.CREATING) {
                 log.warn("Server '{}' is busy (CREATING). Restart aborted.", friendlyName);
                 return false;
             }
             MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
-            String restartMessage = gmcSettings.get("RestartMessage", null);
-            if (!CommonUtils.isNullOrEmpty(restartMessage)) {
+            String restartMessage = gmcSettings.get("RestartMessage");
+            if (!Utils.isNullOrEmpty(restartMessage)) {
                 sendRconCommand("serverchat " + restartMessage);
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
                 }
             }
             return (stop(true).complete() && start().complete());
@@ -344,8 +355,8 @@ public abstract class ArkServer extends GameServer {
 
     @Override
     public void update() {
-        if (PID == null && installDir != null) {
-            PID = CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
+        if (PID == null) {
+            gatherPID();
         }
 
         switch (state) {
@@ -365,7 +376,11 @@ public abstract class ArkServer extends GameServer {
 
                     log.warn("Server crash detected! Restarting server...");
 
-                    ServerUtils.killServerProcess(PID);
+                    if (PID != null) {
+                        SystemUtils.killSystemProcess(PID);
+                    } else {
+                        log.debug("No server pid found. It is assumed that the server has already been terminated.");
+                    }
 
                     MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
 
@@ -388,13 +403,10 @@ public abstract class ArkServer extends GameServer {
                 }
                 restartCounter++;
                 log.debug("Server '{}' is restarting...", friendlyName);
-                new Thread(() -> {
-                    ServerUtils.killServerProcess(PID);
-                    start().complete();
-                }).start();
+                start().queue();
             }
             case STOPPING -> {
-                if (CommonUtils.getProcessPID(installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/")) == null) {
+                if (PID == null) {
                     super.setState(GameServerState.OFFLINE);
                 }
             }
@@ -407,13 +419,13 @@ public abstract class ArkServer extends GameServer {
     }
 
     @Override
-    public String sendRconCommand(String command) {
+    public @Nullable String sendRconCommand(@NonNull String command) {
         try {
             if (state == GameServerState.CREATING) {
                 log.warn("Server '{}' is busy (CREATING). RCON '{}' ignored.", friendlyName, command);
                 return null;
             }
-            if (rconPort == 0 || CommonUtils.isNullOrEmpty(rconPassword)) {
+            if (rconPort == 0 || Utils.isNullOrEmpty(rconPassword)) {
                 return null;
             }
             Rcon rcon = new Rcon("127.0.0.1", rconPort, rconPassword.getBytes());
@@ -424,13 +436,18 @@ public abstract class ArkServer extends GameServer {
             return response;
         } catch (IOException e) {
             log.debug("Information: Port: {}, Password: {}", rconPort, rconPassword);
-            log.debug("Can not send rcon command because server '{}' is offline.", friendlyName, e);
+            log.debug("Can not send rcon command because server '{}' is offline. THIS IS PROBABLY NOT AN ERROR:", friendlyName, e);
             return null;
         } catch (AuthenticationException e) {
             log.debug("Information: Port: {}, Password: {}", rconPort, rconPassword);
             log.error("Rcon authentication failed for server '{}'.", friendlyName);
             return null;
         }
+    }
+
+    @Override
+    protected void gatherPID() {
+        PID = SystemUtils.getProcessPID(PathUtils.convertPathSeparator(installDir.resolve("/ShooterGame/Binaries/Win64/")));
     }
 
     public abstract void writeStartupBatch();

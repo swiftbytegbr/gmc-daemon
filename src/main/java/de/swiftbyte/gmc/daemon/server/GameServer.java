@@ -9,11 +9,14 @@ import de.swiftbyte.gmc.daemon.service.AutoRestartService;
 import de.swiftbyte.gmc.daemon.service.BackupService;
 import de.swiftbyte.gmc.daemon.service.FirewallService;
 import de.swiftbyte.gmc.daemon.stomp.StompHandler;
+import de.swiftbyte.gmc.daemon.utils.PathUtils;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
 import de.swiftbyte.gmc.daemon.utils.action.AsyncAction;
-import lombok.Getter;
 import lombok.CustomLog;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,41 +30,47 @@ import java.util.concurrent.TimeUnit;
 @CustomLog
 public abstract class GameServer {
 
-    private static final ConcurrentHashMap<String, GameServer> GAME_SERVERS = new ConcurrentHashMap<>();
+    private static final @NonNull ConcurrentHashMap<@NonNull String, @NonNull GameServer> GAME_SERVERS = new ConcurrentHashMap<>();
 
-    protected ScheduledFuture<?> updateScheduler;
+    protected final @NonNull Node node;
+    protected final @NonNull ScheduledFuture<?> updateScheduler;
 
-    @Getter
-    protected String PID;
+    protected @Nullable String PID;
 
-    protected Process serverProcess;
-
-    @Getter
-    protected GameServerState state;
+    protected @Nullable Process serverProcess;
 
     @Getter
-    protected String friendlyName;
+    protected @NonNull GameServerState state;
 
     @Getter
-    protected String serverId;
+    protected @NonNull String friendlyName;
 
     @Getter
-    protected Path installDir;
+    protected @NonNull String serverId;
 
     @Getter
-    protected SettingProfile settings;
+    protected @NonNull Path installDir;
+
+    @Getter
+    protected @NonNull SettingProfile settings;
 
     @Getter
     protected int currentOnlinePlayers = 0;
 
 
-    public abstract String getGameId();
+    public abstract @NonNull String getGameId();
 
-    public GameServer(String id, @NotNull Path installDir, String friendlyName, SettingProfile settings) {
+    public GameServer(@NonNull String id, @NotNull Path installDir, @NonNull String friendlyName, @NonNull SettingProfile settings) {
+
+        if (Node.INSTANCE == null) {
+            throw new IllegalStateException("Node was not initialized yet");
+        }
+        node = Node.INSTANCE;
 
         this.serverId = id;
         this.friendlyName = friendlyName;
         this.installDir = installDir.toAbsolutePath().normalize();
+        this.state = GameServerState.UNKNOWN;
 
         // Register first so downstream lookups (e.g., in setSettings -> BackupService) can resolve
         GAME_SERVERS.put(id, this);
@@ -101,8 +110,9 @@ public abstract class GameServer {
     }
 
     // Internal initializer to avoid virtual dispatch during construction
-    private void initSettings(SettingProfile settings) {
-        if (Node.INSTANCE.isManageFirewallAutomatically()) {
+    private void initSettings(@NonNull SettingProfile settings) {
+
+        if (node.isManageFirewallAutomatically()) {
             FirewallService.removePort(friendlyName);
         }
         this.settings = settings;
@@ -111,36 +121,38 @@ public abstract class GameServer {
         AutoRestartService.updateAutoRestartSettings(serverId);
     }
 
-    public abstract AsyncAction<Boolean> install();
+    public abstract @NonNull AsyncAction<@NonNull Boolean> install();
 
-    public abstract AsyncAction<Boolean> delete();
+    public abstract @NonNull AsyncAction<@NonNull Boolean> delete();
 
-    public abstract AsyncAction<Boolean> abandon();
+    public abstract @NonNull AsyncAction<@NonNull Boolean> abandon();
 
-    public abstract AsyncAction<Boolean> start();
+    public abstract @NonNull AsyncAction<@NonNull Boolean> start();
 
-    public AsyncAction<Boolean> stop() {
+    public @NonNull AsyncAction<@NonNull Boolean> stop() {
         return stop(false, false);
     }
 
-    public AsyncAction<Boolean> stop(boolean isRestart) {
+    public @NonNull AsyncAction<@NonNull Boolean> stop(boolean isRestart) {
         return stop(isRestart, false);
     }
 
-    public abstract AsyncAction<Boolean> stop(boolean isRestart, boolean isKill);
+    public abstract @NonNull AsyncAction<@NonNull Boolean> stop(boolean isRestart, boolean isKill);
 
-    public abstract AsyncAction<Boolean> restart();
+    public abstract @NonNull AsyncAction<@NonNull Boolean> restart();
 
     public abstract void update();
 
-    public abstract String sendRconCommand(String command);
+    public abstract @Nullable String sendRconCommand(@NonNull String command);
 
-    public abstract List<Integer> getNeededPorts();
+    public abstract @NonNull List<@NonNull Integer> getNeededPorts();
 
     public abstract void allowFirewallPorts();
 
-    public void setInstallDir(Path newInstallDir) {
-        this.installDir = newInstallDir.toAbsolutePath().normalize();
+    protected abstract void gatherPID();
+
+    public void setInstallDir(@NonNull Path newInstallDir) {
+        this.installDir = PathUtils.getAbsolutPath(newInstallDir);
     }
 
     /**
@@ -151,16 +163,17 @@ public abstract class GameServer {
      * "<DisplayName> - Link" -> <installDir>
      */
     public void changeFriendlyName(@NotNull String newFriendlyName) {
+
         if (newFriendlyName.equals(this.friendlyName)) {
             return;
         }
 
         //Remove Firewall rules and recreate them after the name change
-        if(Node.INSTANCE.isManageFirewallAutomatically()) {
+        if (node.isManageFirewallAutomatically()) {
             FirewallService.removePort(friendlyName);
         }
 
-        Path parent = this.installDir != null ? this.installDir.getParent() : null;
+        Path parent = this.installDir.getParent();
         if (parent == null) {
             this.friendlyName = newFriendlyName;
             return;
@@ -198,7 +211,7 @@ public abstract class GameServer {
         setSettings(settings);
     }
 
-    public void setState(GameServerState state) {
+    public void setState(@NonNull GameServerState state) {
 
         if (this.state == GameServerState.DELETING) {
             return;
@@ -222,12 +235,13 @@ public abstract class GameServer {
         StompHandler.send("/app/server/state", packet);
     }
 
-    public void setSettings(SettingProfile settings) {
+    public void setSettings(@NonNull SettingProfile settings) {
+
         if (this.state == GameServerState.CREATING) {
             log.warn("Server '{}' is busy (CREATING). Settings change ignored.", friendlyName);
             return;
         }
-        if (Node.INSTANCE.isManageFirewallAutomatically()) {
+        if (node.isManageFirewallAutomatically()) {
             FirewallService.removePort(friendlyName);
         }
         this.settings = settings;
@@ -236,15 +250,15 @@ public abstract class GameServer {
         AutoRestartService.updateAutoRestartSettings(serverId);
     }
 
-    protected static void removeServerById(String id) {
+    protected static void removeServerById(@NonNull String id) {
         GAME_SERVERS.remove(id);
     }
 
-    public static GameServer getServerById(String id) {
+    public static @Nullable GameServer getServerById(@NonNull String id) {
         return GAME_SERVERS.get(id);
     }
 
-    public static List<GameServer> getAllServers() {
+    public static @NonNull List<@NonNull GameServer> getAllServers() {
         return new ArrayList<>(GAME_SERVERS.values());
     }
 

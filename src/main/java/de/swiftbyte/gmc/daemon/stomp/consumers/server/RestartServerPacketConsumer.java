@@ -2,13 +2,13 @@ package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 
 import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.packet.from.backend.server.ServerRestartPacket;
-import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.tasks.consumers.TimedRestartTaskConsumer.TimedRestartPayload;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 
@@ -17,7 +17,7 @@ import java.util.HashMap;
 public class RestartServerPacketConsumer implements StompPacketConsumer<ServerRestartPacket> {
 
     @Override
-    public void onReceive(ServerRestartPacket packet) {
+    public void onReceive(@NonNull ServerRestartPacket packet) {
         log.info("Restarting server with id {}.", packet.getServerId());
         if (packet.getDelayMinutes() != null && packet.getDelayMinutes() > 0) {
             log.debug("Received timed restart request: serverId={}, delayMinutes={}, hasMessage={}",
@@ -35,7 +35,7 @@ public class RestartServerPacketConsumer implements StompPacketConsumer<ServerRe
             boolean created = TaskService.createTask(
                     NodeTask.Type.TIMED_RESTART,
                     new TimedRestartPayload(packet.getServerId(), delay, packet.getDelayedRestartMessage()),
-                    Node.INSTANCE.getNodeId(),
+                    getNode().getNodeId(),
                     context,
                     packet.getServerId()
             );

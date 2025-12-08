@@ -1,11 +1,9 @@
 package de.swiftbyte.gmc.daemon.utils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.swiftbyte.gmc.common.entity.NodeData;
 import lombok.CustomLog;
-import org.apache.commons.lang3.SystemUtils;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import oshi.SystemInfo;
 
 import java.io.File;
@@ -13,7 +11,6 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -21,52 +18,37 @@ import java.util.List;
 import java.util.Optional;
 
 @CustomLog
-public class CommonUtils {
+public final class SystemUtils {
 
-    public static boolean isNullOrEmpty(Object obj) {
-
-        if (obj == null) {
-            return true;
-        }
-
-        return obj.toString().isEmpty();
+    private SystemUtils() {
     }
 
-    public static String convertPathSeparator(String path) {
-
-        if (SystemUtils.IS_OS_WINDOWS) {
-
-            return path.replace("/", "\\");
-
-        }
-
-        return path;
-    }
-
-    public static String convertPathSeparator(Path path) {
-        return convertPathSeparator(path.toString());
-    }
-
-    public static String getProcessPID(String command) {
+    public static @Nullable String getProcessPID(@NonNull String command) {
         Optional<ProcessHandle> processHandle = ProcessHandle.allProcesses()
-                .filter(ph -> ph.info().command().isPresent()).filter(ph -> ph.info().command().get().contains(command))
+                .filter(ph -> ph.info().command().isPresent() && ph.info().command().get().contains(command))
                 .findFirst();
 
         return processHandle.map(handle -> String.valueOf(handle.pid())).orElse(null);
     }
 
-    public static List<String> getSystemIpAddresses() {
+    public static @NonNull List<@NonNull String> getSystemIpAddresses() {
+
         List<String> ipAddresses = new ArrayList<>();
+
         try {
             Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+
             while (networkInterfaces.hasMoreElements()) {
                 NetworkInterface networkInterface = networkInterfaces.nextElement();
                 Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
+
                 while (inetAddresses.hasMoreElements()) {
                     InetAddress inetAddress = inetAddresses.nextElement();
+
                     if (inetAddress instanceof Inet6Address) {
                         continue;
                     }
+
                     ipAddresses.add(inetAddress.getHostAddress());
                 }
             }
@@ -76,8 +58,10 @@ public class CommonUtils {
         return ipAddresses;
     }
 
-    public static HashMap<String, NodeData.Storage> getSystemStorages() {
+    public static @NonNull HashMap<@NonNull String, NodeData.@NonNull Storage> getSystemStorages() {
+
         HashMap<String, NodeData.Storage> storages = new HashMap<>();
+
         File[] roots = File.listRoots();
         for (File root : roots) {
             NodeData.Storage storage = new NodeData.Storage();
@@ -89,9 +73,9 @@ public class CommonUtils {
         return storages;
     }
 
-    public static NodeData.Cpu getSystemCpu() {
-        NodeData.Cpu cpu = new NodeData.Cpu();
+    public static NodeData.@NonNull Cpu getSystemCpu() {
         SystemInfo systemInfo = new SystemInfo();
+        NodeData.Cpu cpu = new NodeData.Cpu();
         cpu.setName(systemInfo.getHardware().getProcessor().getProcessorIdentifier().getName());
         cpu.setCores(systemInfo.getHardware().getProcessor().getPhysicalProcessorCount());
         cpu.setThreads(systemInfo.getHardware().getProcessor().getLogicalProcessorCount());
@@ -99,9 +83,11 @@ public class CommonUtils {
         return cpu;
     }
 
-    public static ObjectReader getObjectReader() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(new JavaTimeModule());
-        return mapper.reader();
+    public static void killSystemProcess(@NonNull String PID) {
+        Optional<ProcessHandle> handle = ProcessHandle.of(Long.parseLong(PID));
+        if (handle.isPresent()) {
+            log.debug("Server process running... Killing process...");
+            handle.get().destroy();
+        }
     }
 }

@@ -6,9 +6,11 @@ import de.swiftbyte.gmc.daemon.migration.MigrateServerInstallDir;
 import de.swiftbyte.gmc.daemon.migration.MigrationScript;
 import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
-import lombok.Getter;
 import lombok.CustomLog;
+import lombok.Getter;
 import org.jline.terminal.Terminal;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -33,11 +35,9 @@ import java.util.concurrent.ScheduledExecutorService;
 @CustomLog
 public class Application {
 
-
     private static final int MIGRATION_LEVEL = 1;
 
-
-    public static String getBackendDomain() {
+    public static @NonNull String getBackendDomain() {
         return ConfigUtils.get("backend-domain", "api.gamemanager.cloud");
     }
 
@@ -45,15 +45,16 @@ public class Application {
         return ConfigUtils.get("backend-secure", "true").equals("true");
     }
 
-    public static String getBackendUrl() {
+    public static @NonNull String getBackendUrl() {
         if (isSecure()) {
             return "https://" + getBackendDomain();
         } else {
+            //noinspection HttpUrlsUsage
             return "http://" + getBackendDomain();
         }
     }
 
-    public static String getWebsocketUrl() {
+    public static @NonNull String getWebsocketUrl() {
         if (isSecure()) {
             return "wss://" + getBackendDomain() + "/websocket-nodes";
         } else {
@@ -61,23 +62,25 @@ public class Application {
         }
     }
 
-    private static final HashMap<Integer, MigrationScript> migrationScripts = new HashMap<>();
+    private static final @NonNull HashMap<@NonNull Integer, @NonNull MigrationScript> migrationScripts = new HashMap<>();
 
     @Getter
-    private static String version;
+    private static @NonNull String version = "";
 
     @Getter
-    private static Node node;
+    private static @Nullable Node node;
 
     @Getter
-    private static Terminal terminal;
+    private static @Nullable Terminal terminal;
 
     @Getter
-    private static ComponentFlow.Builder componentFlowBuilder;
+    private static ComponentFlow.@Nullable Builder componentFlowBuilder;
 
-    private static ScheduledExecutorService executorService;
+    private static @Nullable ScheduledExecutorService executorService;
 
-    private static final Thread shutdownHook = new Thread(() -> {
+    private static final @NonNull Thread shutdownHook = new Thread(Application::shutdownCleanly);
+
+    private static void shutdownCleanly() {
         if (node == null) {
             return;
         }
@@ -87,14 +90,14 @@ public class Application {
         }
         node.shutdown();
         log.info("Goodbye!");
-    });
+    }
 
-    public Application(ComponentFlow.Builder componentFlowBuilder, Terminal terminal) {
+    public Application(ComponentFlow.@NonNull Builder componentFlowBuilder, @NonNull Terminal terminal) {
         Application.componentFlowBuilder = componentFlowBuilder;
         Application.terminal = terminal;
     }
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         Runtime.getRuntime().addShutdownHook(shutdownHook);
 
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -159,7 +162,7 @@ public class Application {
         }
     }
 
-    public static ScheduledExecutorService getExecutor() {
+    public static @NonNull ScheduledExecutorService getExecutor() {
         if (executorService == null) {
             executorService = Executors.newScheduledThreadPool(ConfigUtils.getInt("override-thread-pool-size", 32));
         }
@@ -167,7 +170,7 @@ public class Application {
     }
 
     @Value("${spring.application.version}")
-    public void setVersion(String version) {
+    public void setVersion(@NonNull String version) {
         Application.version = version;
     }
 }

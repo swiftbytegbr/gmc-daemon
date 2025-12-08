@@ -2,11 +2,11 @@ package de.swiftbyte.gmc.daemon.migration;
 
 import de.swiftbyte.gmc.daemon.cache.CacheModel;
 import de.swiftbyte.gmc.daemon.cache.GameServerCacheModel;
-import de.swiftbyte.gmc.daemon.utils.CommonUtils;
+import de.swiftbyte.gmc.daemon.utils.NodeUtils;
+import de.swiftbyte.gmc.daemon.utils.Utils;
 import lombok.CustomLog;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 
@@ -23,19 +23,28 @@ public class MigrateServerInstallDir implements MigrationScript {
         try {
             log.info("Staring migration script 1...");
 
-            File cacheFile = new File("./cache.json");
+            File cacheFile = new File(NodeUtils.CACHE_FILE_PATH);
 
             if (!cacheFile.exists()) {
                 log.debug("No cache file found. Skipping...");
                 return;
             }
 
-            CacheModel cacheModel = CommonUtils.getObjectReader().readValue(cacheFile, CacheModel.class);
+            CacheModel cacheModel = Utils.getObjectReader(CacheModel.class).readValue(cacheFile);
             HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
+
+            if (gameServerCacheModelHashMap == null) {
+                log.info("No servers were found. Skipping migration.");
+                return;
+            }
 
             log.info("Found {} servers. Starting folder name migration...", gameServerCacheModelHashMap.size());
 
             gameServerCacheModelHashMap.forEach((id, gameServerCacheModel) -> {
+                if(gameServerCacheModel.getInstallDir() == null) {
+                    log.warn("Server {} could not be migrated: Cache model invalid", id);
+                    return;
+                }
                 Path installDir = Path.of(gameServerCacheModel.getInstallDir());
                 Path serverDir = installDir.getParent();
                 File gameServerFolder = installDir.toFile();
@@ -57,8 +66,6 @@ public class MigrateServerInstallDir implements MigrationScript {
 
             log.info("Folder name migration was successful. Exiting migration script...");
 
-        } catch (IOException e) {
-            log.error("An unknown error occurred while getting cached information.", e);
         } catch (Exception e) {
             log.error("An unknown error occurred while migrating server install dir.", e);
         }

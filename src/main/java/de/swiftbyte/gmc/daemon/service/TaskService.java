@@ -13,6 +13,8 @@ import de.swiftbyte.gmc.daemon.tasks.consumers.ServerDirectoryChangeTaskConsumer
 import de.swiftbyte.gmc.daemon.tasks.consumers.TimedRestartTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.TimedShutdownTaskConsumer;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -26,17 +28,23 @@ import java.util.concurrent.Future;
 @CustomLog
 public class TaskService {
 
-    private static final HashMap<NodeTask.Type, NodeTaskConsumer> CONSUMERS = new HashMap<>();
-    private static final ConcurrentHashMap<String, TaskRun> TASKS = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<String, Integer> LAST_PROGRESS = new ConcurrentHashMap<>();
+    private static final @NonNull HashMap<NodeTask.@NonNull Type, @NonNull NodeTaskConsumer> CONSUMERS = new HashMap<>();
+    private static final ConcurrentHashMap<@NonNull String, @NonNull TaskRun> TASKS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<@NonNull String, @NonNull Integer> LAST_PROGRESS = new ConcurrentHashMap<>();
 
-    private static ExecutorService executor = null;
+    private static @Nullable ExecutorService executor = null;
+
+    private static @NonNull ExecutorService getExecutor() {
+        if (executor == null) {
+            executor = Executors.newCachedThreadPool();
+        }
+
+        return executor;
+    }
 
     public static void initializeTaskService() {
 
         shutdownTaskService();
-
-        executor = Executors.newCachedThreadPool();
 
         registerConsumer(NodeTask.Type.BACKUP, new BackupTaskConsumer());
         registerConsumer(NodeTask.Type.ROLLBACK, new RollbackTaskConsumer());
@@ -65,15 +73,16 @@ public class TaskService {
         CONSUMERS.clear();
     }
 
-    public static boolean createTask(NodeTask.Type type, String nodeId, String... targetIds) {
+    @SuppressWarnings("unused")
+    public static boolean createTask(NodeTask.@NonNull Type type, @NonNull String nodeId, @NonNull String... targetIds) {
         return createTask(type, null, nodeId, targetIds);
     }
 
-    public static boolean createTask(NodeTask.Type type, Object payload, String nodeId, String... affectedIds) {
-        return createTask(type, payload, nodeId, null, affectedIds);
+    public static boolean createTask(NodeTask.@NonNull Type type, @Nullable Object payload, @NonNull String nodeId, @NonNull String... affectedIds) {
+        return createTask(type, payload, nodeId, new HashMap<>(), affectedIds);
     }
 
-    public static boolean createTask(NodeTask.Type type, Object payload, String nodeId, HashMap<String, Object> context, String... affectedIds) {
+    public static boolean createTask(NodeTask.@NonNull Type type, @Nullable Object payload, @NonNull String nodeId, @NonNull HashMap<@NonNull String, @Nullable Object> context, @NonNull String... affectedIds) {
 
         NodeTaskConsumer consumer = CONSUMERS.get(type);
         if (consumer == null) {
@@ -118,14 +127,14 @@ public class TaskService {
         TASKS.put(task.getId(), new TaskRun(null, task, payload));
 
         // Submit execution
-        Future<?> future = executor.submit(() -> runTask(task, payload, consumer));
+        Future<?> future = getExecutor().submit(() -> runTask(task, payload, consumer));
 
         // Update entry with real future
         TASKS.put(task.getId(), new TaskRun(future, task, payload));
         return true;
     }
 
-    private static void runTask(NodeTask task, Object payload, NodeTaskConsumer consumer) {
+    private static void runTask(@NonNull NodeTask task, @Nullable Object payload, @NonNull NodeTaskConsumer consumer) {
         try {
             task.setState(NodeTask.State.RUNNING);
             sendUpdatePacket(task);
@@ -134,7 +143,7 @@ public class TaskService {
             consumer.run(task, payload);
 
             // If consumer didn't set a terminal state, default to SUCCEEDED
-            if (task.getState() == null || task.getState() == NodeTask.State.RUNNING || task.getState() == NodeTask.State.PENDING) {
+            if (task.getState() == NodeTask.State.RUNNING || task.getState() == NodeTask.State.PENDING) {
                 task.setState(NodeTask.State.SUCCEEDED);
             }
 
@@ -154,7 +163,7 @@ public class TaskService {
             if (task.getFinishedAt() != null) {
                 log.debug("Task {} threw after finalization; skipping completion (state={}).", task.getId(), task.getState());
             } else {
-                boolean interrupted = Thread.currentThread().isInterrupted() || (e instanceof InterruptedException);
+                boolean interrupted = Thread.currentThread().isInterrupted();
                 if (interrupted) {
                     task.setState(NodeTask.State.CANCELED);
                     task.setErrorMessage(null);
@@ -181,7 +190,7 @@ public class TaskService {
     }
 
 
-    public static boolean cancelTask(String taskId) {
+    public static boolean cancelTask(@NonNull String taskId) {
 
         TaskRun taskRun = TASKS.get(taskId);
         if (taskRun == null) {
@@ -210,7 +219,7 @@ public class TaskService {
         }
     }
 
-    private static void sendUpdatePacket(NodeTask task) {
+    private static void sendUpdatePacket(@NonNull NodeTask task) {
         NodeTaskUpdatePacket packet = new NodeTaskUpdatePacket();
         packet.setNodeTask(task);
 
@@ -218,14 +227,11 @@ public class TaskService {
         log.debug("Task update sent: id={}, state={}, cancellable={}", task.getId(), task.getState(), task.isCancellable());
     }
 
-    public static void updateTask(NodeTask task) {
+    public static void updateTask(@NonNull NodeTask task) {
         sendUpdatePacket(task);
     }
 
-    public static void updateTaskProgress(NodeTask task, int percent) {
-        if (task == null) {
-            return;
-        }
+    public static void updateTaskProgress(@NonNull NodeTask task, int percent) {
         if (task.getType() != NodeTask.Type.SERVER_DIRECTORY_CHANGE) {
             return;
         }
@@ -268,14 +274,14 @@ public class TaskService {
     }
 
 
-    private static void registerConsumer(NodeTask.Type type, NodeTaskConsumer consumer) {
+    private static void registerConsumer(NodeTask.@NonNull Type type, @NonNull NodeTaskConsumer consumer) {
         CONSUMERS.put(type, consumer);
     }
 
     private record TaskRun(
-            Future<?> future,
-            NodeTask task,
-            Object payload
+            @Nullable Future<?> future,
+            @NonNull NodeTask task,
+            @Nullable Object payload
     ) {
     }
 }

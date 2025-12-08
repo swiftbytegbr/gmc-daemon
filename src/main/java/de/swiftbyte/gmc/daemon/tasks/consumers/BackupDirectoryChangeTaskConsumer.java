@@ -9,6 +9,8 @@ import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
 import de.swiftbyte.gmc.daemon.utils.NodeUtils;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
 
@@ -16,17 +18,19 @@ import java.nio.file.Path;
 public class BackupDirectoryChangeTaskConsumer implements NodeTaskConsumer {
 
     @Override
-    public void run(NodeTask task, Object payload) {
+    public void run(@NonNull NodeTask task, @Nullable Object payload) {
         if (!(payload instanceof BackupDirectoryChangeTaskPayload(Path oldBackupPath, Path newBackupPath))) {
             throw new IllegalArgumentException("Expected BackupDirectoryChangeTaskPayload");
+        }
+
+        if (Node.INSTANCE == null) {
+            throw new IllegalArgumentException("Node is not initialized yet");
         }
 
         try {
             log.info("Starting BACKUP_DIRECTORY_CHANGE task: {} -> {}", oldBackupPath, newBackupPath);
             BackupService.suspendBackups();
             BackupService.moveBackupsDirectory(oldBackupPath, newBackupPath);
-            // Apply new backup path after successful move and persist
-            Node.INSTANCE.setBackupPath(newBackupPath);
             NodeUtils.cacheInformation(Node.INSTANCE);
             log.info("BACKUP_DIRECTORY_CHANGE task finished successfully.");
         } catch (Exception e) {
@@ -36,23 +40,7 @@ public class BackupDirectoryChangeTaskConsumer implements NodeTaskConsumer {
             }
             // Inform backend to rollback settings
             try {
-                NodeSettings rollback = new NodeSettings();
-                rollback.setName(Node.INSTANCE.getNodeName());
-                rollback.setServerPath(Node.INSTANCE.getServerPath());
-                rollback.setEnableAutoUpdate(Node.INSTANCE.isAutoUpdateEnabled());
-                rollback.setManageFirewallAutomatically(Node.INSTANCE.isManageFirewallAutomatically());
-                // Ensure defaultServerDirectory is preserved during rollback
-                try {
-                    if (Node.INSTANCE.getDefaultServerDirectory() != null) {
-                        rollback.setDefaultServerDirectory(Node.INSTANCE.getDefaultServerDirectory().toString());
-                    }
-                } catch (Exception ignored) {
-                }
-                // Revert backups dir to the previous value
-                rollback.setServerBackupsDirectory(oldBackupPath.toString());
-
-                NodeSettingsPacket packet = new NodeSettingsPacket();
-                packet.setNodeSettings(rollback);
+                NodeSettingsPacket packet = getRollbackPacket(Node.INSTANCE, oldBackupPath);
                 StompHandler.send("/app/node/settings", packet);
                 log.info("Rollback NodeSettingsPacket sent to backend (backup path reverted to '{}').", oldBackupPath);
             } catch (Exception ex) {
@@ -62,6 +50,23 @@ public class BackupDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         } finally {
             BackupService.resumeBackups();
         }
+    }
+
+    private static @NonNull NodeSettingsPacket getRollbackPacket(@NonNull Node node, @NonNull Path oldBackupPath) {
+        NodeSettings rollback = new NodeSettings();
+        rollback.setName(node.getNodeName());
+        rollback.setEnableAutoUpdate(node.isAutoUpdateEnabled());
+        rollback.setManageFirewallAutomatically(node.isManageFirewallAutomatically());
+        // Ensure defaultServerDirectory is preserved during rollback
+
+        rollback.setDefaultServerDirectory(node.getDefaultServerDirectory().toString());
+
+        // Revert backups dir to the previous value
+        rollback.setServerBackupsDirectory(oldBackupPath.toString());
+
+        NodeSettingsPacket packet = new NodeSettingsPacket();
+        packet.setNodeSettings(rollback);
+        return packet;
     }
 
     public record BackupDirectoryChangeTaskPayload(Path oldBackupPath, Path newBackupPath) {

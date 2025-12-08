@@ -2,13 +2,13 @@ package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 
 import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.packet.from.backend.server.ServerRollbackPacket;
-import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.tasks.consumers.RollbackTaskConsumer;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 
@@ -17,7 +17,7 @@ import java.util.HashMap;
 public class RollbackServerPacketConsumer implements StompPacketConsumer<ServerRollbackPacket> {
 
     @Override
-    public void onReceive(ServerRollbackPacket packet) {
+    public void onReceive(@NonNull ServerRollbackPacket packet) {
         log.info("Start rollback of server {}.", packet.getServerId());
         GameServer server = GameServer.getServerById(packet.getServerId());
 
@@ -30,7 +30,7 @@ public class RollbackServerPacketConsumer implements StompPacketConsumer<ServerR
             TaskService.createTask(
                     NodeTask.Type.ROLLBACK,
                     new RollbackTaskConsumer.RollbackTaskPayload(packet.getBackupId(), packet.isRollbackPlayers()),
-                    Node.INSTANCE.getNodeId(),
+                    getNode().getNodeId(),
                     context,
                     packet.getServerId()
             );

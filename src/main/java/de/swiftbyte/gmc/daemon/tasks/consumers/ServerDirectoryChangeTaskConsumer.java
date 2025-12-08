@@ -11,17 +11,26 @@ import de.swiftbyte.gmc.daemon.tasks.NodeTaskConsumer;
 import de.swiftbyte.gmc.daemon.utils.NodeUtils;
 import lombok.CustomLog;
 import org.apache.commons.io.FileUtils;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicLong;
 
 @CustomLog
 public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
 
     @Override
-    public void run(NodeTask task, Object payload) {
+    public void run(@NonNull NodeTask task, @Nullable Object payload) {
+
+        if (Node.INSTANCE == null) {
+            throw new IllegalStateException("Node is not initialized yet.");
+        }
+
+        //noinspection DeconstructionCanBeUsed
         if (!(payload instanceof ServerDirectoryChangeTaskPayload p)) {
             throw new IllegalArgumentException("Expected ServerDirectoryChangeTaskPayload");
         }
@@ -34,9 +43,9 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         log.info("Starting SERVER_DIRECTORY_CHANGE task for '{}' ({} -> {}).", server.getFriendlyName(), p.oldParentDir(), p.newParentDir());
 
         // Precompute paths and destination existence for guarded cleanup
-        Path currentInstallDirInitial = server.getInstallDir();
-        Path destInstallDirInitial = p.newParentDir().resolve(currentInstallDirInitial.getFileName());
-        boolean destExistedBefore = destInstallDirInitial.toFile().exists();
+        Path currentInstallDir = server.getInstallDir();
+        Path destInstallDir = p.newParentDir().resolve(currentInstallDir.getFileName());
+        boolean destExistedBefore = destInstallDir.toFile().exists();
 
         // Block operations by setting state to CREATING for the duration of the move
         // Precondition: server must be OFFLINE
@@ -49,9 +58,6 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
             server.setState(GameServerState.CREATING);
             // Initialize progress to 0%
             TaskService.updateTaskProgress(task, 0);
-
-            Path currentInstallDir = currentInstallDirInitial;
-            Path destInstallDir = destInstallDirInitial;
 
             // Copy all files first while updating progress; delete source only after successful copy
             // Use 0-85% for copy, 85-100% for deletion
@@ -66,7 +72,7 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
             server.setInstallDir(newAbs);
 
             // Refresh display-name symlink
-            refreshDisplayNameSymlink(server, currentInstallDirInitial.getParent(), p.newParentDir(), newAbs);
+            refreshDisplayNameSymlink(server, currentInstallDir.getParent(), p.newParentDir(), newAbs);
 
             NodeUtils.cacheInformation(Node.INSTANCE);
 
@@ -80,13 +86,13 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
             // Best-effort cleanup of destination if we created it and the task failed
             if (!destExistedBefore) {
                 try {
-                    File destDirFile = destInstallDirInitial.toFile();
+                    File destDirFile = destInstallDir.toFile();
                     if (destDirFile.exists()) {
                         FileUtils.deleteDirectory(destDirFile);
                         log.info("Cleaned up destination folder '{}' after failed move.", destDirFile.getAbsolutePath());
                     }
                 } catch (Exception cleanupEx) {
-                    log.warn("Failed to cleanup destination folder '{}' after failed move.", destInstallDirInitial, cleanupEx);
+                    log.warn("Failed to cleanup destination folder '{}' after failed move.", destInstallDir, cleanupEx);
                 }
             }
             throw new RuntimeException("Failed to move server directory: " + e.getMessage(), e);
@@ -99,7 +105,7 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         }
     }
 
-    private void refreshDisplayNameSymlink(GameServer server, Path oldParentDir, Path newParentDir, Path newInstallDir) {
+    private void refreshDisplayNameSymlink(@NonNull GameServer server, @NonNull Path oldParentDir, @NonNull Path newParentDir, @NonNull Path newInstallDir) {
         try {
             Path oldAlias = oldParentDir.resolve(server.getFriendlyName() + " - Link");
             try {
@@ -124,7 +130,7 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         }
     }
 
-    private void copyDirectoryTreeWithProgress(File srcDir, File dstDir, NodeTask task, long totalBytes, int basePercent, int weightPercent) throws IOException {
+    private void copyDirectoryTreeWithProgress(@NonNull File srcDir, @NonNull File dstDir, @NonNull NodeTask task, long totalBytes, int basePercent, int weightPercent) throws IOException {
         if (!srcDir.exists() || !srcDir.isDirectory()) {
             throw new IOException("Source directory not found: " + srcDir.getAbsolutePath());
         }
@@ -161,7 +167,7 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         return sum;
     }
 
-    private void copyRecursive(File src, File dst, NodeTask task, Progress progress) throws IOException {
+    private void copyRecursive(@NonNull File src, @NonNull File dst, @NonNull NodeTask task, @NonNull Progress progress) throws IOException {
         File[] children = src.listFiles();
         if (children == null) {
             return;
@@ -182,7 +188,7 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         }
     }
 
-    private void deleteDirectoryTreeWithProgress(File srcDir, NodeTask task, long totalBytes, int basePercent, int weightPercent) throws IOException {
+    private void deleteDirectoryTreeWithProgress(@NonNull File srcDir, @NonNull NodeTask task, long totalBytes, int basePercent, int weightPercent) throws IOException {
         // Delete files and directories while reporting progress based on total bytes
         Progress delProgress = new Progress(Math.max(1, totalBytes), basePercent, weightPercent);
         deleteRecursive(srcDir, task, delProgress);
@@ -190,7 +196,7 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         setProgress(task, basePercent + weightPercent);
     }
 
-    private void deleteRecursive(File file, NodeTask task, Progress progress) throws IOException {
+    private void deleteRecursive(@NonNull File file, @NonNull NodeTask task, @NonNull Progress progress) throws IOException {
         if (file.isDirectory()) {
             File[] children = file.listFiles();
             if (children != null) {
@@ -213,7 +219,7 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
         }
     }
 
-    private void setProgress(NodeTask task, int percent) {
+    private void setProgress(@NonNull NodeTask task, int percent) {
         try {
             TaskService.updateTaskProgress(task, Math.max(0, Math.min(100, percent)));
         } catch (Exception ignored) {
@@ -221,27 +227,27 @@ public class ServerDirectoryChangeTaskConsumer implements NodeTaskConsumer {
     }
 
     private static class Progress {
-        final long total;
-        volatile long processed;
-        final int base;
-        final int weight;
+        private final long total;
+        private final AtomicLong processed;
+        private final int base;
+        private final int weight;
 
         Progress(long total, int base, int weight) {
             this.total = total;
-            this.processed = 0;
+            this.processed = new AtomicLong(0);
             this.base = base;
             this.weight = weight;
         }
 
         void addBytes(long n) {
-            this.processed += n;
+            this.processed.addAndGet(n);
         }
 
         int getPercent() {
             if (total <= 0) {
                 return base + weight;
             }
-            int scaled = (int) Math.round(Math.min(1.0, (processed * 1.0) / total) * weight);
+            int scaled = (int) Math.round(Math.min(1.0, (processed.get() * 1.0) / total) * weight);
             return Math.min(100, base + scaled);
         }
     }

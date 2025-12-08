@@ -2,13 +2,13 @@ package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 
 import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.packet.from.backend.server.ServerStopPacket;
-import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.tasks.consumers.TimedShutdownTaskConsumer.TimedShutdownPayload;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 
@@ -17,7 +17,7 @@ import java.util.HashMap;
 public class StopServerPacketConsumer implements StompPacketConsumer<ServerStopPacket> {
 
     @Override
-    public void onReceive(ServerStopPacket packet) {
+    public void onReceive(@NonNull ServerStopPacket packet) {
         log.info("Stopping server with id {}.", packet.getServerId());
         if (packet.getDelayMinutes() != null && packet.getDelayMinutes() > 0) {
             log.debug("Received timed stop request: serverId={}, delayMinutes={}, forceStop={}, hasMessage={}",
@@ -35,7 +35,7 @@ public class StopServerPacketConsumer implements StompPacketConsumer<ServerStopP
             boolean created = TaskService.createTask(
                     NodeTask.Type.TIMED_SHUTDOWN,
                     new TimedShutdownPayload(packet.getServerId(), delay, packet.isForceStop(), packet.getDelayedStopMessage()),
-                    Node.INSTANCE.getNodeId(),
+                    getNode().getNodeId(),
                     context,
                     packet.getServerId()
             );

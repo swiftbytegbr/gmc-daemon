@@ -1,67 +1,81 @@
 package de.swiftbyte.gmc.daemon.utils.settings;
 
-import de.swiftbyte.gmc.daemon.utils.CommonUtils;
+import de.swiftbyte.gmc.daemon.utils.Utils;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 
-public record INISettingsAdapter(LinkedHashMap<String, LinkedHashMap<String, Object>> settings) {
+public record INISettingsAdapter(
+        LinkedHashMap<@NonNull String, @Nullable LinkedHashMap<@NonNull String, @Nullable Object>> settings) {
 
-    public String get(String category, String key) {
-        if (!settings.containsKey(category)) {
+    public @Nullable String get(@NonNull String category, @NonNull String key) {
+
+        LinkedHashMap<String, Object> cat = settings.get(category);
+
+        if (cat == null) {
             return null;
         }
-        Object value = settings.get(category).get(key);
+
+        Object value = cat.get(key);
         return value != null ? value.toString() : null;
     }
 
-    public Integer getInt(String category, String key) {
-        if (!settings.containsKey(category)) {
+    public @Nullable Integer getInt(@NonNull String category, @NonNull String key) {
+
+        LinkedHashMap<String, Object> cat = settings.get(category);
+
+        if (cat == null) {
             return null;
         }
-        Object value = settings.get(category).get(key);
+
+        Object value = cat.get(key);
         return value != null ? (int) value : null;
     }
 
-    public Boolean getBoolean(String category, String key) {
-        if (!settings.containsKey(category)) {
+    public @Nullable Boolean getBoolean(@NonNull String category, @NonNull String key) {
+        LinkedHashMap<String, Object> cat = settings.get(category);
+
+        if (cat == null) {
             return null;
         }
-        Object value = settings.get(category).get(key);
+
+        Object value = cat.get(key);
         return value != null ? (Boolean) value : null;
     }
 
-    public String get(String category, String key, String defaultValue) {
-        if (!hasAndNotEmpty(category, key)) {
-            return defaultValue;
-        }
-        return get(category, key);
+    public @NonNull String get(@NonNull String category, @NonNull String key, @NonNull String defaultValue) {
+        String value = get(category, key);
+        return Utils.isNullOrEmpty(value) ? defaultValue : value;
     }
 
-    public Integer getInt(String category, String key, int defaultValue) {
-        if (!hasAndNotEmpty(category, key)) {
-            return defaultValue;
-        }
-        return getInt(category, key);
+    public @NonNull Integer getInt(@NonNull String category, @NonNull String key, int defaultValue) {
+        Integer value = getInt(category, key);
+        return Utils.isNullOrEmpty(value) ? defaultValue : value;
     }
 
-    public Boolean getBoolean(String category, String key, boolean defaultValue) {
-        if (!hasAndNotEmpty(category, key)) {
-            return defaultValue;
-        }
-        return getBoolean(category, key);
+    public @NonNull Boolean getBoolean(@NonNull String category, @NonNull String key, boolean defaultValue) {
+        Boolean value = getBoolean(category, key);
+        return Utils.isNullOrEmpty(value) ? defaultValue : value;
     }
 
     public boolean has(String category, String key) {
-        if (!settings.containsKey(category)) {
+
+        LinkedHashMap<String, Object> cat = settings.get(category);
+
+        if (cat == null) {
             return false;
         }
-        return settings.get(category).containsKey(key);
+        return cat.containsKey(key);
     }
 
-    public boolean hasAndNotEmpty(String category, String key) {
-        if (!settings.containsKey(category)) {
+    public boolean hasAndNotEmpty(@NonNull String category, @NonNull String key) {
+
+        LinkedHashMap<String, Object> cat = settings.get(category);
+
+        if (cat == null) {
             return false;
         }
-        return has(category, key) && !CommonUtils.isNullOrEmpty(settings.get(category).get(key));
+        return !Utils.isNullOrEmpty(cat.get(key));
     }
 }

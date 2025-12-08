@@ -1,52 +1,48 @@
 package de.swiftbyte.gmc.daemon.utils.settings;
 
-import de.swiftbyte.gmc.daemon.utils.CommonUtils;
+import de.swiftbyte.gmc.daemon.utils.Utils;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
-public record MapSettingsAdapter(Map<String, Object> settings) {
+public record MapSettingsAdapter(@NonNull Map<@NonNull String, @Nullable Object> settings) {
 
-    public String get(String key) {
+    public @Nullable String get(@NonNull String key) {
         Object value = settings.get(key);
         return value != null ? value.toString() : null;
     }
 
-    public Integer getInt(String key) {
+    public @Nullable Integer getInt(@NonNull String key) {
         Object value = settings.get(key);
         return value != null ? (int) value : null;
     }
 
-    public Boolean getBoolean(String key) {
+    public @Nullable Boolean getBoolean(@NonNull String key) {
         Object value = settings.get(key);
         return value != null ? (Boolean) value : null;
     }
 
-    public String get(String key, String defaultValue) {
-        if (!hasAndNotEmpty(key)) {
-            return defaultValue;
-        }
-        return get(key);
+    public @NonNull String get(@NonNull String key, @NonNull String defaultValue) {
+        String value = get(key);
+        return Utils.isNullOrEmpty(value) ? defaultValue : value;
     }
 
-    public Integer getInt(String key, int defaultValue) {
-        if (!hasAndNotEmpty(key)) {
-            return defaultValue;
-        }
-        return getInt(key);
+    public @NonNull Integer getInt(@NonNull String key, int defaultValue) {
+        Integer value = getInt(key);
+        return Utils.isNullOrEmpty(value) ? defaultValue : value;
     }
 
-    public Boolean getBoolean(String key, boolean defaultValue) {
-        if (!hasAndNotEmpty(key)) {
-            return defaultValue;
-        }
-        return getBoolean(key);
+    public @NonNull Boolean getBoolean(@NonNull String key, boolean defaultValue) {
+        Boolean value = getBoolean(key);
+        return Utils.isNullOrEmpty(value) ? defaultValue : value;
     }
 
-    public boolean has(String key) {
+    public boolean has(@NonNull String key) {
         return settings.get(key) != null;
     }
 
-    public boolean hasAndNotEmpty(String key) {
-        return has(key) && !CommonUtils.isNullOrEmpty(settings.get(key));
+    public boolean hasAndNotEmpty(@NonNull String key) {
+        return has(key) && !Utils.isNullOrEmpty(settings.get(key));
     }
 }

@@ -5,13 +5,14 @@ import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 @CustomLog
 @StompPacketInfo(path = "/user/queue/server/update", packetClass = ServerUpdatePacket.class)
 public class UpdateServerVersionPacketConsumer implements StompPacketConsumer<ServerUpdatePacket> {
 
     @Override
-    public void onReceive(ServerUpdatePacket packet) {
+    public void onReceive(@NonNull ServerUpdatePacket packet) {
         log.info("Updating server with id {}.", packet.getServerId());
         GameServer server = GameServer.getServerById(packet.getServerId());
 

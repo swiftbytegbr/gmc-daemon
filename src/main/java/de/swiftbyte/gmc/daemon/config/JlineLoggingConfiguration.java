@@ -7,6 +7,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.ConsoleAppender;
 import org.jline.reader.LineReader;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.annotation.Configuration;
@@ -17,9 +18,9 @@ import java.util.Iterator;
 @Configuration
 public class JlineLoggingConfiguration {
 
-    private final LineReader lineReader;
+    private final @NonNull LineReader lineReader;
 
-    public JlineLoggingConfiguration(LineReader lineReader) {
+    public JlineLoggingConfiguration(@NonNull LineReader lineReader) {
         this.lineReader = lineReader;
     }
 

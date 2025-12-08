@@ -1,9 +1,5 @@
 package de.swiftbyte.gmc.daemon.utils;
 
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.swiftbyte.gmc.common.entity.GameType;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
@@ -13,9 +9,13 @@ import de.swiftbyte.gmc.daemon.server.AseServer;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import lombok.CustomLog;
 import org.apache.commons.io.FileUtils;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.shell.component.context.ComponentContext;
 import org.springframework.shell.component.flow.ComponentFlow;
 import org.zeroturnaround.zip.ZipUtil;
+import tools.jackson.databind.ObjectWriter;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,23 +23,26 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 
 @CustomLog
-public class NodeUtils {
+public final class NodeUtils {
 
-    public static final String TMP_PATH = "tmp/",
+    public static final @NonNull String TMP_PATH = "tmp/",
             DAEMON_LATEST_DOWNLOAD_URL = "https://github.com/swiftbytegbr/gmc-daemon/releases/latest/download/gmc-daemon-setup.exe",
             STEAM_CMD_DIR = "steamcmd/",
             STEAM_CMD_PATH = STEAM_CMD_DIR + "steamcmd.exe",
-            STEAM_CMD_DOWNLOAD_URL = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip";
+            STEAM_CMD_DOWNLOAD_URL = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip",
+            CACHE_FILE_PATH = "./cache.json";
 
-    public static Path getSteamCmdPath() {
-        return Paths.get(STEAM_CMD_PATH);
+    private NodeUtils() {
     }
 
-    public static Integer getValidatedToken(String token) {
+    public static @NonNull Path getSteamCmdPath() {
+        return PathUtils.getAbsolutPath(STEAM_CMD_PATH);
+    }
+
+    public static @Nullable Integer getValidatedToken(@NonNull String token) {
 
         log.debug("Validating token '{}'...", token);
 
@@ -66,7 +69,12 @@ public class NodeUtils {
         }
     }
 
-    public static ComponentContext<?> promptForInviteToken() {
+    public static @NonNull ComponentContext<?> promptForInviteToken() {
+
+        if (Application.getComponentFlowBuilder() == null) {
+            throw new IllegalStateException("Component flow has not been initialised yet");
+        }
+
         ComponentFlow flow = Application.getComponentFlowBuilder().clone().reset()
                 .withStringInput("inviteToken")
                 .name("Please enter the Invite Token. You can find the Invite Token in the create node window in the web panel:")
@@ -75,7 +83,7 @@ public class NodeUtils {
     }
 
     public static void checkInstallation() {
-        if (Files.exists(Paths.get(STEAM_CMD_PATH))) {
+        if (Files.exists(getSteamCmdPath())) {
             log.debug("SteamCMD installation found.");
         } else {
             log.info("SteamCMD installation not found. Try to install...");
@@ -129,7 +137,7 @@ public class NodeUtils {
         }
     }
 
-    public static void cacheInformation(Node node) {
+    public static void cacheInformation(@NonNull Node node) {
 
         if (node.getConnectionState() == ConnectionState.DELETING) {
             return;
@@ -149,41 +157,29 @@ public class NodeUtils {
                     .gameType(gameType)
                     .settings(gameServer.getSettings())
                     .build();
-            if (gameServer.getInstallDir() == null) {
-                log.error("Install directory is null for game server '{}'. Skipping...", gameServer.getFriendlyName());
-                continue;
-            }
             gameServerCacheModel.setInstallDir(gameServer.getInstallDir().toString());
             gameServers.put(gameServer.getServerId(), gameServerCacheModel);
         }
 
-        String defaultServers = node.getDefaultServerDirectory() != null
-                ? node.getDefaultServerDirectory().normalize().toString()
-                : PathValidationUtils.canonicalizeOrAbsolute("./servers");
-
         CacheModel cacheModel = CacheModel.builder()
                 .nodeName(node.getNodeName())
                 .teamName(node.getTeamName())
-                .serverPath(node.getServerPath())
-                .defaultServerDirectory(defaultServers)
-                .backupPath(node.getBackupPath())
+                .defaultServerDirectory(node.getDefaultServerDirectory().toString())
+                .backupPath(node.getBackupPath().toString())
                 .isAutoUpdateEnabled(node.isAutoUpdateEnabled())
                 .gameServerCacheModelHashMap(gameServers)
                 .manageFirewallAutomatically(node.isManageFirewallAutomatically())
                 .build();
 
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
+        ObjectWriter writer = JsonMapper.builder().build().writerWithDefaultPrettyPrinter();
         try {
-            File file = new File("./cache.json");
-            if (!file.exists()) {
-                file.createNewFile();
+            File file = new File(CACHE_FILE_PATH);
+            if (!file.exists() && !file.createNewFile()) {
+                log.warn("There was an error creating the node cache file!");
             }
             writer.writeValue(file, cacheModel);
         } catch (IOException e) {
             log.error("An unknown error occurred while caching information.", e);
         }
-
     }
 }

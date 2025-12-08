@@ -9,6 +9,8 @@ import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.tasks.consumers.BackupTaskConsumer;
 import de.swiftbyte.gmc.daemon.tasks.consumers.RollbackTaskConsumer;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 
@@ -19,44 +21,64 @@ import java.util.List;
 public class BackupManagementCommands {
 
     @Command(command = "backup create", description = "Create a backup.", group = "Backup Management")
-    public String createBackupCommand(@Option(description = "The server", required = true) String serverId, @Option(description = "The backup name") String backupName) {
+    public void createBackupCommand(@NonNull @Option(description = "The server", required = true) String serverId, @Option(description = "The backup name") String backupName) {
+
+        Node node = Node.INSTANCE;
+        if (node == null) {
+            throw new IllegalStateException("Node is not initialized yet.");
+        }
 
         GameServer server = GameServer.getServerById(serverId);
 
         if (server == null) {
-            return "Server with id " + serverId + " not found!";
+            log.error("Server with id {} not found!", serverId);
+            return;
         }
 
         boolean created = TaskService.createTask(
                 NodeTask.Type.BACKUP,
                 new BackupTaskConsumer.BackupTaskPayload(false, backupName),
-                Node.INSTANCE.getNodeId(),
+                node.getNodeId(),
                 serverId
         );
 
-        return created ? "Backup task scheduled." : "Backup task could not be scheduled.";
+        if (created) {
+            log.info("Backup task scheduled.");
+        } else {
+            log.error("Backup task could not be scheduled.");
+        }
     }
 
     @Command(command = "backup rollback", description = "Rollback a backup.", group = "Backup Management")
-    public String rollbackBackupCommand(@Option(description = "The backup", required = true) String backupId, @Option(description = "Should the player data also be restored?") boolean playerData) {
+    public void rollbackBackupCommand(@NonNull @Option(description = "The backup", required = true) String backupId, @Option(description = "Should the player data also be restored?") boolean playerData) {
+
+        Node node = Node.INSTANCE;
+        if (node == null) {
+            throw new IllegalStateException("Node is not initialized yet.");
+        }
 
         Backup backup = BackupService.getBackupById(backupId);
 
         if (backup == null) {
-            return "Backup with id " + backupId + " not found!";
+            log.error("Backup with id {} not found!", backupId);
+            return;
         }
 
         boolean created = TaskService.createTask(
                 NodeTask.Type.ROLLBACK,
                 new RollbackTaskConsumer.RollbackTaskPayload(backup.getBackupId(), playerData),
-                Node.INSTANCE.getNodeId()
+                node.getNodeId()
         );
 
-        return created ? "Rollback task scheduled." : "Rollback task could not be scheduled.";
+        if (created) {
+            log.info("Rollback task scheduled.");
+        } else {
+            log.error("Rollback task could not be scheduled.");
+        }
     }
 
     @Command(command = "backup list", description = "List all backups.", group = "Backup Management")
-    public String listBackupCommand(@Option(description = "Filter for a server id") String serverId) {
+    public void listBackupCommand(@Nullable @Option(description = "Filter for a server id") String serverId) {
 
         List<Backup> backupList;
 
@@ -72,7 +94,7 @@ public class BackupManagementCommands {
             list.append(backup.getName()).append("(").append(backup.getBackupId()).append(") - Server: ").append(backup.getServerId()).append(" / Size:  ").append(backup.getSize() / 1024).append("KB\n");
         }
 
-        return list.toString();
+        log.info(list.toString());
     }
 
 }

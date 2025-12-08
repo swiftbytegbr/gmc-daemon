@@ -1,7 +1,8 @@
 package de.swiftbyte.gmc.daemon.service;
 
-import de.swiftbyte.gmc.daemon.utils.CommonUtils;
+import de.swiftbyte.gmc.daemon.utils.PathUtils;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -11,7 +12,7 @@ import java.util.stream.Collectors;
 @CustomLog
 public class FirewallService {
 
-    public static void allowPort(String serverName, Path executablePath, List<Integer> ports) {
+    public static void allowPort(@NonNull String serverName, @NonNull Path executablePath, @NonNull List<@NonNull Integer> ports) {
 
         String portsString = ports.stream()
                 .map(String::valueOf)
@@ -21,30 +22,30 @@ public class FirewallService {
 
         log.debug("Adding firewall rule for ports {}.", portsString);
 
-        String executable = CommonUtils.convertPathSeparator(executablePath.toAbsolutePath());
+        String executable = PathUtils.convertPathSeparator(executablePath.toAbsolutePath().normalize());
 
         List<String> commandTcp = List.of(
                 "powershell",
                 "New-NetFirewallRule",
-                "-DisplayName", "\""+ruleName+"\"",
+                "-DisplayName", "'" + ruleName + "'",
                 "-Direction", "Inbound",
                 "-LocalPort", portsString,
                 "-Protocol", "TCP",
                 "-Action", "Allow",
-                "-Program", "\""+executable+"\"",
-                "-Group", "\"GameManagerCloud Server Port\""
+                "-Program", "'" + executable + "'",
+                "-Group", "'GameManagerCloud Server Port'"
         );
 
         List<String> commandUdp = List.of(
                 "powershell",
                 "New-NetFirewallRule",
-                "-DisplayName", "\""+ruleName+"\"",
+                "-DisplayName", "'" + ruleName + "'",
                 "-Direction", "Inbound",
                 "-LocalPort", portsString,
                 "-Protocol", "UDP",
                 "-Action", "Allow",
-                "-Program", "\""+executable+"\"",
-                "-Group", "GameManagerCloud Server Port"
+                "-Program", "'" + executable + "'",
+                "-Group", "'GameManagerCloud Server Port'"
         );
 
         try {
@@ -67,7 +68,7 @@ public class FirewallService {
 
     }
 
-    public static void removePort(String serverName) {
+    public static void removePort(@NonNull String serverName) {
 
         String ruleName = String.format("ARK GMC: %s", serverName);
 
@@ -77,7 +78,7 @@ public class FirewallService {
                 "powershell",
                 "Remove-NetFirewallRule",
                 "-DisplayName",
-                "\""+ruleName+"\""
+                "'" + ruleName + "'"
         );
 
         try {

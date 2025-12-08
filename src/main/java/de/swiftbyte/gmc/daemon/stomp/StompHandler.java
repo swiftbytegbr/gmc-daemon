@@ -1,24 +1,21 @@
 package de.swiftbyte.gmc.daemon.stomp;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.management.OperatingSystemMXBean;
 import de.swiftbyte.gmc.common.entity.NodeData;
 import de.swiftbyte.gmc.common.packet.from.daemon.node.NodeLoginPacket;
 import de.swiftbyte.gmc.daemon.Application;
 import de.swiftbyte.gmc.daemon.Node;
-import de.swiftbyte.gmc.daemon.utils.CommonUtils;
 import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
 import de.swiftbyte.gmc.daemon.utils.ConnectionState;
+import de.swiftbyte.gmc.daemon.utils.SystemUtils;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
 import lombok.CustomLog;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.reflections.Reflections;
 import org.springframework.messaging.MessageDeliveryException;
-import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.converter.JacksonJsonMessageConverter;
 import org.springframework.messaging.simp.stomp.ConnectionLostException;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
@@ -29,6 +26,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
@@ -46,12 +44,16 @@ public class StompHandler {
     // 2MB
     private static final int MAX_MESSAGE_BUFFER_SIZE_BYTES = 1024 * 1024 * 2;
 
-    private static ThreadPoolTaskScheduler threadPoolTaskScheduler;
-    private static WebSocketStompClient stompClient;
-    private static StompSession session;
-    private static ExecutorService sendExecutor; // single-threaded sender
+    private static @Nullable ThreadPoolTaskScheduler threadPoolTaskScheduler;
+    private static @Nullable WebSocketStompClient stompClient;
+    private static @Nullable StompSession session;
+    private static final @NonNull ExecutorService sendExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "stomp-sender");
+        t.setDaemon(true);
+        return t;
+    });
 
-    private static boolean hasInterruptedCause(Throwable t) {
+    private static boolean hasInterruptedCause(@NonNull Throwable t) {
         Throwable c = t;
         while (c != null) {
             if (c instanceof InterruptedException) {
@@ -62,7 +64,7 @@ public class StompHandler {
         return false;
     }
 
-    public static boolean initialiseStomp() {
+    public static boolean initialiseStomp(Node node) {
 
         disconnect();
 
@@ -78,19 +80,18 @@ public class StompHandler {
         stompClient.setDefaultHeartbeat(new long[]{10_000, 10_000});
         stompClient.setInboundMessageSizeLimit(MAX_MESSAGE_BUFFER_SIZE_BYTES);
         WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
-        headers.add("Node-Id", Node.INSTANCE.getNodeId());
-        headers.add("Node-Secret", Node.INSTANCE.getSecret());
+        headers.add("Node-Id", node.getNodeId());
+        headers.add("Node-Secret", node.getSecret());
 
 
-        MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
-        converter.setObjectMapper(new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).registerModule(new JavaTimeModule()));
+        JsonMapper mapper = JsonMapper.builder().disable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
+        JacksonJsonMessageConverter converter = new JacksonJsonMessageConverter(mapper);
 
         stompClient.setMessageConverter(converter);
         try {
             log.debug("Connecting WebSocket to {}", Application.getWebsocketUrl());
             session = stompClient.connectAsync(Application.getWebsocketUrl(), headers, new StompSessionHandler()).get();
-            ensureSender();
-            scanForPacketListeners();
+            scanForPacketListeners(session);
         } catch (InterruptedException | ExecutionException e) {
 
             if (e.getMessage() != null && e.getMessage().contains("Failed to handle HTTP response code [401]")) {
@@ -105,38 +106,34 @@ public class StompHandler {
         return true;
     }
 
-    private static synchronized void ensureSender() {
-        if (sendExecutor == null) {
-            sendExecutor = Executors.newSingleThreadExecutor(r -> {
-                Thread t = new Thread(r, "stomp-sender");
-                t.setDaemon(true);
-                return t;
-            });
-        }
-    }
-
-    public static void send(String destination, Object payload) {
-        ensureSender();
+    public static void send(@NonNull String destination, @NonNull Object payload) {
         sendExecutor.execute(() -> doSend(destination, payload));
     }
 
-    public static void sendNonCritical(String destination, Object payload) {
+    public static void sendNonCritical(@NonNull String destination, @NonNull Object payload) {
         // For now, same as send; could apply drop/merge policy later
         send(destination, payload);
     }
 
-    private static void doSend(String destination, Object payload) {
+    private static void doSend(@NonNull String destination, @NonNull Object payload) {
+
+        Node node = Node.INSTANCE;
+
+        if (node == null) {
+            throw new IllegalStateException("Node is not initialized yet");
+        }
+
         if (session == null) {
-            if (Node.INSTANCE.getConnectionState() != ConnectionState.RECONNECTING) {
+            if (node.getConnectionState() != ConnectionState.RECONNECTING) {
                 log.error("Failed to send packet to {} because the session is null.", destination);
-                Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
+                node.setConnectionState(ConnectionState.RECONNECTING);
             }
             return;
         }
 
         if (!session.isConnected()) {
             log.error("Failed to send packet to {} because the session is not connected.", destination);
-            Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
+            node.setConnectionState(ConnectionState.RECONNECTING);
             return;
         }
 
@@ -148,10 +145,10 @@ public class StompHandler {
                 return;
             }
             log.error("Failed to deliver packet to {}.", destination, e);
-            Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
+            node.setConnectionState(ConnectionState.RECONNECTING);
         } catch (Exception e) {
             log.error("Failed to send packet to {}.", destination, e);
-            Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
+            node.setConnectionState(ConnectionState.RECONNECTING);
         }
     }
 
@@ -172,7 +169,7 @@ public class StompHandler {
         }
     }
 
-    private static void scanForPacketListeners() {
+    private static void scanForPacketListeners(@NonNull StompSession session) {
 
         Reflections reflections = new Reflections(Application.class.getPackageName().split("\\.")[0]);
 
@@ -184,8 +181,9 @@ public class StompHandler {
                 StompPacketConsumer<Object> packetConsumer;
 
                 try {
-                    Constructor<?> constructor = clazz.getConstructor();
-                    packetConsumer = (StompPacketConsumer<Object>) constructor.newInstance();
+                    Constructor<?> constructor = clazz.getConstructor(Node.class);
+                    //noinspection unchecked
+                    packetConsumer = (StompPacketConsumer<Object>) constructor.newInstance(Node.INSTANCE);
                 } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                          InvocationTargetException e) {
                     log.error("Failed to find default constructor for class {}.", clazz.getName(), e);
@@ -193,15 +191,14 @@ public class StompHandler {
                 }
 
                 for (String path : annotation.path()) {
-                    ensureSender();
                     sendExecutor.execute(() -> session.subscribe(path, new StompFrameHandler() {
                         @Override
-                        public Type getPayloadType(StompHeaders headers) {
+                        public @NonNull Type getPayloadType(@NonNull StompHeaders headers) {
                             return annotation.packetClass();
                         }
 
                         @Override
-                        public void handleFrame(StompHeaders headers, Object payload) {
+                        public void handleFrame(@NonNull StompHeaders headers, Object payload) {
                             packetConsumer.onReceive(payload);
                         }
                     }));
@@ -216,7 +213,7 @@ public class StompHandler {
     private static class StompSessionHandler extends StompSessionHandlerAdapter {
 
         @Override
-        public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
+        public void afterConnected(@NonNull StompSession session, @NonNull StompHeaders connectedHeaders) {
             log.debug("Connected to session: {}", session.getSessionId());
             super.afterConnected(session, connectedHeaders);
 
@@ -233,9 +230,9 @@ public class StompHandler {
                 log.warn("Failed to fetch hostname.");
             }
             nodeData.setRam((int) (((OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean()).getTotalMemorySize() / (1024 * 1024)));
-            nodeData.setIpAddresses(CommonUtils.getSystemIpAddresses());
-            nodeData.setStorage(CommonUtils.getSystemStorages());
-            nodeData.setCpu(CommonUtils.getSystemCpu());
+            nodeData.setIpAddresses(SystemUtils.getSystemIpAddresses());
+            nodeData.setStorage(SystemUtils.getSystemStorages());
+            nodeData.setCpu(SystemUtils.getSystemCpu());
 
             loginPacket.setNodeData(nodeData);
 
@@ -246,10 +243,15 @@ public class StompHandler {
         }
 
         @Override
-        public void handleTransportError(StompSession session, Throwable e) {
+        public void handleTransportError(@NonNull StompSession session, @NonNull Throwable e) {
 
             if (e instanceof ConnectionLostException) {
                 log.error("The daemon lost connection to the backend. Please check the internet connection or the current backend status.");
+
+                if (Node.INSTANCE == null) {
+                    throw new IllegalStateException("Node is not initialized yet");
+                }
+
                 Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
                 return;
             }
@@ -258,7 +260,7 @@ public class StompHandler {
         }
 
         @Override
-        public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload, Throwable exception) {
+        public void handleException(@NonNull StompSession session, StompCommand command, @NonNull StompHeaders headers, byte @NonNull [] payload, @NonNull Throwable exception) {
             super.handleException(session, command, headers, payload, exception);
             log.error("An unknown error occurred.", exception);
         }

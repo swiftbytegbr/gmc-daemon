@@ -12,6 +12,9 @@ public class GmcPromptProvider implements PromptProvider {
     public AttributedString getPrompt() {
 
         Node node = Node.INSTANCE;
+        if (node == null) {
+            return new AttributedString("$ ");
+        }
 
         return new AttributedString(node.getNodeName().toLowerCase().replace(" ", "-") + "@" + node.getTeamName().toLowerCase().replace(" ", "-") + ": ");
     }

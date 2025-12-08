@@ -1,5 +1,7 @@
 package de.swiftbyte.gmc.daemon.stomp;
 
+import org.jspecify.annotations.NonNull;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -9,8 +11,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface StompPacketInfo {
 
-    String[] path();
+    @NonNull String[] path();
 
-    Class<?> packetClass();
+    @NonNull Class<?> packetClass();
 
 }

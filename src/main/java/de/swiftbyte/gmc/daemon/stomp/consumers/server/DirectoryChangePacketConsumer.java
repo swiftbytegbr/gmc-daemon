@@ -2,13 +2,13 @@ package de.swiftbyte.gmc.daemon.stomp.consumers.server;
 
 import de.swiftbyte.gmc.common.model.NodeTask;
 import de.swiftbyte.gmc.common.packet.from.backend.server.ServerChangeDirectoryPacket;
-import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.service.TaskService;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import de.swiftbyte.gmc.daemon.tasks.consumers.ServerDirectoryChangeTaskConsumer;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 
@@ -18,7 +18,7 @@ public class DirectoryChangePacketConsumer implements StompPacketConsumer<Server
 
 
     @Override
-    public void onReceive(ServerChangeDirectoryPacket packet) {
+    public void onReceive(@NonNull ServerChangeDirectoryPacket packet) {
         log.info("Received server directory change for {} -> {}", packet.getServerId(), packet.getServerDirectory());
         GameServer server = GameServer.getServerById(packet.getServerId());
         if (server == null) {
@@ -43,7 +43,7 @@ public class DirectoryChangePacketConsumer implements StompPacketConsumer<Server
             boolean created = TaskService.createTask(
                     NodeTask.Type.SERVER_DIRECTORY_CHANGE,
                     new ServerDirectoryChangeTaskConsumer.ServerDirectoryChangeTaskPayload(server.getServerId(), currentParent, newParent),
-                    Node.INSTANCE.getNodeId(),
+                    getNode().getNodeId(),
                     context,
                     packet.getServerId()
             );

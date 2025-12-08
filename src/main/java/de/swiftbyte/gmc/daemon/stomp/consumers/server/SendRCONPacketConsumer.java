@@ -6,6 +6,7 @@ import de.swiftbyte.gmc.daemon.stomp.StompHandler;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 import java.time.Instant;
 
@@ -14,7 +15,7 @@ import java.time.Instant;
 public class SendRCONPacketConsumer implements StompPacketConsumer<ServerRconPacket> {
 
     @Override
-    public void onReceive(ServerRconPacket packet) {
+    public void onReceive(@NonNull ServerRconPacket packet) {
         log.info("Sending RCON command to server with id {}.", packet.getServerId());
         GameServer server = GameServer.getServerById(packet.getServerId());
 

@@ -6,13 +6,16 @@ import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 @CustomLog
 @StompPacketInfo(path = {"/user/queue/node/update", "/topic/node/update"}, packetClass = NodeUpdatePacket.class)
 public class NodeUpdatePacketConsumer implements StompPacketConsumer<NodeUpdatePacket> {
 
     @Override
-    public void onReceive(NodeUpdatePacket packet) {
+    public void onReceive(@NonNull NodeUpdatePacket packet) {
+
+        Node node = getNode();
 
         if (packet.isAutoUpdate()) {
 
@@ -22,15 +25,15 @@ public class NodeUpdatePacketConsumer implements StompPacketConsumer<NodeUpdateP
             }
 
             log.info("New daemon version available: {}", packet.getVersion());
-            if (Node.INSTANCE.isAutoUpdateEnabled() && !Application.getVersion().contains("DEV")) {
+            if (node.isAutoUpdateEnabled() && !Application.getVersion().contains("DEV")) {
                 log.info("Auto update enabled. Updating...");
-                Node.INSTANCE.updateDaemon();
+                node.updateDaemon();
             } else {
                 log.warn("Auto update disabled. Skipping update. Please update manually.");
             }
         } else {
             log.info("Updating daemon to version {}...", packet.getVersion());
-            Node.INSTANCE.updateDaemon();
+            node.updateDaemon();
         }
     }
 }

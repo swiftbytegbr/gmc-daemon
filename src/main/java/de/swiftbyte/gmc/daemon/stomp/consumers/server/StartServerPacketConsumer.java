@@ -5,13 +5,14 @@ import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 @CustomLog
 @StompPacketInfo(path = "/user/queue/server/start", packetClass = ServerStartPacket.class)
 public class StartServerPacketConsumer implements StompPacketConsumer<ServerStartPacket> {
 
     @Override
-    public void onReceive(ServerStartPacket packet) {
+    public void onReceive(@NonNull ServerStartPacket packet) {
         log.info("Starting server with id {}.", packet.getServerId());
         GameServer server = GameServer.getServerById(packet.getServerId());
 

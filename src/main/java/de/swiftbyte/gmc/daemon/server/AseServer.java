@@ -2,14 +2,15 @@ package de.swiftbyte.gmc.daemon.server;
 
 import de.swiftbyte.gmc.common.entity.GameServerState;
 import de.swiftbyte.gmc.common.model.SettingProfile;
-import de.swiftbyte.gmc.daemon.Node;
 import de.swiftbyte.gmc.daemon.service.FirewallService;
-import de.swiftbyte.gmc.daemon.utils.CommonUtils;
+import de.swiftbyte.gmc.daemon.utils.PathUtils;
 import de.swiftbyte.gmc.daemon.utils.ServerUtils;
+import de.swiftbyte.gmc.daemon.utils.Utils;
 import de.swiftbyte.gmc.daemon.utils.settings.INISettingsAdapter;
 import de.swiftbyte.gmc.daemon.utils.settings.MapSettingsAdapter;
 import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -23,14 +24,15 @@ import java.util.UUID;
 @CustomLog
 public class AseServer extends ArkServer {
 
-    private static final String STEAM_CMD_ID = "376030";
+    private static final @NonNull String STEAM_CMD_ID = "376030";
+    private final @NonNull Path EXECUTABLE_PATH = installDir.resolve("/ShooterGame/Binaries/Win64/ShooterGameServer.exe");
 
     @Override
-    public String getGameId() {
+    public @NonNull String getGameId() {
         return STEAM_CMD_ID;
     }
 
-    public AseServer(String id, String friendlyName, @NotNull Path installDir, SettingProfile settings, boolean overrideAutoStart) {
+    public AseServer(@NonNull String id, @NonNull String friendlyName, @NotNull Path installDir, @NonNull SettingProfile settings, boolean overrideAutoStart) {
 
         super(id, installDir, friendlyName, settings);
 
@@ -41,7 +43,7 @@ public class AseServer extends ArkServer {
         rconPort = iniSettingsAdapter.getInt("ServerSettings", "RCONPort", 27020);
 
         if (!overrideAutoStart) {
-            PID = CommonUtils.getProcessPID(this.installDir + CommonUtils.convertPathSeparator("/ShooterGame/Binaries/Win64/"));
+            gatherPID();
             if (PID == null && gmcSettings.getBoolean("StartOnBoot", false)) {
                 start().queue();
             } else if (PID != null) {
@@ -52,14 +54,9 @@ public class AseServer extends ArkServer {
     }
 
     @Override
-    public void setSettings(SettingProfile settings) {
-        SettingProfile oldSettings = getSettings();
+    public void setSettings(@NonNull SettingProfile settings) {
+        SettingProfile oldSettings = this.settings;
         super.setSettings(settings);
-
-        // Skip change detection if GMC settings are missing
-        if (settings.getGmcSettings() == null || oldSettings.getGmcSettings() == null) {
-            return;
-        }
 
         MapSettingsAdapter gmcSettings = new MapSettingsAdapter(settings.getGmcSettings());
         MapSettingsAdapter oldGmcSettings = new MapSettingsAdapter(oldSettings.getGmcSettings());
@@ -84,32 +81,30 @@ public class AseServer extends ArkServer {
     }
 
     @Override
-    public List<Integer> getNeededPorts() {
+    public @NonNull List<@NonNull Integer> getNeededPorts() {
 
         INISettingsAdapter spu = new INISettingsAdapter(settings.getGameUserSettings());
+        MapSettingsAdapter questionMarkParams = new MapSettingsAdapter(settings.getQuestionMarkParams());
 
-        int gamePort = settings.getQuestionMarkParams().containsKey("Port") ? (int) settings.getQuestionMarkParams().get("Port") : 7777;
+        int gamePort = questionMarkParams.getInt("Port", 7777);
         int rconPort = spu.getInt("ServerSettings", "RCONPort", 27020);
-        int queryPort = settings.getQuestionMarkParams().containsKey("QueryPort") ? (int) settings.getQuestionMarkParams().get("QueryPort") : 27025;
+        int queryPort = questionMarkParams.getInt("QueryPort", 27025);
 
         return List.of(gamePort, gamePort + 1, rconPort, queryPort);
     }
 
     @Override
     public void allowFirewallPorts() {
-        if (Node.INSTANCE.isManageFirewallAutomatically()) {
+        if (node.isManageFirewallAutomatically()) {
             log.debug("Adding firewall rules for server '{}'...", friendlyName);
-            Path executablePath = Path.of(installDir + "/ShooterGame/Binaries/Win64/ShooterGameServer.exe");
-            FirewallService.allowPort(friendlyName, executablePath, getNeededPorts());
+            FirewallService.allowPort(friendlyName, EXECUTABLE_PATH, getNeededPorts());
         }
     }
 
     @SuppressWarnings("DuplicatedCode")
     public void writeStartupBatch() {
 
-        SettingProfile settings = getSettings();
-
-        if (CommonUtils.isNullOrEmpty(settings.getMap())) {
+        if (Utils.isNullOrEmpty(settings.getMap())) {
             log.error("Map is not set for server '{}'. Falling back to default map.", getFriendlyName());
             settings.setMap("TheIsland");
         }
@@ -124,32 +119,32 @@ public class AseServer extends ArkServer {
         List<String> requiredLaunchParameters2 = getRequiredLaunchArgs2();
 
         String realStartPostArguments = ServerUtils.generateServerArgs(
-                settings.getQuestionMarkParams() == null || settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() : ServerUtils.generateArgListFromMap(settings.getQuestionMarkParams()),
+                settings.getQuestionMarkParams().isEmpty() ? new ArrayList<>() : ServerUtils.generateArgListFromMap(settings.getQuestionMarkParams()),
                 gmcSettings.get("AdditionalQuestionMarkParameters", ""),
-                settings.getHyphenParams() == null || settings.getHyphenParams().isEmpty() ? new ArrayList<>() : ServerUtils.generateArgListFromMap(settings.getHyphenParams(), false),
+                settings.getHyphenParams().isEmpty() ? new ArrayList<>() : ServerUtils.generateArgListFromMap(settings.getHyphenParams(), false),
                 gmcSettings.get("AdditionalHyphenParameters", ""),
                 requiredLaunchParameters1,
                 requiredLaunchParameters2
         );
 
-        String changeDirectoryCommand = "cd /d \"" + CommonUtils.convertPathSeparator(getInstallDir()) + "\\ShooterGame\\Binaries\\Win64\"";
+        String changeDirectoryCommand = "cd /d \"" + PathUtils.convertPathSeparator(installDir.resolve("/ShooterGame/Binaries/Win64"));
 
         String serverExeName = "ShooterGameServer.exe";
 
-        if (Files.exists(Path.of(getInstallDir() + "/ShooterGame/Binaries/Win64/AseApiLoader.exe"))) {
+        if (Files.exists(installDir.resolve("/ShooterGame/Binaries/Win64/AseApiLoader.exe"))) {
             serverExeName = "AseApiLoader.exe";
         }
 
-        String startCommand = "cmd /c start \"" + getFriendlyName() + "\""
+        String startCommand = "cmd /c start \"" + friendlyName + "\""
                 + " /min"
                 + (gmcSettings.has("WindowsProcessPriority") ? " /" + gmcSettings.get("WindowsProcessPriority") : "")
                 + (gmcSettings.has("WindowsProcessAffinity") ? " /affinity " + gmcSettings.get("WindowsProcessAffinity") : "")
-                + " \"" + CommonUtils.convertPathSeparator(getInstallDir() + "/ShooterGame/Binaries/Win64/" + serverExeName) + "\""
+                + " \"" + PathUtils.convertPathSeparator(installDir.resolve("/ShooterGame/Binaries/Win64/", serverExeName)) + "\""
                 + " " + realStartPostArguments;
-        log.debug("Writing startup batch for server {} with command '{}'", getFriendlyName(), startCommand);
+        log.debug("Writing startup batch for server {} with command '{}'", friendlyName, startCommand);
 
         try {
-            FileWriter fileWriter = new FileWriter(getInstallDir() + "/start.bat");
+            FileWriter fileWriter = new FileWriter(installDir.resolve("/start.bat").toFile());
             PrintWriter printWriter = new PrintWriter(fileWriter);
 
             printWriter.println(changeDirectoryCommand);
@@ -162,14 +157,14 @@ public class AseServer extends ArkServer {
         }
     }
 
-    private static List<String> getRequiredLaunchArgs1(String map) {
+    private static @NonNull List<@NonNull String> getRequiredLaunchArgs1(@NonNull String map) {
         return new ArrayList<>(List.of(
                 map,
                 "RCONEnabled=True"
         ));
     }
 
-    private static List<String> getRequiredLaunchArgs2() {
+    private static @NonNull List<@NonNull String> getRequiredLaunchArgs2() {
         return new ArrayList<>(List.of(
                 "oldconsole"
         ));

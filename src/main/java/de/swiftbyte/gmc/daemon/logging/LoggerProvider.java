@@ -1,6 +1,6 @@
 package de.swiftbyte.gmc.daemon.logging;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,8 +15,8 @@ public final class LoggerProvider {
         // utility
     }
 
-    @NotNull
-    public static Logger getLogger(@NotNull Class<?> type) {
+    @NonNull
+    public static Logger getLogger(@NonNull Class<?> type) {
         return Objects.requireNonNull(LoggerFactory.getLogger(type));
     }
 }

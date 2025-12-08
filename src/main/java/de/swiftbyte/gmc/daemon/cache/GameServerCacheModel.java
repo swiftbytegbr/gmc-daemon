@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.jspecify.annotations.Nullable;
 
 @Data
 @Builder
@@ -15,9 +16,13 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GameServerCacheModel {
 
-    private String friendlyName;
-    private GameType gameType;
-    private String installDir;
+    private @Nullable String friendlyName;
+    private @Nullable GameType gameType;
+    private @Nullable String installDir;
 
-    private SettingProfile settings;
+    private @Nullable SettingProfile settings;
+
+    public boolean validateModel() {
+        return friendlyName != null && gameType != null && installDir != null && settings != null;
+    }
 }

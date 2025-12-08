@@ -5,13 +5,14 @@ import de.swiftbyte.gmc.daemon.server.GameServer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketConsumer;
 import de.swiftbyte.gmc.daemon.stomp.StompPacketInfo;
 import lombok.CustomLog;
+import org.jspecify.annotations.NonNull;
 
 @CustomLog
 @StompPacketInfo(path = "/user/queue/server/delete", packetClass = ServerDeletePacket.class)
 public class DeleteServerPacketConsumer implements StompPacketConsumer<ServerDeletePacket> {
 
     @Override
-    public void onReceive(ServerDeletePacket packet) {
+    public void onReceive(@NonNull ServerDeletePacket packet) {
         log.info("Deleting server with id {}.", packet.getServerId());
         GameServer server = GameServer.getServerById(packet.getServerId());
 

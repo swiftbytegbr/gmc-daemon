@@ -5,15 +5,17 @@ import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.encoder.Encoder;
 import lombok.Setter;
 import org.jline.reader.LineReader;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
 
 @Setter
 public class JlinePromptAwareAppender extends AppenderBase<ILoggingEvent> {
 
-    private final Object lineReaderLock = new Object();
-    private LineReader lineReader;
-    private Encoder<ILoggingEvent> encoder;
+    private final @NonNull Object lineReaderLock = new Object();
+    private @Nullable LineReader lineReader;
+    private @Nullable Encoder<ILoggingEvent> encoder;
 
     @Override
     public void start() {
@@ -30,6 +32,10 @@ public class JlinePromptAwareAppender extends AppenderBase<ILoggingEvent> {
     @Override
     protected void append(ILoggingEvent eventObject) {
         try {
+            if (encoder == null) {
+                throw new IllegalStateException("No encoder set for JlinePromptAwareAppender");
+            }
+
             byte[] bytes = this.encoder.encode(eventObject);
             String msg = new String(bytes, StandardCharsets.UTF_8);
 
