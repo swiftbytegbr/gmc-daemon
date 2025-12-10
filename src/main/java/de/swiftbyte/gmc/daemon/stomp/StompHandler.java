@@ -181,9 +181,9 @@ public class StompHandler {
                 StompPacketConsumer<Object> packetConsumer;
 
                 try {
-                    Constructor<?> constructor = clazz.getConstructor(Node.class);
+                    Constructor<?> constructor = clazz.getConstructor();
                     //noinspection unchecked
-                    packetConsumer = (StompPacketConsumer<Object>) constructor.newInstance(Node.INSTANCE);
+                    packetConsumer = (StompPacketConsumer<Object>) constructor.newInstance();
                 } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                          InvocationTargetException e) {
                     log.error("Failed to find default constructor for class {}.", clazz.getName(), e);

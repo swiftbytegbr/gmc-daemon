@@ -56,7 +56,7 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
             GameServer.abandonAll();
             packet.getGameServers().forEach(gameServer -> {
                 try {
-                    log.debug("Loading game server '{}' as type {}...", gameServer.getDisplayName(), gameServer.getType());
+                    log.debug("Loading game server '{}' as type {}...", gameServer.getDisplayName(), gameServer.getGameType());
 
                     Path serverInstallDir = Path.of(gameServer.getServerDirectory(), gameServer.getId());
 
@@ -102,12 +102,12 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
 
     private void createGameServer(GameServerDto gameServer, SettingProfile settings, @NotNull Path serverInstallDir) {
 
-        switch (gameServer.getType()) {
+        switch (gameServer.getGameType()) {
             case ARK_ASCENDED ->
                     new AsaServer(gameServer.getId(), gameServer.getDisplayName(), serverInstallDir, settings, false);
             case ARK_EVOLVED ->
                     new AseServer(gameServer.getId(), gameServer.getDisplayName(), serverInstallDir, settings, false);
-            default -> log.error("Unknown game server type '{}'.", gameServer.getType());
+            default -> log.error("Unknown game server type '{}'.", gameServer.getGameType());
         }
     }
 }

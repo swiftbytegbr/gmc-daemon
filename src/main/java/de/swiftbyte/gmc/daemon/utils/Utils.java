@@ -2,6 +2,7 @@ package de.swiftbyte.gmc.daemon.utils;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectReader;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -28,7 +29,7 @@ public final class Utils {
     public static @NonNull ObjectReader getObjectReader(Class<?> clazz) {
 
         if (mapper == null) {
-            mapper = JsonMapper.builder().build();
+            mapper = JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES).build();
         }
 
         return mapper.readerFor(clazz);
