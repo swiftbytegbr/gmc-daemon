@@ -38,10 +38,21 @@ public final class NodeUtils {
     private NodeUtils() {
     }
 
+    /**
+     * Resolves the absolute path to the SteamCMD executable.
+     *
+     * @return normalized path to SteamCMD
+     */
     public static @NonNull Path getSteamCmdPath() {
-        return PathUtils.getAbsolutPath(STEAM_CMD_PATH);
+        return PathUtils.getAbsolutPath(STEAM_CMD_PATH).normalize();
     }
 
+    /**
+     * Validates and normalizes an invite token.
+     *
+     * @param token raw invite token (may include separators)
+     * @return six-digit token as integer or {@code null} if invalid
+     */
     public static @Nullable Integer getValidatedToken(@NonNull String token) {
 
         log.debug("Validating token '{}'...", token);
@@ -69,6 +80,12 @@ public final class NodeUtils {
         }
     }
 
+    /**
+     * Prompts the user for an invite token using the configured component flow.
+     *
+     * @return flow context containing the entered token
+     * @throws IllegalStateException if the component flow builder is not initialised
+     */
     public static @NonNull ComponentContext<?> promptForInviteToken() {
 
         if (Application.getComponentFlowBuilder() == null) {
@@ -82,6 +99,9 @@ public final class NodeUtils {
         return flow.run().getContext();
     }
 
+    /**
+     * Ensures SteamCMD is installed, triggering installation if missing.
+     */
     public static void checkInstallation() {
         if (Files.exists(getSteamCmdPath())) {
             log.debug("SteamCMD installation found.");
@@ -91,6 +111,9 @@ public final class NodeUtils {
         }
     }
 
+    /**
+     * Downloads and extracts SteamCMD into the configured directory.
+     */
     private static void installSteamCmd() {
         log.debug("Downloading SteamCMD from " + STEAM_CMD_DOWNLOAD_URL + "...");
 
@@ -116,6 +139,9 @@ public final class NodeUtils {
         }
     }
 
+    /**
+     * Downloads the latest daemon installer into the temporary directory.
+     */
     public static void downloadLatestDaemonInstaller() {
         File tmp = new File(TMP_PATH);
 
@@ -137,6 +163,11 @@ public final class NodeUtils {
         }
     }
 
+    /**
+     * Caches node and server information to disk for reuse on restart.
+     *
+     * @param node node data to serialize
+     */
     public static void cacheInformation(@NonNull Node node) {
 
         if (node.getConnectionState() == ConnectionState.DELETING) {

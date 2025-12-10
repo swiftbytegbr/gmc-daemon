@@ -23,6 +23,12 @@ public final class SystemUtils {
     private SystemUtils() {
     }
 
+    /**
+     * Finds the process ID of the first process whose command contains the provided substring.
+     *
+     * @param command substring to search for in running process commands
+     * @return PID as string or {@code null} when not found
+     */
     public static @Nullable String getProcessPID(@NonNull String command) {
         Optional<ProcessHandle> processHandle = ProcessHandle.allProcesses()
                 .filter(ph -> ph.info().command().isPresent() && ph.info().command().get().contains(command))
@@ -31,6 +37,11 @@ public final class SystemUtils {
         return processHandle.map(handle -> String.valueOf(handle.pid())).orElse(null);
     }
 
+    /**
+     * Collects all non-IPv6 addresses assigned to the local machine.
+     *
+     * @return list of IPv4 addresses as strings
+     */
     public static @NonNull List<@NonNull String> getSystemIpAddresses() {
 
         List<String> ipAddresses = new ArrayList<>();
@@ -58,6 +69,11 @@ public final class SystemUtils {
         return ipAddresses;
     }
 
+    /**
+     * Returns a map of system storage devices keyed by root path.
+     *
+     * @return map of storages containing usage data
+     */
     public static @NonNull HashMap<@NonNull String, NodeData.@NonNull Storage> getSystemStorages() {
 
         HashMap<String, NodeData.Storage> storages = new HashMap<>();
@@ -73,6 +89,11 @@ public final class SystemUtils {
         return storages;
     }
 
+    /**
+     * Collects CPU metadata for the current host.
+     *
+     * @return CPU information filled into {@link NodeData.Cpu}
+     */
     public static NodeData.@NonNull Cpu getSystemCpu() {
         SystemInfo systemInfo = new SystemInfo();
         NodeData.Cpu cpu = new NodeData.Cpu();
@@ -83,6 +104,11 @@ public final class SystemUtils {
         return cpu;
     }
 
+    /**
+     * Attempts to terminate a process by PID.
+     *
+     * @param PID process id as string
+     */
     public static void killSystemProcess(@NonNull String PID) {
         Optional<ProcessHandle> handle = ProcessHandle.of(Long.parseLong(PID));
         if (handle.isPresent()) {

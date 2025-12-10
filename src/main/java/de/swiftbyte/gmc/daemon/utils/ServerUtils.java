@@ -30,6 +30,17 @@ import java.util.Map;
 @CustomLog
 public final class ServerUtils {
 
+    /**
+     * Builds a combined server argument string while ensuring required arguments appear first.
+     *
+     * @param argsType1        first argument list, separated by '?'
+     * @param additionalArgsType1 optional extra arguments for the first section
+     * @param argsType2        second argument list, prefixed with '-'
+     * @param additionalArgsType2 optional extra arguments for the second section
+     * @param requiredArgs1    required entries for the first section
+     * @param requiredArgs2    required entries for the second section
+     * @return concatenated argument string ready for execution
+     */
     public static @NonNull String generateServerArgs(@NonNull List<@NonNull String> argsType1,
                                                      @Nullable String additionalArgsType1,
                                                      @NonNull List<@NonNull String> argsType2,
@@ -82,6 +93,13 @@ public final class ServerUtils {
         return preArgs.toString();
     }
 
+    /**
+     * Converts a map of arguments into a list of CLI-ready strings.
+     *
+     * @param args                 argument key/value pairs
+     * @param writeOutBooleanFlags whether boolean {@code true} should emit {@code key=value} instead of just {@code key}
+     * @return list of formatted arguments
+     */
     public static @NonNull List<@NonNull String> generateArgListFromMap(@NonNull Map<@NonNull String, @Nullable Object> args, boolean writeOutBooleanFlags) {
         ArrayList<String> argList = new ArrayList<>();
         args.forEach((key, value) -> {
@@ -100,10 +118,19 @@ public final class ServerUtils {
         return argList;
     }
 
+    /**
+     * Converts a map of arguments into CLI-ready strings, always writing boolean flags.
+     *
+     * @param args argument key/value pairs
+     * @return list of formatted arguments
+     */
     public static @NonNull List<@NonNull String> generateArgListFromMap(@NonNull Map<@NonNull String, Object> args) {
         return generateArgListFromMap(args, true);
     }
 
+    /**
+     * Reconstructs server instances from cached data if available.
+     */
     public static void loadCachedServerInformation() {
 
         log.debug("Loading cached server information...");
@@ -137,6 +164,12 @@ public final class ServerUtils {
 
     }
 
+    /**
+     * Retrieves cached settings for a specific game server.
+     *
+     * @param id server identifier
+     * @return cached {@link SettingProfile} or {@code null} if unavailable
+     */
     public static @Nullable SettingProfile getCachedGameServerSettings(@NonNull String id) {
 
         File cacheFile = new File(NodeUtils.CACHE_FILE_PATH);
@@ -156,6 +189,12 @@ public final class ServerUtils {
         return null;
     }
 
+    /**
+     * Writes ARK configuration files derived from the server's settings.
+     *
+     * @param server     server instance providing settings
+     * @param installDir installation directory where files should be written
+     */
     public static void writeIniFiles(@NonNull GameServer server, @NonNull Path installDir) {
 
         IniConverter iniConverter = new IniConverter();
@@ -199,6 +238,12 @@ public final class ServerUtils {
 
     }
 
+    /**
+     * Fetches a setting profile from the backend service.
+     *
+     * @param settingProfileId identifier of the setting profile
+     * @return parsed {@link SettingProfile} or {@code null} when not found or on error
+     */
     public static @Nullable SettingProfile getSettingProfile(@NonNull String settingProfileId) {
 
         Node node = Node.INSTANCE;

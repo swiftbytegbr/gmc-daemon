@@ -13,6 +13,9 @@ public final class TimedPowerActionsUtils {
     private TimedPowerActionsUtils() {
     }
 
+    /**
+     * Sleeps for one minute unless interrupted, restoring interrupt status when interrupted.
+     */
     public static void sleepInterruptibly() {
         long millis = TimeUnit.MINUTES.toMillis(1);
         long end = System.currentTimeMillis() + millis;
@@ -31,6 +34,12 @@ public final class TimedPowerActionsUtils {
         }
     }
 
+    /**
+     * Parses a comma-separated list of integers from settings and filters out invalid values.
+     *
+     * @param gmcSettings settings adapter containing the {@code DelayedMessageMilestones} entry
+     * @return list of positive integer milestones; empty when missing or invalid
+     */
     public static @NonNull List<@NonNull Integer> getMessageMilestoneList(@NonNull MapSettingsAdapter gmcSettings) {
         String csv = gmcSettings.get("DelayedMessageMilestones");
         if (Utils.isNullOrEmpty(csv)) {
@@ -50,4 +59,3 @@ public final class TimedPowerActionsUtils {
         }
     }
 }
-

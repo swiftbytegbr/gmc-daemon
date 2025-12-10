@@ -14,7 +14,13 @@ public final class NodeSettingsUtils {
     private NodeSettingsUtils() {
     }
 
-    // Validates incoming defaultServerDirectory; if null/invalid, backfill to currentDefaultDir (or absolute ./servers) and sync once.
+    /**
+     * Validates the default server directory from the backend, backfilling and syncing if invalid.
+     *
+     * @param nodeSettings      node settings received from the backend
+     * @param currentDefaultDir current default directory on disk
+     * @return writable, absolute path to use as default server directory
+     */
     public static @NonNull Path validateOrBackfillDefaultServerDirectory(@NonNull NodeSettings nodeSettings, @NonNull Path currentDefaultDir) {
 
         Path incoming = PathUtils.getAbsolutPath(nodeSettings.getDefaultServerDirectory());
@@ -36,7 +42,13 @@ public final class NodeSettingsUtils {
         return incoming;
     }
 
-    // Validates incoming serverBackupsDirectory; if null/invalid, backfill to currentBackupPath and sync once.
+    /**
+     * Validates the server backups directory from the backend, backfilling and syncing if invalid.
+     *
+     * @param nodeSettings     node settings received from the backend
+     * @param currentBackupPath current local backups directory
+     * @return writable, absolute path to use for server backups
+     */
     public static @NonNull Path validateOrBackfillServerBackupsDirectory(@NonNull NodeSettings nodeSettings, @NonNull Path currentBackupPath) {
 
         Path incoming = PathUtils.getAbsolutPath(nodeSettings.getServerBackupsDirectory());

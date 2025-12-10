@@ -15,8 +15,12 @@ public final class PathUtils {
     private PathUtils() {
     }
 
-    // Returns true if `path` is an existing directory (or can be created)
-    // and a dummy file can be created and removed inside it (indicating write access).
+    /**
+     * Checks whether the given path is a writable directory, creating it if necessary.
+     *
+     * @param path path to validate
+     * @return {@code true} if the directory exists (or was created) and is writable
+     */
     public static boolean isWritableDirectory(@NonNull Path path) {
         if (Utils.isNullOrEmpty(path)) {
             return false;
@@ -60,14 +64,32 @@ public final class PathUtils {
         }
     }
 
+    /**
+     * Normalizes the provided path to an absolute path.
+     *
+     * @param path path to normalize
+     * @return absolute, normalized path
+     */
     public static @NonNull Path getAbsolutPath(@NonNull Path path) {
         return path.toAbsolutePath().normalize();
     }
 
+    /**
+     * Normalizes the provided path string to an absolute path.
+     *
+     * @param path path string to normalize
+     * @return absolute, normalized path
+     */
     public static @NonNull Path getAbsolutPath(@NonNull String path) {
         return Path.of(path).toAbsolutePath().normalize();
     }
 
+    /**
+     * Converts path separators to the platform default.
+     *
+     * @param path path string to convert
+     * @return path with correct separators for the current OS
+     */
     public static @NonNull String convertPathSeparator(@NonNull String path) {
 
         if (SystemUtils.IS_OS_WINDOWS) {
@@ -79,6 +101,12 @@ public final class PathUtils {
         return path;
     }
 
+    /**
+     * Converts a path to a platform-specific string, adjusting separators.
+     *
+     * @param path path to convert
+     * @return string with correct separators for the current OS
+     */
     public static @NonNull String convertPathSeparator(@NonNull Path path) {
         return convertPathSeparator(path.toString());
     }
@@ -88,6 +116,10 @@ public final class PathUtils {
      * - If destination does not exist, it will be created.
      * - If an entry already exists at destination, directories are merged and files are overwritten.
      * - The source directory will be removed if empty at the end.
+     *
+     * @param srcDirPath directory to move from
+     * @param dstDirPath directory to move into (created if missing)
+     * @throws IOException when creation or move fails
      */
     public static void moveDirectoryContents(@NonNull Path srcDirPath, @NonNull Path dstDirPath) throws IOException {
         File srcDir = srcDirPath.toFile();
@@ -136,6 +168,11 @@ public final class PathUtils {
      * Moves the directory at srcPath into the destination parent directory, keeping the folder name.
      * For example: src=/old/servers/MyServer, dstParent=/new/servers -> /new/servers/MyServer
      * If destination exists, contents are merged.
+     *
+     * @param srcPath       directory to move
+     * @param dstParentPath destination parent directory
+     * @return normalized destination path of the moved directory
+     * @throws IOException when moving or creating directories fails
      */
     public static @NonNull Path moveDirectoryToParent(@NonNull Path srcPath, @NonNull Path dstParentPath) throws IOException {
         File src = srcPath.toFile();
