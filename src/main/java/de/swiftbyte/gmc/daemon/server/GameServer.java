@@ -37,7 +37,7 @@ public abstract class GameServer {
     protected Process serverProcess;
 
     @Getter
-    protected GameServerState state;
+    protected volatile GameServerState state;
 
     @Getter
     protected String friendlyName;
