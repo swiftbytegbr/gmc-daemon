@@ -25,7 +25,10 @@ import java.util.UUID;
 public class AsaServer extends ArkServer {
 
     private static final String STEAM_CMD_ID = "2430930";
-    private final @NonNull Path EXECUTABLE_PATH = installDir.resolve("/ShooterGame/Binaries/Win64/ArkAscendedServer.exe");
+
+    private @NonNull Path getExecutablePath() {
+        return installDir.resolve("ShooterGame/Binaries/Win64/ArkAscendedServer.exe");
+    }
 
     @Override
     public @NonNull String getGameId() {
@@ -69,7 +72,7 @@ public class AsaServer extends ArkServer {
     public void allowFirewallPorts() {
         if (node.isManageFirewallAutomatically()) {
             log.debug("Adding firewall rules for server '{}'...", friendlyName);
-            FirewallService.allowPort(friendlyName, EXECUTABLE_PATH, getNeededPorts());
+            FirewallService.allowPort(friendlyName, getExecutablePath(), getNeededPorts());
         }
     }
 
@@ -100,11 +103,11 @@ public class AsaServer extends ArkServer {
                 requiredLaunchParameters2
         );
 
-        String changeDirectoryCommand = "cd /d \"" + PathUtils.convertPathSeparator(installDir.resolve("/ShooterGame/Binaries/Win64"));
+        String changeDirectoryCommand = "cd /d \"" + PathUtils.convertPathSeparator(installDir.resolve("ShooterGame/Binaries/Win64"));
 
         String serverExeName = "ArkAscendedServer.exe";
 
-        if (Files.exists(installDir.resolve("/ShooterGame/Binaries/Win64/AsaApiLoader.exe"))) {
+        if (Files.exists(installDir.resolve("ShooterGame/Binaries/Win64/AsaApiLoader.exe"))) {
             serverExeName = "AsaApiLoader.exe";
         }
 
@@ -112,12 +115,12 @@ public class AsaServer extends ArkServer {
                 + " /min"
                 + (gmcSettings.has("WindowsProcessPriority") ? " /" + gmcSettings.get("WindowsProcessPriority") : "")
                 + (gmcSettings.has("WindowsProcessAffinity") ? " /affinity " + gmcSettings.get("WindowsProcessAffinity") : "")
-                + " \"" + PathUtils.convertPathSeparator(installDir.resolve("/ShooterGame/Binaries/Win64/", serverExeName)) + "\""
+                + " \"" + PathUtils.convertPathSeparator(installDir.resolve("ShooterGame/Binaries/Win64/", serverExeName)) + "\""
                 + " " + realStartPostArguments;
         log.debug("Writing startup batch for server {} with command '{}'", friendlyName, startCommand);
 
         try {
-            FileWriter fileWriter = new FileWriter(installDir.resolve("/start.bat").toFile());
+            FileWriter fileWriter = new FileWriter(installDir.resolve("start.bat").toFile());
             PrintWriter printWriter = new PrintWriter(fileWriter);
 
             printWriter.println(changeDirectoryCommand);
