@@ -40,7 +40,7 @@ public abstract class GameServer {
     protected @Nullable Process serverProcess;
 
     @Getter
-    protected @NonNull GameServerState state;
+    protected volatile @NonNull GameServerState state;
 
     @Getter
     protected @NonNull String friendlyName;
