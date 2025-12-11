@@ -224,7 +224,7 @@ public abstract class ArkServer extends GameServer {
                 install().queue();
                 return false;
             }
-
+            //TODO rework start logic
             new Thread(() -> {
                 writeStartupBatch();
                 ServerUtils.writeIniFiles(this, installDir);
@@ -233,6 +233,7 @@ public abstract class ArkServer extends GameServer {
                     List<String> startCommand = List.of("cmd", "/c", "start", "/min", "", startupScript);
                     log.debug("Starting server with command {}", String.join(" ", startCommand));
                     serverProcess = new ProcessBuilder(startCommand).start();
+                    PID = String.valueOf(serverProcess.pid());
                     Scanner scanner = new Scanner(serverProcess.getInputStream());
                     while (scanner.hasNextLine()) {
                         scanner.nextLine();
@@ -355,9 +356,7 @@ public abstract class ArkServer extends GameServer {
 
     @Override
     public void update() {
-        if (PID == null) {
-            gatherPID();
-        }
+        gatherPID();
 
         switch (state) {
             case INITIALIZING -> {
@@ -447,7 +446,7 @@ public abstract class ArkServer extends GameServer {
 
     @Override
     protected void gatherPID() {
-        PID = SystemUtils.getProcessPID(PathUtils.convertPathSeparator(installDir.resolve("/ShooterGame/Binaries/Win64/")));
+        PID = SystemUtils.getProcessPID(PathUtils.convertPathSeparator(installDir.resolve("ShooterGame/Binaries/Win64/")));
     }
 
     public abstract void writeStartupBatch();

@@ -206,7 +206,7 @@ public class BackupService {
         File backupLocation = node.getBackupPath().resolve(server.getServerId(), backup.getName() + ".zip").toFile();
 
         //TODO find a better way to handle different save locations for different game servers then hardcoding it here
-        File saveLocation = server.getInstallDir().resolve("/ShooterGame/Saved/SavedArks", server instanceof AsaServer ? "/" + server.getSettings().getMap() : "").toFile();
+        File saveLocation = server.getInstallDir().resolve("ShooterGame/Saved/SavedArks", server instanceof AsaServer ? "/" + server.getSettings().getMap() : "").toFile();
 
         log.debug("Creating backup directories...");
 
@@ -339,7 +339,7 @@ public class BackupService {
         File backupLocation = node.getBackupPath().resolve(server.getServerId(), backup.getName() + ".zip").toFile();
 
         //TODO find a better way to handle different save locations for different game servers then hardcoding it here
-        File saveLocation = server.getInstallDir().resolve("/ShooterGame/Saved/SavedArks", server instanceof AsaServer ? "/" + server.getSettings().getMap() : "").toFile();
+        File saveLocation = server.getInstallDir().resolve("ShooterGame/Saved/SavedArks", server instanceof AsaServer ? "/" + server.getSettings().getMap() : "").toFile();
 
         if (!backupLocation.exists()) {
             throw new IllegalStateException("Backup file does not exist: " + backupLocation.getAbsolutePath());
