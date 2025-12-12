@@ -126,6 +126,17 @@ public class ServerUtils {
             HashMap<String, GameServerCacheModel> gameServerCacheModelHashMap = cacheModel.getGameServerCacheModelHashMap();
 
             gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> {
+
+                if(gameServerCacheModel.getSettings() == null) {
+                    log.error("Could not create server {} from cache: Missing Settings", s);
+                    return;
+                }
+
+                if(gameServerCacheModel.getInstallDir() == null) {
+                    log.error("Could not create server {} from cache: Missing Install Dir", s);
+                    return;
+                }
+
                 switch (gameServerCacheModel.getGameType()) {
                     case ARK_ASCENDED ->
                             new AsaServer(s, gameServerCacheModel.getFriendlyName(), Path.of(gameServerCacheModel.getInstallDir()), gameServerCacheModel.getSettings(), false);

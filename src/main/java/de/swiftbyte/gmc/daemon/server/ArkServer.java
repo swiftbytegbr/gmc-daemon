@@ -196,8 +196,8 @@ public abstract class ArkServer extends GameServer {
         return () -> {
             AutoRestartService.cancelAutoRestart(serverId);
             GameServer.removeServerById(serverId);
-            updateScheduler.cancel(false);
             NodeUtils.cacheInformation(Node.INSTANCE);
+            updateScheduler.cancel(false);
             return true;
         };
     }

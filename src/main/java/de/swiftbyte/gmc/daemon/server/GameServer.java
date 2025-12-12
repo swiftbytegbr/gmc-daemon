@@ -223,10 +223,6 @@ public abstract class GameServer {
     }
 
     public void setSettings(SettingProfile settings) {
-        if (this.state == GameServerState.CREATING) {
-            log.warn("Server '{}' is busy (CREATING). Settings change ignored.", friendlyName);
-            return;
-        }
         if (Node.INSTANCE.isManageFirewallAutomatically()) {
             FirewallService.removePort(friendlyName);
         }
