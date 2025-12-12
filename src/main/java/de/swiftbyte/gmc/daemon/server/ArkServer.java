@@ -194,11 +194,10 @@ public abstract class ArkServer extends GameServer {
     @Override
     public @NonNull AsyncAction<@NonNull Boolean> abandon() {
         return () -> {
-
             AutoRestartService.cancelAutoRestart(serverId);
             GameServer.removeServerById(serverId);
-            updateScheduler.cancel(false);
             NodeUtils.cacheInformation(node);
+            updateScheduler.cancel(false);
             return true;
         };
     }
