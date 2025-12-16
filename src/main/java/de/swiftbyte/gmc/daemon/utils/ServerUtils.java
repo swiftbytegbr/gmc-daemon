@@ -127,6 +127,12 @@ public class ServerUtils {
 
             gameServerCacheModelHashMap.forEach((s, gameServerCacheModel) -> {
 
+                GameServer existing = GameServer.getServerById(s);
+                if (existing != null) {
+                    existing.abandon().complete();
+                    return;
+                }
+
                 if(gameServerCacheModel.getSettings() == null) {
                     log.error("Could not create server {} from cache: Missing Settings", s);
                     return;

@@ -63,6 +63,12 @@ public abstract class GameServer {
         this.friendlyName = friendlyName;
         this.installDir = installDir.toAbsolutePath().normalize();
 
+        GameServer existing = GAME_SERVERS.get(id);
+        if (existing != null && existing != this) {
+            log.warn("Replacing existing GameServer instance for id '{}' (old name: '{}') to avoid duplicate schedulers.", id, existing.getFriendlyName());
+            existing.abandon().complete();
+        }
+
         // Register first so downstream lookups (e.g., in setSettings -> BackupService) can resolve
         GAME_SERVERS.put(id, this);
 
