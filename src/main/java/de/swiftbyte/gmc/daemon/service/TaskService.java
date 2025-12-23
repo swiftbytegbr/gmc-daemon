@@ -46,9 +46,6 @@ public class TaskService {
         registerConsumer(NodeTask.Type.TIMED_SHUTDOWN, new TimedShutdownTaskConsumer());
         registerConsumer(NodeTask.Type.TIMED_RESTART, new TimedRestartTaskConsumer());
 
-        // Server maintenance
-        registerConsumer(NodeTask.Type.SAVEGAME_WIPE, new de.swiftbyte.gmc.daemon.tasks.consumers.SavegameWipeTaskConsumer());
-
     }
 
     public static void shutdownTaskService() {
