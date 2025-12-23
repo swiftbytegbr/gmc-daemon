@@ -22,6 +22,17 @@ public class UpdateServerVersionPacketConsumer implements StompPacketConsumer<Se
                 if (success) {
                     if (server.install().complete()) {
                         log.info("Updated server with id {} successfully.", packet.getServerId());
+
+                        if (packet.isStartAfterUpdate()) {
+                            log.info("Starting server with id {} after update.", packet.getServerId());
+                            server.start().queue(startSuccess -> {
+                                if (startSuccess) {
+                                    log.info("Started server with id {} successfully after update.", packet.getServerId());
+                                } else {
+                                    log.error("Starting server with id {} after update failed.", packet.getServerId());
+                                }
+                            });
+                        }
                     } else {
                         log.error("Updating server with id {} failed.", packet.getServerId());
                     }
