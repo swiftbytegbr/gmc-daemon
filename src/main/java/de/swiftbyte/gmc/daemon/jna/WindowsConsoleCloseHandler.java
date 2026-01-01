@@ -1,13 +1,13 @@
-package de.swiftbyte.gmc.daemon;
+package de.swiftbyte.gmc.daemon.jna;
 
 import com.sun.jna.Callback;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import lombok.CustomLog;
-import org.jspecify.annotations.NonNull;
+import org.apache.commons.lang3.SystemUtils;
 
 @CustomLog
-final class WindowsConsoleCloseHandler {
+public final class WindowsConsoleCloseHandler {
 
     private static final int CTRL_C_EVENT = 0;
     private static final int CTRL_BREAK_EVENT = 1;
@@ -15,17 +15,13 @@ final class WindowsConsoleCloseHandler {
     private static final int CTRL_LOGOFF_EVENT = 5;
     private static final int CTRL_SHUTDOWN_EVENT = 6;
 
-    private static Kernel32.HandlerRoutine handler;
+    private WindowsConsoleCloseHandler() {}
 
-    private WindowsConsoleCloseHandler() {
-    }
+    public static void install() {
 
-    static void install() {
-        if (!isWindows()) {
-            return;
-        }
+        if (!SystemUtils.IS_OS_WINDOWS) return;
 
-        handler = ctrlType -> {
+        Kernel32.HandlerRoutine handler = ctrlType -> {
             switch (ctrlType) {
                 case CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT -> {
                     log.info("Console control event received: {}", ctrlType);
@@ -42,11 +38,6 @@ final class WindowsConsoleCloseHandler {
         if (!registered) {
             log.warn("Failed to register console control handler.");
         }
-    }
-
-    private static boolean isWindows() {
-        String osName = System.getProperty("os.name", "");
-        return osName.toLowerCase().contains("win");
     }
 
     private interface Kernel32 extends Library {

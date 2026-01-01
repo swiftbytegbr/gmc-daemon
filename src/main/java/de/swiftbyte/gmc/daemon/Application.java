@@ -2,6 +2,7 @@ package de.swiftbyte.gmc.daemon;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import de.swiftbyte.gmc.daemon.jna.WindowsConsoleCloseHandler;
 import de.swiftbyte.gmc.daemon.migration.MigrateServerInstallDir;
 import de.swiftbyte.gmc.daemon.migration.MigrationScript;
 import de.swiftbyte.gmc.daemon.utils.ConfigUtils;
