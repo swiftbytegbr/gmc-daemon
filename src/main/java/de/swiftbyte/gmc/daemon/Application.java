@@ -99,6 +99,7 @@ public class Application {
 
     static void main(String[] args) {
         Runtime.getRuntime().addShutdownHook(shutdownHook);
+        WindowsConsoleCloseHandler.install();
 
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger("de.swiftbyte");

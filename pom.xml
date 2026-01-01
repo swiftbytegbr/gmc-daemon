@@ -70,6 +70,13 @@
             <version>3.30.6</version>
         </dependency>
 
+        <!-- JNA -->
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>5.18.1</version>
+        </dependency>
+
         <!-- SwiftByte -->
         <dependency>
             <groupId>de.swiftbyte.gmc</groupId>
