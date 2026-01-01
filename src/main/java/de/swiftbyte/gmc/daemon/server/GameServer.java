@@ -110,11 +110,7 @@ public abstract class GameServer {
 
     // Internal initializer to avoid virtual dispatch during construction
     private void initSettings(SettingProfile settings) {
-        if (Node.INSTANCE.isManageFirewallAutomatically()) {
-            FirewallService.removePort(friendlyName);
-        }
         this.settings = settings;
-        allowFirewallPorts();
         BackupService.updateAutoBackupSettings(serverId);
         AutoRestartService.updateAutoRestartSettings(serverId);
     }
@@ -165,7 +161,7 @@ public abstract class GameServer {
 
         //Remove Firewall rules and recreate them after the name change
         if(Node.INSTANCE.isManageFirewallAutomatically()) {
-            FirewallService.removePort(friendlyName);
+            FirewallService.removePort(friendlyName).queue();
         }
 
         Path parent = this.installDir != null ? this.installDir.getParent() : null;
@@ -231,13 +227,23 @@ public abstract class GameServer {
     }
 
     public void setSettings(SettingProfile settings) {
-        if (Node.INSTANCE.isManageFirewallAutomatically()) {
-            FirewallService.removePort(friendlyName);
-        }
         this.settings = settings;
-        allowFirewallPorts();
         BackupService.updateAutoBackupSettings(serverId);
         AutoRestartService.updateAutoRestartSettings(serverId);
+        queueFirewallRefresh();
+    }
+
+    private void queueFirewallRefresh() {
+        if (!Node.INSTANCE.isManageFirewallAutomatically()) {
+            return;
+        }
+        FirewallService.removePort(friendlyName).queue(
+                (_) -> allowFirewallPorts(),
+                (error) -> {
+                    log.warn("Failed to remove firewall rules for '{}'. Attempting to re-apply rules.", friendlyName, error);
+                    allowFirewallPorts();
+                }
+        );
     }
 
     protected static void removeServerById(String id) {

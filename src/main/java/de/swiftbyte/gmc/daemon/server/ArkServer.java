@@ -171,7 +171,7 @@ public abstract class ArkServer extends GameServer {
 
                 Thread.sleep(5000);
                 FileUtils.deleteDirectory(installDir.toFile());
-                FirewallService.removePort(friendlyName);
+                FirewallService.removePort(friendlyName).complete();
                 BackupService.deleteAllBackupsByServer(this);
                 GameServer.removeServerById(serverId);
                 updateScheduler.cancel(false);
