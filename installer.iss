@@ -45,4 +45,4 @@ Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall runascurrentuser
-Filename: "{cmd}"; Parameters: "/C """"{sys}\WindowsPowerShell\v1.0\powershell.exe"" -NoProfile -ExecutionPolicy Bypass -File ""{app}\Install_Certificate.ps1"" & if %errorlevel%==0 (exit /b 3010) else exit /b %errorlevel%"""; Flags: runhidden waituntilterminated restart; Check: IsTaskSelected('installcerts')
+Filename: "{cmd}"; Parameters: "/C """"{sys}\WindowsPowerShell\v1.0\powershell.exe"" -NoProfile -ExecutionPolicy Bypass -File ""{app}\Install_Certificate.ps1"" & if %errorlevel%==0 (exit /b 3010) else exit /b %errorlevel%"""; Flags: runhidden waituntilterminated; Check: WizardIsTaskSelected('installcerts')
