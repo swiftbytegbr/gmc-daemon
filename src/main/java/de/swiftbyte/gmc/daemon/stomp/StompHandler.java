@@ -37,6 +37,7 @@ import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 public class StompHandler {
@@ -48,6 +49,7 @@ public class StompHandler {
     private static WebSocketStompClient stompClient;
     private static StompSession session;
     private static ExecutorService sendExecutor; // single-threaded sender
+    private static final AtomicLong SESSION_GENERATION = new AtomicLong(0);
 
     private static boolean hasInterruptedCause(Throwable t) {
         Throwable c = t;
@@ -60,7 +62,7 @@ public class StompHandler {
         return false;
     }
 
-    public static boolean initialiseStomp() {
+    public static synchronized boolean initialiseStomp() {
 
         disconnect();
 
@@ -87,6 +89,7 @@ public class StompHandler {
         try {
             log.debug("Connecting WebSocket to {}", Application.getWebsocketUrl());
             session = stompClient.connectAsync(Application.getWebsocketUrl(), headers, new StompSessionHandler()).get();
+            SESSION_GENERATION.incrementAndGet();
             ensureSender();
             scanForPacketListeners();
         } catch (InterruptedException | ExecutionException e) {
@@ -158,6 +161,7 @@ public class StompHandler {
             session.disconnect();
             session = null;
         }
+        SESSION_GENERATION.incrementAndGet();
 
         if (stompClient != null && stompClient.isRunning()) {
             stompClient.stop();
@@ -174,6 +178,7 @@ public class StompHandler {
 
         Reflections reflections = new Reflections(Application.class.getPackageName().split("\\.")[0]);
 
+        final long generation = SESSION_GENERATION.get();
         reflections.getTypesAnnotatedWith(StompPacketInfo.class).forEach(clazz -> {
 
             if (StompPacketConsumer.class.isAssignableFrom(clazz)) {
@@ -200,6 +205,9 @@ public class StompHandler {
 
                         @Override
                         public void handleFrame(StompHeaders headers, Object payload) {
+                            if (generation != SESSION_GENERATION.get()) {
+                                return;
+                            }
                             packetConsumer.onReceive(payload);
                         }
                     }));

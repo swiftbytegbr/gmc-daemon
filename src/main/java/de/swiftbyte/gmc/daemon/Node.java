@@ -42,6 +42,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Getter
 @Slf4j
@@ -52,6 +53,7 @@ public class Node {
     private volatile ConnectionState connectionState;
 
     private ScheduledExecutorService heartbeatExecutor;
+    private static final AtomicBoolean CONNECTING = new AtomicBoolean(false);
 
     @Setter
     private String nodeName;
@@ -260,18 +262,27 @@ public class Node {
 
     public void connect() {
 
-        if (getConnectionState() == ConnectionState.RECONNECTING) {
-            log.info("Reconnecting to backend...");
-            // Re-establish STOMP connection only; keep TaskService running to avoid interrupting tasks
-            StompHandler.initialiseStomp();
-        } else {
-            log.info("Connecting to backend...");
-            setConnectionState(ConnectionState.CONNECTING);
-            if (!StompHandler.initialiseStomp()) {
-                setConnectionState(ConnectionState.RECONNECTING);
-                ServerUtils.getCachedServerInformation();
+        if (!CONNECTING.compareAndSet(false, true)) {
+            log.debug("Connect attempt skipped because another connect is in progress.");
+            return;
+        }
+
+        try {
+            if (getConnectionState() == ConnectionState.RECONNECTING) {
+                log.info("Reconnecting to backend...");
+                // Re-establish STOMP connection only; keep TaskService running to avoid interrupting tasks
+                StompHandler.initialiseStomp();
+            } else {
+                log.info("Connecting to backend...");
+                setConnectionState(ConnectionState.CONNECTING);
+                if (!StompHandler.initialiseStomp()) {
+                    setConnectionState(ConnectionState.RECONNECTING);
+                    ServerUtils.getCachedServerInformation();
+                }
+                TaskService.initializeTaskService();
             }
-            TaskService.initializeTaskService();
+        } finally {
+            CONNECTING.set(false);
         }
     }
 

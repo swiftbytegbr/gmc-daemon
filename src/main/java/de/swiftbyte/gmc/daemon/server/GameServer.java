@@ -59,18 +59,20 @@ public abstract class GameServer {
 
     public GameServer(String id, @NotNull Path installDir, String friendlyName, SettingProfile settings) {
 
+        log.debug("Creating server object for server {}({})", friendlyName, System.identityHashCode(this));
+
         this.serverId = id;
         this.friendlyName = friendlyName;
         this.installDir = installDir.toAbsolutePath().normalize();
 
-        GameServer existing = GAME_SERVERS.get(id);
-        if (existing != null && existing != this) {
-            log.warn("Replacing existing GameServer instance for id '{}' (old name: '{}') to avoid duplicate schedulers.", id, existing.getFriendlyName());
-            existing.abandon().complete();
-        }
-
         // Register first so downstream lookups (e.g., in setSettings -> BackupService) can resolve
-        GAME_SERVERS.put(id, this);
+        GAME_SERVERS.compute(id, (_, existing) -> {
+            if (existing != null && existing != this) {
+                log.warn("Replacing existing GameServer instance for id '{}' (old name: '{}') to avoid duplicate schedulers.", id, existing.getFriendlyName());
+                existing.abandon().complete();
+            }
+            return this;
+        });
 
         // Initialize baseline settings from cache when available to support delta detection
         SettingProfile cached = ServerUtils.getCachedGameServerSettings(id);
@@ -210,7 +212,7 @@ public abstract class GameServer {
             return;
         }
 
-        log.debug("Changing state of server '{}' from '{}' to '{}'.", friendlyName, this.state, state);
+        log.debug("Changing state of server '{}' from '{}' to '{}'. ({})", friendlyName, this.state, state, System.identityHashCode(this));
 
         if (state == GameServerState.OFFLINE || state == GameServerState.INITIALIZING) {
             this.PID = null;

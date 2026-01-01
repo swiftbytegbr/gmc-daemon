@@ -22,12 +22,15 @@ import java.nio.file.Path;
 @StompPacketInfo(path = "/user/queue/node/login", packetClass = NodeLoginAckPacket.class)
 public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckPacket> {
 
+    private static final Object LOGIN_ACK_LOCK = new Object();
+
     @Override
     public void onReceive(NodeLoginAckPacket packet) {
 
-        try {
+        synchronized (LOGIN_ACK_LOCK) {
+            try {
 
-            Node.INSTANCE.setTeamName(packet.getTeamName());
+                Node.INSTANCE.setTeamName(packet.getTeamName());
 
             log.info("Backend running in profile '{}' with version '{}'.", packet.getBackendProfile(), packet.getBackendVersion());
             log.info("I am '{}' in team {}!", packet.getNodeSettings().getName(), packet.getTeamName());
@@ -85,20 +88,21 @@ public class LoginAckPacketConsumer implements StompPacketConsumer<NodeLoginAckP
                 log.warn("Failed to re-announce active tasks after login ack.", e);
             }
 
-            if (Node.INSTANCE.isFirstStart()) {
-                log.info("""
+                if (Node.INSTANCE.isFirstStart()) {
+                    log.info("""
                         
                         Congratulations — you have connected the daemon to your team!
                         
                         The daemon will continue to run on your server. Every time you perform an action in the web app, commands are sent to the daemon. It then executes these commands. If GMC ever needs to perform maintenance, you can manage the server using commands via the console.
                         
                         You are now finished here and can switch back to app.gamemanager.cloud.""");
-                Node.INSTANCE.setFirstStart(false);
-            }
+                    Node.INSTANCE.setFirstStart(false);
+                }
 
-        } catch (Exception e) {
-            log.error("An unknown error occurred while trying to start the daemon.", e);
-            Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
+            } catch (Exception e) {
+                log.error("An unknown error occurred while trying to start the daemon.", e);
+                Node.INSTANCE.setConnectionState(ConnectionState.RECONNECTING);
+            }
         }
     }
 
